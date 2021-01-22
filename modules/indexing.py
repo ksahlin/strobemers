@@ -85,4 +85,51 @@ def randomers(seq, k_size, order = 2, **kwargs):
 
 
 
+def strobemer_order2(subseq, m_size):
+    k1 = subseq[0:m_size]
+    f = lambda x: x
+    mod = 2**26
+    min_index, min_value = argmin([ hash(k1) - hash(subseq[i:i+m_size]) for i in range(m_size, len(subseq) - m_size + 1)])
+    min_k2 = subseq[m_size+ min_index:m_size+ min_index+m_size]
+    # print(len(k1 + min_k2))
+    return k1 + min_k2
+
+
+
+def strobemer_order3(subseq, m_size, N_1, N_2):
+    # print(len(subseq),m_size, N_1, N_2, m_size, m_size+ N_1 - m_size + 1, [i for i in range(m_size + N_1, m_size + N_1 + N_2 - m_size + 1)])
+    k1 = subseq[0:m_size]
+    f = lambda x: x
+    mod = 2**26
+    min_index, min_value = argmin([ hash(k1) - hash(subseq[i:i+m_size]) for i in range(m_size, m_size+ N_1 - m_size + 1)])
+    min_k2 = subseq[m_size + min_index: m_size+ min_index+m_size]
+
+    min_index, min_value = argmin([ hash(k1) - hash(min_k2) + hash(subseq[i:i+m_size]) for i in range(m_size + N_1, m_size + N_1 + N_2 - m_size + 1)])
+    min_k3 = subseq[m_size + N_1 + min_index: m_size + N_1+ min_index+m_size]
+
+    return k1 + min_k2 + min_k3
+
+
+def strobemers(seq, k_size, order = 2, **kwargs):
+
+    if order == 2:
+        N_1 = kwargs["N_1"]
+        if k_size % 2 != 0:
+            print("WARNING: kmer size is not evenly divisible with 2, will use {0} as kmer size: ".format(k_size - k_size % 2))
+            k_size = k_size - k_size % 2
+        m_size = k_size//2
+        strobemers = {p : strobemer_order2(seq[p:min(p+N_1, len(seq))], m_size) for p in range(len(seq) - k_size +1)}
+        return strobemers
+
+    elif order == 3:
+        N_1 = kwargs["N_1"]
+        N_2 = kwargs["N_2"]  
+        if k_size % 3 != 0:
+            print("WARNING: kmer size is not evenly divisible with 3, will use {0} as kmer size: ".format(k_size - k_size % 3))
+            k_size = k_size - k_size % 3
+        m_size = k_size//3
+        strobemers = {p: strobemer_order3(seq[p:min(p+m_size+N_1+N_2, len(seq))], m_size, min(N_1 + N_2, len(seq)-p - m_size)//2, min(N_1 + N_2, len(seq)-p - m_size)//2) for p in range(len(seq) - k_size +1)}
+        return strobemers
+
+
 
