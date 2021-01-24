@@ -61,7 +61,7 @@ def randomer_order3(subseq, m_size, N_1, N_2):
     return k1 + min_k2 + min_k3
 
 
-def randomers(seq, k_size, order = 2, **kwargs):
+def randstrobes(seq, k_size, order = 2, **kwargs):
 
     if order == 2:
         N_1 = kwargs["N_1"]
@@ -69,8 +69,8 @@ def randomers(seq, k_size, order = 2, **kwargs):
             print("WARNING: kmer size is not evenly divisible with 2, will use {0} as kmer size: ".format(k_size - k_size % 2))
             k_size = k_size - k_size % 2
         m_size = k_size//2
-        randomers = {p : randomer_order2(seq[p:min(p+N_1, len(seq))], m_size) for p in range(len(seq) - k_size +1)}
-        return randomers
+        randstrobes = {p : randomer_order2(seq[p:min(p+N_1, len(seq))], m_size) for p in range(len(seq) - k_size +1)}
+        return randstrobes
 
     elif order == 3:
         N_1 = kwargs["N_1"]
@@ -79,8 +79,8 @@ def randomers(seq, k_size, order = 2, **kwargs):
             print("WARNING: kmer size is not evenly divisible with 3, will use {0} as kmer size: ".format(k_size - k_size % 3))
             k_size = k_size - k_size % 3
         m_size = k_size//3
-        randomers = {p: randomer_order3(seq[p:min(p+m_size+N_1+N_2, len(seq))], m_size, min(N_1 + N_2, len(seq)-p - m_size)//2, min(N_1 + N_2, len(seq)-p - m_size)//2) for p in range(len(seq) - k_size +1)}
-        return randomers
+        randstrobes = {p: randomer_order3(seq[p:min(p+m_size+N_1+N_2, len(seq))], m_size, min(N_1 + N_2, len(seq)-p - m_size)//2, min(N_1 + N_2, len(seq)-p - m_size)//2) for p in range(len(seq) - k_size +1)}
+        return randstrobes
 
 
 
@@ -110,7 +110,7 @@ def strobemer_order3(subseq, m_size, N_1, N_2):
     return k1 + min_k2 + min_k3
 
 
-def strobemers(seq, k_size, order = 2, **kwargs):
+def minstrobes(seq, k_size, order = 2, **kwargs):
 
     if order == 2:
         N_1 = kwargs["N_1"]
@@ -118,8 +118,8 @@ def strobemers(seq, k_size, order = 2, **kwargs):
             print("WARNING: kmer size is not evenly divisible with 2, will use {0} as kmer size: ".format(k_size - k_size % 2))
             k_size = k_size - k_size % 2
         m_size = k_size//2
-        strobemers = {p : strobemer_order2(seq[p:min(p+N_1, len(seq))], m_size) for p in range(len(seq) - k_size +1)}
-        return strobemers
+        minstrobes = {p : strobemer_order2(seq[p:min(p+N_1, len(seq))], m_size) for p in range(len(seq) - k_size +1)}
+        return minstrobes
 
     elif order == 3:
         N_1 = kwargs["N_1"]
@@ -128,8 +128,8 @@ def strobemers(seq, k_size, order = 2, **kwargs):
             print("WARNING: kmer size is not evenly divisible with 3, will use {0} as kmer size: ".format(k_size - k_size % 3))
             k_size = k_size - k_size % 3
         m_size = k_size//3
-        strobemers = {p: strobemer_order3(seq[p:min(p+m_size+N_1+N_2, len(seq))], m_size, min(N_1 + N_2, len(seq)-p - m_size)//2, min(N_1 + N_2, len(seq)-p - m_size)//2) for p in range(len(seq) - k_size +1)}
-        return strobemers
+        minstrobes = {p: strobemer_order3(seq[p:min(p+m_size+N_1+N_2, len(seq))], m_size, min(N_1 + N_2, len(seq)-p - m_size)//2, min(N_1 + N_2, len(seq)-p - m_size)//2) for p in range(len(seq) - k_size +1)}
+        return minstrobes
 
 
 
