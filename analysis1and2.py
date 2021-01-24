@@ -147,62 +147,63 @@ def main(args):
     L = 1000
     k_size = 30
     nr_exp = 1000
-    mut_freq = 0.05 #0.01 #, 0.05, 0.1]
-
-    results = {"kmers" : {"m": 0, "c": 0, "islands": []},
-                "minstrobes" : { (2,15,50): {"m": 0, "c": 0, "islands": []}, (3,10,25): {"m": 0, "c": 0, "islands": []} },
-                "randstrobes" : { (2,15,50): {"m": 0, "c": 0, "islands": []}, (3,10,25): {"m": 0, "c": 0, "islands": []} }
-               }
+    mut_freq = 0.5 #0.01 #, 0.05, 0.1]
 
 
-    for exp_id in range(nr_exp):
-        seq1 = "".join([random.choice("ACGT") for i in range(L)])
-        
-        # controlled or random experiment
-        muts = set(range(20,1000,20)) 
-        # muts = set(random.sample(range(len(seq1)),int(L*mut_freq)))
+    for mut_freq in [0.01, 0.05, 0.1]:
+        print("MUTATION RATE:", mut_freq)
+        results = {"kmers" : {"m": 0, "c": 0, "islands": []},
+                    "minstrobes" : { (2,15,50): {"m": 0, "c": 0, "islands": []}, (3,10,25): {"m": 0, "c": 0, "islands": []} },
+                    "randstrobes" : { (2,15,50): {"m": 0, "c": 0, "islands": []}, (3,10,25): {"m": 0, "c": 0, "islands": []} }
+                   }
+        for exp_id in range(nr_exp):
+            seq1 = "".join([random.choice("ACGT") for i in range(L)])
+            
+            # controlled or random experiment
+            # muts = set(range(20,1000,20)) 
+            muts = set(random.sample(range(len(seq1)),int(L*mut_freq)))
 
-        seq2 = "".join([seq1[i] if i not in muts else random.choice(['', help_functions.reverse_complement(seq1[i]), seq1[i] + random.choice("ACGT")]) for i in range(len(seq1))])
-        
-        #kmers
-        m,c,islands = analyze_kmers(seq1, seq2, k_size)
-        results["kmers"]["m"] += m 
-        results["kmers"]["c"] += c 
-        results["kmers"]["islands"].append(islands) 
+            seq2 = "".join([seq1[i] if i not in muts else random.choice(['', help_functions.reverse_complement(seq1[i]), seq1[i] + random.choice("ACGT")]) for i in range(len(seq1))])
+            
+            #kmers
+            m,c,islands = analyze_kmers(seq1, seq2, k_size)
+            results["kmers"]["m"] += m 
+            results["kmers"]["c"] += c 
+            results["kmers"]["islands"].append(islands) 
 
-        m,c,islands = analyze_strobemers(seq1, seq2, k_size, 2, "minstrobes", N_1 = 50 )
-        results["minstrobes"][(2,15,50)]["m"] += m 
-        results["minstrobes"][(2,15,50)]["c"] += c 
-        results["minstrobes"][(2,15,50)]["islands"].append(islands) 
+            m,c,islands = analyze_strobemers(seq1, seq2, k_size, 2, "minstrobes", N_1 = 50 )
+            results["minstrobes"][(2,15,50)]["m"] += m 
+            results["minstrobes"][(2,15,50)]["c"] += c 
+            results["minstrobes"][(2,15,50)]["islands"].append(islands) 
 
-        m,c,islands = analyze_strobemers(seq1, seq2, k_size, 3, "minstrobes", N_1 = 40, N_2 = 40 )
-        results["minstrobes"][(3,10,25)]["m"] += m 
-        results["minstrobes"][(3,10,25)]["c"] += c 
-        results["minstrobes"][(3,10,25)]["islands"].append(islands) 
+            m,c,islands = analyze_strobemers(seq1, seq2, k_size, 3, "minstrobes", N_1 = 25, N_2 = 25 )
+            results["minstrobes"][(3,10,25)]["m"] += m 
+            results["minstrobes"][(3,10,25)]["c"] += c 
+            results["minstrobes"][(3,10,25)]["islands"].append(islands) 
 
-        m,c,islands = analyze_strobemers(seq1, seq2, k_size, 2, "randstrobes", N_1 = 50 )
-        results["randstrobes"][(2,15,50)]["m"] += m 
-        results["randstrobes"][(2,15,50)]["c"] += c 
-        results["randstrobes"][(2,15,50)]["islands"].append(islands) 
+            m,c,islands = analyze_strobemers(seq1, seq2, k_size, 2, "randstrobes", N_1 = 50 )
+            results["randstrobes"][(2,15,50)]["m"] += m 
+            results["randstrobes"][(2,15,50)]["c"] += c 
+            results["randstrobes"][(2,15,50)]["islands"].append(islands) 
 
-        m,c,islands = analyze_strobemers(seq1, seq2, k_size, 3, "randstrobes", N_1 = 40, N_2 = 40 )
-        results["randstrobes"][(3,10,25)]["m"] += m 
-        results["randstrobes"][(3,10,25)]["c"] += c 
-        results["randstrobes"][(3,10,25)]["islands"].append(islands) 
+            m,c,islands = analyze_strobemers(seq1, seq2, k_size, 3, "randstrobes", N_1 = 25, N_2 = 25 )
+            results["randstrobes"][(3,10,25)]["m"] += m 
+            results["randstrobes"][(3,10,25)]["c"] += c 
+            results["randstrobes"][(3,10,25)]["islands"].append(islands) 
 
-        # positions_matching_kmers(seq1, seq2, k)
-    for protocol in results:
-        if protocol == "kmers":
-            flat = [g for l in results[protocol]["islands"] for g in l]
-            avg_island_len = sum(flat)/len(flat)
-            res = [results[protocol]["m"]/nr_exp, results[protocol]["c"]/(L*nr_exp), avg_island_len]
-            print(protocol, " & ".join([ str(round(r, 1)) for r in res]) )
-        else:
-            for params in results[protocol]:
-                flat = [g for l in results[protocol][params]["islands"] for g in l]
+            # positions_matching_kmers(seq1, seq2, k)
+        for protocol in results:
+            if protocol == "kmers":
+                flat = [g for l in results[protocol]["islands"] for g in l]
                 avg_island_len = sum(flat)/len(flat)
-                res = [results[protocol][params]["m"]/nr_exp, 100*results[protocol][params]["c"]/(L*nr_exp), avg_island_len]
-                print(protocol, params, " & ".join([ str(round(r, 1)) for r in res]) )
+                res = [results[protocol]["m"]/nr_exp, 100*results[protocol]["c"]/(L*nr_exp), avg_island_len]
+                print(protocol, " & ".join([ str(round(r, 1)) for r in res]) )
+            else:
+                for params in results[protocol]:
+                    flat = [g for l in results[protocol][params]["islands"] for g in l]
+                    avg_island_len = sum(flat)/len(flat)
+                    res = [results[protocol][params]["m"]/nr_exp, 100*results[protocol][params]["c"]/(L*nr_exp), avg_island_len]
+                    print(protocol, params, " & ".join([ str(round(r, 1)) for r in res]) )
 
     # print(results)
 

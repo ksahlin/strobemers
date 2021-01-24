@@ -83,6 +83,27 @@ def randstrobes(seq, k_size, order = 2, **kwargs):
         return randstrobes
 
 
+def randstrobes_iter(seq, k_size, order = 2, **kwargs):
+
+    if order == 2:
+        N_1 = kwargs["N_1"]
+        if k_size % 2 != 0:
+            print("WARNING: kmer size is not evenly divisible with 2, will use {0} as kmer size: ".format(k_size - k_size % 2))
+            k_size = k_size - k_size % 2
+        m_size = k_size//2
+        for p in range(len(seq) - k_size +1):
+            yield randomer_order2(seq[p:min(p+N_1, len(seq))], m_size)
+
+    elif order == 3:
+        N_1 = kwargs["N_1"]
+        N_2 = kwargs["N_2"]  
+        if k_size % 3 != 0:
+            print("WARNING: kmer size is not evenly divisible with 3, will use {0} as kmer size: ".format(k_size - k_size % 3))
+            k_size = k_size - k_size % 3
+        m_size = k_size//3
+        for p in range(len(seq) - k_size +1):
+            yield randomer_order3(seq[p:min(p+m_size+N_1+N_2, len(seq))], m_size, min(N_1 + N_2, len(seq)-p - m_size)//2, min(N_1 + N_2, len(seq)-p - m_size)//2)
+
 
 
 def strobemer_order2(subseq, m_size):
@@ -132,4 +153,25 @@ def minstrobes(seq, k_size, order = 2, **kwargs):
         return minstrobes
 
 
+
+def minstrobes_iter(seq, k_size, order = 2, **kwargs):
+
+    if order == 2:
+        N_1 = kwargs["N_1"]
+        if k_size % 2 != 0:
+            print("WARNING: kmer size is not evenly divisible with 2, will use {0} as kmer size: ".format(k_size - k_size % 2))
+            k_size = k_size - k_size % 2
+        m_size = k_size//2
+        for p in range(len(seq) - k_size +1):
+            yield strobemer_order2(seq[p:min(p+N_1, len(seq))], m_size)
+
+    elif order == 3:
+        N_1 = kwargs["N_1"]
+        N_2 = kwargs["N_2"]  
+        if k_size % 3 != 0:
+            print("WARNING: kmer size is not evenly divisible with 3, will use {0} as kmer size: ".format(k_size - k_size % 3))
+            k_size = k_size - k_size % 3
+        m_size = k_size//3
+        for p in range(len(seq) - k_size +1):
+            yield strobemer_order3(seq[p:min(p+m_size+N_1+N_2, len(seq))], m_size, min(N_1 + N_2, len(seq)-p - m_size)//2, min(N_1 + N_2, len(seq)-p - m_size)//2)
 
