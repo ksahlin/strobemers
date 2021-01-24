@@ -26,22 +26,27 @@ def main(args):
     abundances = list(kmers.values())
     del kmers
     mean = sum(abundances)/len(abundances)
-    median = sorted(abundances)[len(abundances)//2]
-    print("Mean:", mean, "median",median)
-    # sys.exit()
+    ab_sorted = sorted(abundances)
+    lower_75 = ab_sorted[1*len(abundances)//4]
+    median = ab_sorted[len(abundances)//2]
+    upper_75 = ab_sorted[3*len(abundances)//4]
+    print("kmers Mean:", mean, "median", median, "lower_75", lower_75, "upper_75", upper_75)
 
     # s = indexing.minstrobes_iter(genome, k_size, order = 2, N_1 = 50 )
     minstrobes2 = defaultdict(int)
     for acc, seq in genome.items():
         for i,s in enumerate(indexing.minstrobes_iter(seq, k_size, order = 2, N_1 = 50 )):
             minstrobes2[hash(s)] += 1
-        print(acc)
+        # print(acc)
 
     abundances = list(minstrobes2.values())
     del minstrobes2
     mean = sum(abundances)/len(abundances)
-    median = sorted(abundances)[len(abundances)//2]
-    print("Mean:", mean, "median",median)
+    ab_sorted = sorted(abundances)
+    lower_75 = ab_sorted[1*len(abundances)//4]
+    median = ab_sorted[len(abundances)//2]
+    upper_75 = ab_sorted[3*len(abundances)//4]
+    print("minstrobes2 Mean:", mean, "median", median, "lower_75", lower_75, "upper_75", upper_75)
 
 
     # s = indexing.minstrobes(genome, k_size, order = 3, N_1 = 25, N_2 = 25)
@@ -52,8 +57,11 @@ def main(args):
     abundances = list(minstrobes3.values())
     del minstrobes3
     mean = sum(abundances)/len(abundances)
-    median = sorted(abundances)[len(abundances)//2]
-    print("Mean:", mean, "median",median)
+    ab_sorted = sorted(abundances)
+    lower_75 = ab_sorted[1*len(abundances)//4]
+    median = ab_sorted[len(abundances)//2]
+    upper_75 = ab_sorted[3*len(abundances)//4]
+    print("minstrobes3 Mean:", mean, "median", median, "lower_75", lower_75, "upper_75", upper_75)
 
 
 
@@ -67,8 +75,11 @@ def main(args):
     abundances = list(randstrobes2.values())
     del randstrobes2
     mean = sum(abundances)/len(abundances)
-    median = sorted(abundances)[len(abundances)//2]
-    print("Mean:", mean, "median",median)
+    ab_sorted = sorted(abundances)
+    lower_75 = ab_sorted[1*len(abundances)//4]
+    median = ab_sorted[len(abundances)//2]
+    upper_75 = ab_sorted[3*len(abundances)//4]
+    print("randstrobes2 Mean:", mean, "median", median, "lower_75", lower_75, "upper_75", upper_75)
 
 
     # s = indexing.randstrobes(genome, k_size, order = 3, N_1 = 25, N_2 = 25)
@@ -80,8 +91,11 @@ def main(args):
     abundances = list(randstrobes3.values())
     del randstrobes3
     mean = sum(abundances)/len(abundances)
-    median = sorted(abundances)[len(abundances)//2]
-    print("Mean:", mean, "median",median)
+    ab_sorted = sorted(abundances)
+    lower_75 = ab_sorted[1*len(abundances)//4]
+    median = ab_sorted[len(abundances)//2]
+    upper_75 = ab_sorted[3*len(abundances)//4]
+    print("randstrobes3 Mean:", mean, "median", median, "lower_75", lower_75, "upper_75", upper_75)
 
 
 
