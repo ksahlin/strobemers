@@ -140,10 +140,10 @@ def analyze_kmers(seq1, seq2, k_size):
 def main(args):
     # reads = { acc: seq for i, (acc, (seq, _)) in enumerate(readfq(open(args.fasta, 'r')))}
     # seq1, seq2 = list(reads.values())
-    L = 1000
+    L = 10000
     k_size = 30
     nr_exp = 1000
-    mut_freq = 0.5 #0.01 #, 0.05, 0.1]
+    # mut_freq = 0.5 #0.01 #, 0.05, 0.1]
 
 
     for mut_freq in [0.01, 0.05, 0.1]:
@@ -156,7 +156,7 @@ def main(args):
             seq1 = "".join([random.choice("ACGT") for i in range(L)])
             
             # controlled or random experiment
-            # muts = set(range(20,1000,20)) 
+            # muts = set(range(20,10000,20)) 
             muts = set(random.sample(range(len(seq1)),int(L*mut_freq)))
 
             seq2 = "".join([seq1[i] if i not in muts else random.choice(['', help_functions.reverse_complement(seq1[i]), seq1[i] + random.choice("ACGT")]) for i in range(len(seq1))])
