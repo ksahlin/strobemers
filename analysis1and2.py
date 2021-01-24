@@ -136,10 +136,6 @@ def analyze_kmers(seq1, seq2, k_size):
     # print("kmer intervals:", ivls)
     return m, c, island_lengths
 
-def analyze_randstrobes():
-    pass
-
-
 
 def main(args):
     # reads = { acc: seq for i, (acc, (seq, _)) in enumerate(readfq(open(args.fasta, 'r')))}
@@ -224,7 +220,7 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Calc identity", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--fasta', type=str,  default=False, help='Path to consensus fastq file(s)')
+    # parser.add_argument('--fasta', type=str,  default=False, help='Path to consensus fastq file(s)')
     # parser.add_argument('--k', type=int, default=13, help='Kmer size')
     # parser.add_argument('--w', type=int, default=20, help='Window size')
     # parser.add_argument('--outfolder', type=str,  default=None, help='A fasta file with transcripts that are shared between samples and have perfect illumina support.')
@@ -234,8 +230,8 @@ if __name__ == '__main__':
 
 
 
-    if len(sys.argv)==1:
-        parser.print_help()
-        sys.exit()
+    # if len(sys.argv)==1:
+    #     parser.print_help()
+    #     sys.exit()
 
     main(args)
