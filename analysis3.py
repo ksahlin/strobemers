@@ -16,7 +16,7 @@ def print_stats(acc, datastructure, all_mers, k_size, total_mers):
     lower_75 = ab_sorted[1*len(abundances)//4]
     median = ab_sorted[len(abundances)//2]
     upper_75 = ab_sorted[3*len(abundances)//4]
-    data = " & ".join([str(d) for d in [k_size, datastructure, acc, mean, median, lower_75, upper_75, percent_unique]])
+    data = ",".join([str(d) for d in [k_size, datastructure, acc, mean, median, lower_75, upper_75, percent_unique]])
     print(data)
 
 
@@ -59,12 +59,12 @@ def main(args):
 
     for acc,seq in genome.items():
         acc = acc.split()[0]
-        print(acc)
+        # print(acc)
         genome[acc] = seq.replace("N", "") # remove Ns
 
-    print(len(genome), sum([len(v) for k,v in genome.items()]))
+    # print(len(genome), sum([len(v) for k,v in genome.items()]))
 
-    print("datastructure & k & acc & mean & median & lower_75 & upper_75 & \%-unique")
+    print("datastructure,k,acc,mean,median,lower_75,upper_75,\%-unique")
 
     total_mers = {}
 
