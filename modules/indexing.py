@@ -125,7 +125,7 @@ def strobemer_order3(subseq, m_size, N_1, N_2):
     min_index, min_value = argmin([ hash(k1) - hash(subseq[i:i+m_size]) for i in range(m_size, m_size+ N_1 - m_size + 1)])
     min_k2 = subseq[m_size + min_index: m_size+ min_index+m_size]
 
-    min_index, min_value = argmin([ hash(k1) - hash(min_k2) + hash(subseq[i:i+m_size]) for i in range(m_size + N_1, m_size + N_1 + N_2 - m_size + 1)])
+    min_index, min_value = argmin([ (hash(k1) - hash(min_k2))/ hash(subseq[i:i+m_size]) for i in range(m_size + N_1, m_size + N_1 + N_2 - m_size + 1)])
     min_k3 = subseq[m_size + N_1 + min_index: m_size + N_1+ min_index+m_size]
 
     return k1 + min_k2 + min_k3

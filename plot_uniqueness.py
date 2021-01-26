@@ -19,14 +19,14 @@ def plot(input_csv, outfolder, acc):
 
     indata = pd.read_csv(input_csv)
     print(indata)
-    g = sns.lineplot(data=indata, x="k", y="unique", hue="datastructure", palette = sns.color_palette()[:5])
+    ax = sns.lineplot(data=indata, x="k", y="unique", hue="datastructure", palette = sns.color_palette()[:5])
     # axes = g.axes
-    # g.set_ylabels("Count")
-    # g.set_xlabels("Number of splice sites")
+    ax.set_ylabel("% unique")
+    ax.set_xlabel("k")
     # axes.set_xticks(np.arange(0, 70, step=5) )
-    # axes.set_xlim(xlim=(0, 70))
+    ax.set_ylim((75, 100))
     # g.set_xlim(0,70)
-    # g.set_xticks(np.arange(0, 70, step=5))
+    ax.set_xticks([18,24,30])
     # ax.set_ylabel("Error rate %")
 
     plt.savefig(os.path.join(outfolder, "uniqueness_{0}.eps".format(acc)))

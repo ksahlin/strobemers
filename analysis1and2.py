@@ -182,7 +182,7 @@ def main(args):
     # mut_freq = 0.5 #0.01 #, 0.05, 0.1]
 
 
-    for mut_freq in [0.15]: # [0.01, 0.05, 0.1]:
+    for mut_freq in [0.01, 0.05, 0.1]:
         print("MUTATION RATE:", mut_freq)
         results = {"kmers" : {"m": 0, "c": 0, "islands": []},
                     "minstrobes" : { (2,15,50): {"m": 0, "c": 0, "islands": []}, (3,10,25): {"m": 0, "c": 0, "islands": []} },
