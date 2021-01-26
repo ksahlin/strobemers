@@ -71,7 +71,7 @@ def main(args):
     for acc, seq in genome.items():
         for k_size in [18,24,30]:
             total_mers[acc] = len(seq) - k_size + 1
-            if acc == "chr1" or acc == "chr2":
+            if acc == "chr3" or acc == "chr4" or acc == "chr5":
                 compute_uniqueness(args, acc, seq, k_size, total_mers[acc])
 
 
