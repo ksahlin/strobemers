@@ -26,7 +26,7 @@ def plot(input_csv, outfolder, acc):
     # axes.set_xticks(np.arange(0, 70, step=5) )
     ax.set_ylim((75, 100))
     # g.set_xlim(0,70)
-    ax.set_xticks([18,24,30])
+    ax.set_xticks([18,24,30, 36])
     # ax.set_ylabel("Error rate %")
 
     plt.savefig(os.path.join(outfolder, "uniqueness_{0}.eps".format(acc)))

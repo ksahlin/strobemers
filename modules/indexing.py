@@ -1,4 +1,5 @@
 import operator
+import random 
 
 def argmin(values):
     min_index, min_value = min(enumerate(values), key=operator.itemgetter(1))
@@ -31,9 +32,21 @@ def minimizers(seq, k_size, w_size):
     return minimizers
 
 
+def spaced_kmers(seq, k_size, span_size, positions):
+    '''
+        Parameters:
+        Positions : A set of positions to consider for the spaced k-mer
+
+        Returns: a dictionary with positions along the string as keys and the spaced kmer as value 
+    '''
+    assert len(positions) == k_size
+    # print(positions, len(positions), span_size)
+    # well, this is not the most time efficient way to sample spaced kmers but works for simulations...
+    return {i :  "".join([seq[i + j] for j in range(span_size) if j in positions ]) for i in range(len(seq) - span_size +1)}
+
+
 def kmers(seq, k_size):
     return set([seq[i:i+k_size] for i in range(len(seq) - k_size +1)])
-
 
 
 def randomer_order2(subseq, m_size):

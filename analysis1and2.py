@@ -147,6 +147,21 @@ def analyze_kmers(seq1, seq2, k_size):
     # print("kmer intervals:", ivls)
     return m, c, island_lengths, all_pos_vector
 
+def analyze_spaced_kmers(seq1, seq2, k_size, span_size):
+    positions = set(random.sample(range(span_size), k_size)) 
+    spaced_kmers_seq1 = indexing.spaced_kmers(seq1, k_size, span_size, positions)
+    spaced_kmers_seq2 = indexing.spaced_kmers(seq2, k_size, span_size, positions) 
+    matches  = set(spaced_kmers_seq1.values()) & set(spaced_kmers_seq2.values())
+    m = len(matches)
+    ivls, all_pos_vector = get_intervals(spaced_kmers_seq1, matches)
+    nr_islands, island_lengths, c = statistics(ivls, seq1, k_size)
+    # print("kmers nr_matches:", len(matches))    
+    # print("Number of islands (gaps):", nr_islands)
+    # print("Avg island size (gaps):", sum(island_lengths)/len(island_lengths))
+    # print("Seq covered:", seq_covered)
+    # print("kmer intervals:", ivls)
+    return m, c, island_lengths, all_pos_vector 
+
 
 def plot_island_distribution(results, mut_freq, outfolder):
     # pd.set_option("display.precision", 8)
@@ -246,16 +261,17 @@ def plot_matches(all_data, method, L, k_size,outfolder):
 def main(args):
     # reads = { acc: seq for i, (acc, (seq, _)) in enumerate(readfq(open(args.fasta, 'r')))}
     # seq1, seq2 = list(reads.values())
-    L = 100
-    k_size = 18
-    nr_exp = 5
-    mut_freqs = [0.1] # [0.01, 0.05, 0.1]
+    L = 10000
+    k_size = 30
+    nr_exp = 10
+    mut_freqs = [0.01, 0.05, 0.1] #[0.1] 
     # mut_freq = 0.5 #0.01 #, 0.05, 0.1]
     list_for_illustration = [[],[],[],[]]
 
     for mut_freq in mut_freqs:
         print("MUTATION RATE:", mut_freq)
-        results = {"kmers" : {"m": 0, "c": 0, "islands": []},
+        results = {"kmers" : {"m": 0, "c": 0, "islands": []}, 
+                    "spaced_kmers" : {"m": 0, "c": 0, "islands": []},
                     "minstrobes" : { (2,15,50): {"m": 0, "c": 0, "islands": []}, (3,10,25): {"m": 0, "c": 0, "islands": []} },
                     "randstrobes" : { (2,15,50): {"m": 0, "c": 0, "islands": []}, (3,10,25): {"m": 0, "c": 0, "islands": []} }
                    }
@@ -263,22 +279,30 @@ def main(args):
             seq1 = "".join([random.choice("ACGT") for i in range(L)])
             
             # controlled or random experiment
-            muts = set(range(20,L,15)) 
-            # muts = set(random.sample(range(len(seq1)),int(L*mut_freq)))
+            # muts = set(range(15,L,15)) 
+            muts = set(random.sample(range(len(seq1)),int(L*mut_freq)))
 
             seq2 = "".join([seq1[i] if i not in muts else random.choice(['', help_functions.reverse_complement(seq1[i]), seq1[i] + random.choice("ACGT")]) for i in range(len(seq1))])
             
-            #kmers
+            # kmers
             m,c,islands,all_pos_vector = analyze_kmers(seq1, seq2, k_size)
             results["kmers"]["m"] += m 
             results["kmers"]["c"] += c 
             results["kmers"]["islands"].append(islands) 
-            print_matches(all_pos_vector, "kmers")
+            # print_matches(all_pos_vector, "kmers")
+
+            # Spaced kmers
+            m,c,islands,all_pos_vector = analyze_spaced_kmers(seq1, seq2, k_size, k_size+k_size//2)
+            results["spaced_kmers"]["m"] += m 
+            results["spaced_kmers"]["c"] += c 
+            results["spaced_kmers"]["islands"].append(islands) 
+            # print_matches(all_pos_vector, "Spaced kmers")
+
             m,c,islands,all_pos_vector = analyze_strobemers(seq1, seq2, k_size, 2, "minstrobes", N_1 = 50 )
             results["minstrobes"][(2,15,50)]["m"] += m 
             results["minstrobes"][(2,15,50)]["c"] += c 
             results["minstrobes"][(2,15,50)]["islands"].append(islands) 
-            print_matches(all_pos_vector, "minstrobes2")
+            # print_matches(all_pos_vector, "minstrobes2")
             list_for_illustration[0].append(all_pos_vector)
             # print(islands)
 
@@ -286,7 +310,7 @@ def main(args):
             results["minstrobes"][(3,10,25)]["m"] += m 
             results["minstrobes"][(3,10,25)]["c"] += c 
             results["minstrobes"][(3,10,25)]["islands"].append(islands) 
-            print_matches(all_pos_vector, "minstrobes3") 
+            # print_matches(all_pos_vector, "minstrobes3") 
             list_for_illustration[1].append(all_pos_vector)
             # print(islands)
 
@@ -294,7 +318,7 @@ def main(args):
             results["randstrobes"][(2,15,50)]["m"] += m 
             results["randstrobes"][(2,15,50)]["c"] += c 
             results["randstrobes"][(2,15,50)]["islands"].append(islands) 
-            print_matches(all_pos_vector, "randstrobes2") 
+            # print_matches(all_pos_vector, "randstrobes2") 
             list_for_illustration[2].append(all_pos_vector)
             # print(islands)
 
@@ -302,18 +326,18 @@ def main(args):
             results["randstrobes"][(3,10,25)]["m"] += m 
             results["randstrobes"][(3,10,25)]["c"] += c 
             results["randstrobes"][(3,10,25)]["islands"].append(islands) 
-            print_matches(all_pos_vector, "randstrobes3") 
+            # print_matches(all_pos_vector, "randstrobes3") 
             list_for_illustration[3].append(all_pos_vector)
             # print(islands)
-            print(len(list_for_illustration))
+            # print(len(list_for_illustration))
         
-        plot_matches(list_for_illustration, "m", L, k_size, args.outfolder)
+        # plot_matches(list_for_illustration, "m", L, k_size, args.outfolder)
 
-        plot_island_distribution(results, mut_freq, args.outfolder)
+        # plot_island_distribution(results, mut_freq, args.outfolder)
 
         
         for protocol in results:
-            if protocol == "kmers":
+            if protocol == "kmers" or protocol == "spaced_kmers":
                 flat = [g for l in results[protocol]["islands"] for g in l]
                 avg_island_len = sum(flat)/len(flat)
                 res = [round(100*results[protocol]["m"]/(L*nr_exp), 1), 100*results[protocol]["c"]/(L*nr_exp), avg_island_len]
