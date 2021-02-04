@@ -21,32 +21,50 @@ def print_stats(acc, datastructure, all_mers, k_size, total_mers):
 
 
 def compute_uniqueness(args, acc, seq, k_size, total_mers):
-    N_1 = 25
-    N_2 = 25 
+    w_1 = 25
+    w_2 = 25 
     all_mers = defaultdict(int)
     if args.kmers:
         datastructure = "kmers"
         for i in range(len(seq) - k_size +1):
             all_mers[hash(seq[i:i+k_size])] += 1
 
+    if args.spaced_dense:
+        datastructure = "spaced_dense"
+        span_size = k_size+k_size//2
+        positions = set(random.sample(range(1, span_size - 1 ), k_size-2)) 
+        positions.add(0)
+        positions.add(span_size - 1) # asserts first and last position is sampled so that we have a spaced kmer of length span size
+        for i,s in enumerate(indexing.spaced_kmers(seq, k_size, span_size, positions)):
+            all_mers[hash(s)] += 1
+
+    if args.spaced_sparse:
+        datastructure = "spaced_sparse"
+        span_size = 3*k_size
+        positions = set(random.sample(range(1, span_size - 1 ), k_size-2)) 
+        positions.add(0)
+        positions.add(span_size - 1) # asserts first and last position is sampled so that we have a spaced kmer of length span size
+        for i,s in enumerate(indexing.spaced_kmers(seq, k_size, span_size, positions)):
+            all_mers[hash(s)] += 1
+
     elif args.minstrobes2:
         datastructure = "minstrobes2"
-        for i,s in enumerate(indexing.minstrobes_iter(seq, k_size, order = 2, N_1 = 50 )):
+        for i,s in enumerate(indexing.minstrobes_iter(seq, k_size, order = 2, w_1 = 50 )):
             all_mers[hash(s)] += 1
 
     elif args.minstrobes3:
         datastructure = "minstrobes3"
-        for i, s in enumerate(indexing.minstrobes_iter(seq, k_size, order = 3, N_1 = N_1, N_2 = N_2 )):
+        for i, s in enumerate(indexing.minstrobes_iter(seq, k_size, order = 3, w_1 = w_1, w_2 = w_2 )):
             all_mers[hash(s)] += 1
 
     elif args.randstrobes2:
         datastructure = "randstrobes2"
-        for s in indexing.randstrobes_iter(seq, k_size, order = 2, N_1 = 50 ):
+        for s in indexing.randstrobes_iter(seq, k_size, order = 2, w_1 = 50 ):
             all_mers[s] += 1
 
     elif args.randstrobes3:
         datastructure = "randstrobes3"
-        for s in indexing.randstrobes_iter(seq, k_size, order = 3, N_1 = N_1, N_2 = N_2 ):
+        for s in indexing.randstrobes_iter(seq, k_size, order = 3, w_1 = w_1, w_2 = w_2 ):
             all_mers[s] += 1
     
     print_stats(acc, datastructure, all_mers, k_size, total_mers)
@@ -88,6 +106,8 @@ if __name__ == '__main__':
     parser.add_argument('--minstrobes3',  action="store_true", help='Kmer size')
     parser.add_argument('--randstrobes2',  action="store_true", help='Kmer size')
     parser.add_argument('--randstrobes3',  action="store_true", help='Kmer size')
+    parser.add_argument('--spaced_dense',  action="store_true", help='Kmer size')
+    parser.add_argument('--spaced_sparse',  action="store_true", help='Kmer size')
     # parser.add_argument('--k', type=int, default=13, help='Kmer size')
     # parser.add_argument('--w', type=int, default=20, help='Window size')
     # parser.add_argument('--outfolder', type=str,  default=None, help='A fasta file with transcripts that are shared between samples and have perfect illumina support.')

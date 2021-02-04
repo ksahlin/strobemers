@@ -23,8 +23,8 @@ def print_stats(acc, datastructure, all_mers):
 def main(args):
     # cluster ONT sirv sequences?
     k_size = 12
-    N_1 = 25
-    N_2 = 25 
+    w_1 = 25
+    w_2 = 25 
     genome = {acc: seq for (acc, (seq, _)) in help_functions.readfq(open(args.fasta, 'r'))}
     for acc,seq in genome.items():
         genome[acc] = seq.replace("N", "") # remove Ns
@@ -46,7 +46,7 @@ def main(args):
         datastructure = "minstrobes2"
         for acc, seq in genome.items():
             all_mers = defaultdict(int)
-            for i,s in enumerate(indexing.minstrobes_iter(seq, k_size, order = 2, N_1 = 50 )):
+            for i,s in enumerate(indexing.minstrobes_iter(seq, k_size, order = 2, w_1 = 50 )):
                 all_mers[hash(s)] += 1
             print_stats(acc, datastructure, all_mers)
 
@@ -54,7 +54,7 @@ def main(args):
         datastructure = "minstrobes3"
         for acc, seq in genome.items():
             all_mers = defaultdict(int)
-            for i, s in enumerate(indexing.minstrobes_iter(seq, k_size, order = 3, N_1 = N_1, N_2 = N_2 )):
+            for i, s in enumerate(indexing.minstrobes_iter(seq, k_size, order = 3, w_1 = w_1, w_2 = w_2 )):
                 all_mers[hash(s)] += 1
             print_stats(acc, datastructure, all_mers)
 
@@ -62,7 +62,7 @@ def main(args):
         datastructure = "randstrobes2"
         for acc, seq in genome.items():
             all_mers = defaultdict(int)
-            for s in indexing.randstrobes_iter(seq, k_size, order = 2, N_1 = 50 ):
+            for s in indexing.randstrobes_iter(seq, k_size, order = 2, w_1 = 50 ):
                 all_mers[s] += 1
             print_stats(acc, datastructure, all_mers)
 
@@ -70,7 +70,7 @@ def main(args):
         datastructure = "randstrobes3"
         for acc, seq in genome.items():
             all_mers = defaultdict(int)
-            for s in indexing.randstrobes_iter(seq, k_size, order = 3, N_1 = N_1, N_2 = N_2 ):
+            for s in indexing.randstrobes_iter(seq, k_size, order = 3, w_1 = w_1, w_2 = w_2 ):
                 all_mers[s] += 1
             print_stats(acc, datastructure, all_mers)
 

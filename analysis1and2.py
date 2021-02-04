@@ -16,10 +16,34 @@ from matplotlib import pyplot
 
 from modules import indexing, help_functions
 
+def seq_covered_spaced_kmers(mers, matches, seq, positions):
+    """
+        Function specific to calculate the coverage of spaced k-mers
+        since we have all the "sampled" positions in a spaced k-mer
+        we can keep an active set of covered positions as we iterate 
+        through the string.
+    """
+    seq_covered = 0
+    if not matches:
+        return seq_covered
+
+    spaced_kmer_sampled_pos = sorted(positions)
+    covered_pos = [0]*len(seq)
+    all_match_pos_vector = sorted([p for (p, k) in mers.items() if k in matches ])
+
+    for p in all_match_pos_vector:
+        for j in spaced_kmer_sampled_pos:
+            covered_pos[p + j] +=1
+
+    # all positions covered at least once
+    c = sum([1 for p in covered_pos if p > 0])
+    return c
+
+
 def get_intervals(mers, matches):
     if not matches:
         return [], []
-    all_pos_vector = [p for (p, k) in mers.items() if k in matches ]
+    all_pos_vector = sorted([p for (p, k) in mers.items() if k in matches ])
     ivls = []
     iv_start = all_pos_vector[0]
     p_prev = all_pos_vector[0]
@@ -32,6 +56,7 @@ def get_intervals(mers, matches):
             iv_start = p
     ivls.append((iv_start, p_prev))
     return ivls, all_pos_vector
+
 
 def statistics(ivls, seq, k):
     if not ivls:
@@ -58,66 +83,26 @@ def statistics(ivls, seq, k):
 
     return nr_islands, island_lengths, seq_covered
 
-# def positions_matching_kmers(seq1, seq2, k_size):
-
-#     # randstrobes
-#     assert k_size % 2 == 0, "Not even kmer length, results will be different"
-#     randomers1 = indexing.randstrobes(seq1, k_size, order = 2, N_1 = 50 )
-#     randomers2 = indexing.randstrobes(seq2, k_size, order = 2, N_1 = 50 )    
-#     matches2 = set(randomers1.values()) & set(randomers2.values())
-#     ivls = get_intervals(randomers1, matches2)
-#     nr_islands, island_lengths, seq_covered = statistics(ivls, seq1, k_size//2)
-#     print("2-spaced randstrobes nr_matches:", len(matches2))  
-#     print("Number of islands (gaps):", nr_islands)
-#     print("Avg island size (gaps):", sum(island_lengths)/len(island_lengths))
-#     print("Seq covered:", seq_covered)
-#     # print("2-spaced randstrobes intervals:", ivls)
 
 
-#     assert k_size % 3 == 0, "Not div by 3 kmer length, results will be different"
-#     randomers1 = indexing.randstrobes(seq1, k_size, order = 3, N_1 = 25, N_2 = 25)
-#     randomers2 = indexing.randstrobes(seq2, k_size, order = 3, N_1 = 25, N_2 = 25 )
-#     matches3 = set(randomers1.values()) & set(randomers2.values())
-#     ivls = get_intervals(randomers1, matches3)
-#     nr_islands, island_lengths, seq_covered = statistics(ivls, seq1, k_size//3)
-#     print("3-spaced randstrobes nr_matches:", len(matches3))  
-#     print("Number of islands (gaps):", nr_islands)
-#     print("Avg island size (gaps):", sum(island_lengths)/len(island_lengths))
-#     print("Seq covered:", seq_covered)
-#     # print("3-spaced randstrobes intervals:", ivls)
-
-#     assert k_size % 3 == 0, "Not div by 3 kmer length, results will be different"
-#     strobemers1 = indexing.minstrobes(seq1, k_size, order = 3, N_1 = 25, N_2 = 25)
-#     strobemers2 = indexing.minstrobes(seq2, k_size, order = 3, N_1 = 25, N_2 = 25 )
-#     matches3 = set(strobemers1.values()) & set(strobemers2.values())
-#     ivls = get_intervals(strobemers1, matches3)
-#     nr_islands, island_lengths, seq_covered = statistics(ivls, seq1, k_size//3)
-#     print("3-spaced minstrobes nr_matches:", len(matches3)) 
-#     print("Number of islands (gaps):", nr_islands)
-#     print("Avg island size (gaps):", sum(island_lengths)/len(island_lengths))
-#     print("Seq covered:", seq_covered)
-#     # print("3-spaced minstrobes intervals:", ivls)
-
-
-
-def analyze_strobemers(seq1, seq2, k_size, order, hash_fcn, N_1 = 50, N_2 = 50 ):
+def analyze_strobemers(seq1, seq2, k_size, order, hash_fcn, w_1 = 50, w_2 = 50 ):
     # minstrobes
     if order == 2:
         assert k_size % 2 == 0, "Not even kmer length, results will be different"
         if hash_fcn == "randstrobes":
-            strobemers1 = indexing.randstrobes(seq1, k_size, order = 2, N_1 = N_1 )
-            strobemers2 = indexing.randstrobes(seq2, k_size, order = 2, N_1 = N_1 )               
+            strobemers1 = indexing.randstrobes(seq1, k_size, order = 2, w_1 = w_1 )
+            strobemers2 = indexing.randstrobes(seq2, k_size, order = 2, w_1 = w_1 )               
         elif hash_fcn == "minstrobes":
-            strobemers1 = indexing.minstrobes(seq1, k_size, order = 2, N_1 = N_1 )
-            strobemers2 = indexing.minstrobes(seq2, k_size, order = 2, N_1 = N_1 )    
+            strobemers1 = indexing.minstrobes(seq1, k_size, order = 2, w_1 = w_1 )
+            strobemers2 = indexing.minstrobes(seq2, k_size, order = 2, w_1 = w_1 )    
     elif order == 3:
         assert k_size % 3 == 0, "Not div by 3 kmer length, results will be different"
         if hash_fcn == "randstrobes":
-            strobemers1 = indexing.randstrobes(seq1, k_size, order = 3, N_1 = N_1, N_2 = N_2)
-            strobemers2 = indexing.randstrobes(seq2, k_size, order = 3, N_1 = N_1, N_2 = N_2 )
+            strobemers1 = indexing.randstrobes(seq1, k_size, order = 3, w_1 = w_1, w_2 = w_2)
+            strobemers2 = indexing.randstrobes(seq2, k_size, order = 3, w_1 = w_1, w_2 = w_2 )
         elif hash_fcn == "minstrobes":
-            strobemers1 = indexing.minstrobes(seq1, k_size, order = 3, N_1 = N_1, N_2 = N_2)
-            strobemers2 = indexing.minstrobes(seq2, k_size, order = 3, N_1 = N_1, N_2 = N_2 )
+            strobemers1 = indexing.minstrobes(seq1, k_size, order = 3, w_1 = w_1, w_2 = w_2)
+            strobemers2 = indexing.minstrobes(seq2, k_size, order = 3, w_1 = w_1, w_2 = w_2 )
 
     matches = set(strobemers1.values()) & set(strobemers2.values())
     m = len(matches)
@@ -148,13 +133,18 @@ def analyze_kmers(seq1, seq2, k_size):
     return m, c, island_lengths, all_pos_vector
 
 def analyze_spaced_kmers(seq1, seq2, k_size, span_size):
-    positions = set(random.sample(range(span_size), k_size)) 
+    positions = set(random.sample(range(1, span_size - 1 ), k_size-2)) 
+    positions.add(0)
+    positions.add(span_size - 1) # asserts first and last position is sampled so that we have a spaced kmer of length span size
     spaced_kmers_seq1 = indexing.spaced_kmers(seq1, k_size, span_size, positions)
     spaced_kmers_seq2 = indexing.spaced_kmers(seq2, k_size, span_size, positions) 
     matches  = set(spaced_kmers_seq1.values()) & set(spaced_kmers_seq2.values())
     m = len(matches)
     ivls, all_pos_vector = get_intervals(spaced_kmers_seq1, matches)
-    nr_islands, island_lengths, c = statistics(ivls, seq1, k_size)
+    nr_islands, island_lengths, _ = statistics(ivls, seq1, span_size)
+    # we compute coverage for spaced k-mers with specific function
+    c = seq_covered_spaced_kmers(spaced_kmers_seq1, matches, seq1, positions)
+
     # print("kmers nr_matches:", len(matches))    
     # print("Number of islands (gaps):", nr_islands)
     # print("Avg island size (gaps):", sum(island_lengths)/len(island_lengths))
@@ -259,19 +249,20 @@ def plot_matches(all_data, method, L, k_size,outfolder):
 
 
 def main(args):
-    # reads = { acc: seq for i, (acc, (seq, _)) in enumerate(readfq(open(args.fasta, 'r')))}
-    # seq1, seq2 = list(reads.values())
     L = 10000
     k_size = 30
-    nr_exp = 10
+    nr_exp = 1000
     mut_freqs = [0.01, 0.05, 0.1] #[0.1] 
+    # experiment_type choose between 'only_subs', 'controlled' or 'all'
+    experiment_type = "all" #"only_subs" # "" # for spaced kmers
     # mut_freq = 0.5 #0.01 #, 0.05, 0.1]
     list_for_illustration = [[],[],[],[]]
 
     for mut_freq in mut_freqs:
         print("MUTATION RATE:", mut_freq)
         results = {"kmers" : {"m": 0, "c": 0, "islands": []}, 
-                    "spaced_kmers" : {"m": 0, "c": 0, "islands": []},
+                    "spaced_kmers_dense" : {"m": 0, "c": 0, "islands": []},
+                    "spaced_kmers_sparse" : {"m": 0, "c": 0, "islands": []},
                     "minstrobes" : { (2,15,50): {"m": 0, "c": 0, "islands": []}, (3,10,25): {"m": 0, "c": 0, "islands": []} },
                     "randstrobes" : { (2,15,50): {"m": 0, "c": 0, "islands": []}, (3,10,25): {"m": 0, "c": 0, "islands": []} }
                    }
@@ -279,10 +270,21 @@ def main(args):
             seq1 = "".join([random.choice("ACGT") for i in range(L)])
             
             # controlled or random experiment
-            # muts = set(range(15,L,15)) 
-            muts = set(random.sample(range(len(seq1)),int(L*mut_freq)))
+            if experiment_type == 'only_subs':
+                muts = set(random.sample(range(len(seq1)),int(L*mut_freq)))
+                seq2 = "".join([seq1[i] if i not in muts else random.choice([help_functions.reverse_complement(seq1[i])]) for i in range(len(seq1))])
+            elif experiment_type == 'controlled':
+                # muts = set(range(15,L,15)) # every 15th nt for figure 2 only!
+                muts = set(range(20,L,20)) 
+                seq2 = "".join([seq1[i] if i not in muts else random.choice(['', help_functions.reverse_complement(seq1[i]), seq1[i] + random.choice("ACGT")]) for i in range(len(seq1))])
+            elif experiment_type == 'all':
+                muts = set(random.sample(range(len(seq1)),int(L*mut_freq)))
+                seq2 = "".join([seq1[i] if i not in muts else random.choice(['', help_functions.reverse_complement(seq1[i]), seq1[i] + random.choice("ACGT")]) for i in range(len(seq1))])
+            else:
+                print("Wrong experiment label specified")
+                sys.exit()
 
-            seq2 = "".join([seq1[i] if i not in muts else random.choice(['', help_functions.reverse_complement(seq1[i]), seq1[i] + random.choice("ACGT")]) for i in range(len(seq1))])
+
             
             # kmers
             m,c,islands,all_pos_vector = analyze_kmers(seq1, seq2, k_size)
@@ -291,14 +293,22 @@ def main(args):
             results["kmers"]["islands"].append(islands) 
             # print_matches(all_pos_vector, "kmers")
 
-            # Spaced kmers
+            # Spaced kmers dense
             m,c,islands,all_pos_vector = analyze_spaced_kmers(seq1, seq2, k_size, k_size+k_size//2)
-            results["spaced_kmers"]["m"] += m 
-            results["spaced_kmers"]["c"] += c 
-            results["spaced_kmers"]["islands"].append(islands) 
+            results["spaced_kmers_dense"]["m"] += m 
+            results["spaced_kmers_dense"]["c"] += c 
+            results["spaced_kmers_dense"]["islands"].append(islands) 
             # print_matches(all_pos_vector, "Spaced kmers")
 
-            m,c,islands,all_pos_vector = analyze_strobemers(seq1, seq2, k_size, 2, "minstrobes", N_1 = 50 )
+            # Spaced kmers sparse
+            m,c,islands,all_pos_vector = analyze_spaced_kmers(seq1, seq2, k_size, 3*k_size)
+            results["spaced_kmers_sparse"]["m"] += m 
+            results["spaced_kmers_sparse"]["c"] += c 
+            results["spaced_kmers_sparse"]["islands"].append(islands) 
+            # print_matches(all_pos_vector, "Spaced kmers")
+
+
+            m,c,islands,all_pos_vector = analyze_strobemers(seq1, seq2, k_size, 2, "minstrobes", w_1 = 50 )
             results["minstrobes"][(2,15,50)]["m"] += m 
             results["minstrobes"][(2,15,50)]["c"] += c 
             results["minstrobes"][(2,15,50)]["islands"].append(islands) 
@@ -306,7 +316,7 @@ def main(args):
             list_for_illustration[0].append(all_pos_vector)
             # print(islands)
 
-            m,c,islands,all_pos_vector = analyze_strobemers(seq1, seq2, k_size, 3, "minstrobes", N_1 = 25, N_2 = 25 )
+            m,c,islands,all_pos_vector = analyze_strobemers(seq1, seq2, k_size, 3, "minstrobes", w_1 = 25, w_2 = 25 )
             results["minstrobes"][(3,10,25)]["m"] += m 
             results["minstrobes"][(3,10,25)]["c"] += c 
             results["minstrobes"][(3,10,25)]["islands"].append(islands) 
@@ -314,7 +324,7 @@ def main(args):
             list_for_illustration[1].append(all_pos_vector)
             # print(islands)
 
-            m,c,islands,all_pos_vector = analyze_strobemers(seq1, seq2, k_size, 2, "randstrobes", N_1 = 50 )
+            m,c,islands,all_pos_vector = analyze_strobemers(seq1, seq2, k_size, 2, "randstrobes", w_1 = 50 )
             results["randstrobes"][(2,15,50)]["m"] += m 
             results["randstrobes"][(2,15,50)]["c"] += c 
             results["randstrobes"][(2,15,50)]["islands"].append(islands) 
@@ -322,7 +332,7 @@ def main(args):
             list_for_illustration[2].append(all_pos_vector)
             # print(islands)
 
-            m,c,islands,all_pos_vector = analyze_strobemers(seq1, seq2, k_size, 3, "randstrobes", N_1 = 25, N_2 = 25 )
+            m,c,islands,all_pos_vector = analyze_strobemers(seq1, seq2, k_size, 3, "randstrobes", w_1 = 25, w_2 = 25 )
             results["randstrobes"][(3,10,25)]["m"] += m 
             results["randstrobes"][(3,10,25)]["c"] += c 
             results["randstrobes"][(3,10,25)]["islands"].append(islands) 
@@ -337,15 +347,21 @@ def main(args):
 
         
         for protocol in results:
-            if protocol == "kmers" or protocol == "spaced_kmers":
+            if protocol == "kmers" or protocol == "spaced_kmers_sparse" or protocol == "spaced_kmers_dense":
                 flat = [g for l in results[protocol]["islands"] for g in l]
-                avg_island_len = sum(flat)/len(flat)
+                if flat:
+                    avg_island_len = sum(flat)/len(flat)
+                else:
+                    avg_island_len = 0
                 res = [round(100*results[protocol]["m"]/(L*nr_exp), 1), 100*results[protocol]["c"]/(L*nr_exp), avg_island_len]
                 print(protocol, " & ".join([ str(round(r, 1)) for r in res]) )
             else:
                 for params in results[protocol]:
                     flat = [g for l in results[protocol][params]["islands"] for g in l]
-                    avg_island_len = sum(flat)/len(flat)
+                    if flat:
+                        avg_island_len = sum(flat)/len(flat)
+                    else:
+                        avg_island_len = 0
                     res = [round(100*results[protocol][params]["m"]/(L*nr_exp), 1), 100*results[protocol][params]["c"]/(L*nr_exp), avg_island_len]
                     print(protocol, params, " & ".join([ str(round(r, 1)) for r in res]) )
 

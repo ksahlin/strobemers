@@ -13,7 +13,16 @@ The `indexing.py` module located in the `modules` folder contains functions for 
 ```
 from modules import indexing
 all_mers = defaultdict(int)
-for s in indexing.randstrobes_iter(seq, k_size, order = 2, N_1 = 50 ):
+for s in indexing.randstrobes_iter(seq, k_size, order = 2, w_1 = 50 ):
+    all_mers[s] += 1
+```
+
+or with order 3 strobemers:
+
+```
+from modules import indexing
+all_mers = defaultdict(int)
+for s in indexing.randstrobes_iter(seq, k_size, order = 3, w_1 = 25, w_2 = 25 ):
     all_mers[s] += 1
 ```
 
