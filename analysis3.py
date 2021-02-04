@@ -35,7 +35,7 @@ def compute_uniqueness(args, acc, seq, k_size, total_mers):
         positions = set(random.sample(range(1, span_size - 1 ), k_size-2)) 
         positions.add(0)
         positions.add(span_size - 1) # asserts first and last position is sampled so that we have a spaced kmer of length span size
-        for i,s in enumerate(indexing.spaced_kmers(seq, k_size, span_size, positions)):
+        for i,s in enumerate(indexing.spaced_kmers_iter(seq, k_size, span_size, positions)):
             all_mers[hash(s)] += 1
 
     if args.spaced_sparse:
@@ -44,7 +44,7 @@ def compute_uniqueness(args, acc, seq, k_size, total_mers):
         positions = set(random.sample(range(1, span_size - 1 ), k_size-2)) 
         positions.add(0)
         positions.add(span_size - 1) # asserts first and last position is sampled so that we have a spaced kmer of length span size
-        for i,s in enumerate(indexing.spaced_kmers(seq, k_size, span_size, positions)):
+        for i,s in enumerate(indexing.spaced_kmers_iter(seq, k_size, span_size, positions)):
             all_mers[hash(s)] += 1
 
     elif args.minstrobes2:
