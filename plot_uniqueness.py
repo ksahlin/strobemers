@@ -19,15 +19,20 @@ def plot(input_csv, outfolder, acc):
 
     indata = pd.read_csv(input_csv)
     print(indata)
-    ax = sns.lineplot(data=indata, x="k", y="unique", hue="datastructure", palette = sns.color_palette()[:5])
-    # axes = g.axes
-    ax.set_ylabel("% unique")
-    ax.set_xlabel("k")
-    # axes.set_xticks(np.arange(0, 70, step=5) )
-    ax.set_ylim((75, 100))
-    # g.set_xlim(0,70)
-    ax.set_xticks([18,24,30, 36])
-    # ax.set_ylabel("Error rate %")
+    g = sns.relplot(
+        data=indata, x="k", y="unique",
+        col="chr", hue="datastructure", kind="line", 
+        col_wrap=3, col_order=["chr1", "chr2", "chr3"])
+    # ax = sns.lineplot(data=indata, x="k", y="unique", hue="datastructure", style="chr", palette = sns.color_palette()[:7])
+    axes = g.axes
+    g.set_axis_labels("k", "% unique")
+    g.set_xticklabels([18,24,30,36])
+    # ax.set_ylabel("% unique")
+    # ax.set_xlabel("k")
+    # axes.set_xticks([18,24,30,36] )
+    # ax.set_ylim((75, 100))
+    g.set(ylim=(80, 100), xticks=[18,24,30,36])
+    # ax.set_xticks([18,24,30,36])
 
     plt.savefig(os.path.join(outfolder, "uniqueness_{0}.eps".format(acc)))
     plt.savefig(os.path.join(outfolder, "uniqueness_{0}.pdf".format(acc)))

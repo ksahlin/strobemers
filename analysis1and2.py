@@ -159,15 +159,17 @@ def plot_island_distribution(results, mut_freq, outfolder):
     plt.yscale('log', nonposy='clip')
     # bins = [0.1*i for i in range(300)]
     for label in results:
-        if label == "kmers":
-            flat = [g for l in results[label]["islands"] for g in l]
-            pyplot.hist(flat, 100, range=[0, 500], alpha=0.5, label=label)
+        if label == "kmers" or label == "spaced_kmers_dense" or label == "spaced_kmers_sparse":
+            if label == "kmers":
+                flat = [g for l in results[label]["islands"] for g in l]
+                pyplot.hist(flat, 100, range=[0, 500], alpha=0.5, label=label)
         else:
             for t in results[label]:
                 flat = [g for l in results[label][t]["islands"] for g in l]
                 tmp_label = label + "-{0}".format(t)
-                if label == "randstrobes" and t == (3,10,25):
-                    pyplot.hist(flat, 100, range=[0, 500], alpha=0.5, label=tmp_label)
+                # if label == "randstrobes" and t == (3,10,25):
+                #     pyplot.hist(flat, 100, range=[0, 500], alpha=0.5, label=tmp_label)
+                pyplot.hist(flat, 100, range=[0, 500], alpha=0.5, label=tmp_label)
 
     pyplot.legend(loc='upper right')
     # pyplot.xlabel("Difference to genome (%)")
@@ -176,6 +178,39 @@ def plot_island_distribution(results, mut_freq, outfolder):
     plt.savefig(filename)
     plt.savefig(filename)
     plt.close()
+
+def plot_island_distribution2(results, mut_freq, outfolder):
+    # pd.set_option("display.precision", 8)
+    filename = os.path.join(outfolder, "{0}.pdf".format(mut_freq))
+
+    # make data correct format
+    data = open(os.path.join(outfolder, "{0}.csv".format(mut_freq)), "w")
+    data.write("label\tdp\tmut_freq\n")
+
+    for label in results:
+        if label == "kmers" or label == "spaced_kmers_dense" or label == "spaced_kmers_sparse":
+            flat = [g for l in results[label]["islands"] for g in l]
+            for dp in flat:
+                data.write("{0}\t{1}\t{2}\n".format(label, dp, mut_freq))
+        else:
+            for t in results[label]:
+                flat = [g for l in results[label][t]["islands"] for g in l]
+                tmp_label = label + "-{0}".format(t)
+                for dp in flat:
+                    data.write("{0}\t{1}\t{2}\n".format(tmp_label, dp, mut_freq))
+    data.close()
+    data = pd.read_csv(data.name, sep='\t')
+    # plt.yscale('log', nonposy='clip')
+    # bins = [0.1*i for i in range(300)]
+    sns.displot(data, x="dp", hue="label",  element="step", log_scale=(True, True)) # , kind="kde", log_scale= True, fill=True, multiple="stack"
+    pyplot.legend(loc='upper right')
+    # pyplot.xlabel("Difference to genome (%)")
+    pyplot.xlabel("Island length")
+    pyplot.ylabel("Count")
+    plt.savefig(filename)
+    plt.savefig(filename)
+    plt.close()
+
 
 def print_matches(all_pos_vector, method):
     s = set(all_pos_vector)
@@ -248,13 +283,17 @@ def plot_matches(all_data, method, L, k_size,outfolder):
     plt.savefig(filename)
 
 
+def get_e_size(all_islands, L, nr_exp):
+    sum_of_squares = sum([x**2 for x in all_islands])
+    return sum_of_squares/(L*nr_exp) 
+
 def main(args):
     L = 10000
     k_size = 30
     nr_exp = 1000
     mut_freqs = [0.01, 0.05, 0.1] #[0.1] 
     # experiment_type choose between 'only_subs', 'controlled' or 'all'
-    experiment_type = "all" #"only_subs" # "" # for spaced kmers
+    experiment_type = "controlled" #"only_subs" # "" # for spaced kmers
     # mut_freq = 0.5 #0.01 #, 0.05, 0.1]
     list_for_illustration = [[],[],[],[]]
 
@@ -343,7 +382,7 @@ def main(args):
         
         # plot_matches(list_for_illustration, "m", L, k_size, args.outfolder)
 
-        # plot_island_distribution(results, mut_freq, args.outfolder)
+        plot_island_distribution2(results, mut_freq, args.outfolder)
 
         
         for protocol in results:
@@ -351,18 +390,20 @@ def main(args):
                 flat = [g for l in results[protocol]["islands"] for g in l]
                 if flat:
                     avg_island_len = sum(flat)/len(flat)
+                    e_size = get_e_size(flat, L, nr_exp)
                 else:
                     avg_island_len = 0
-                res = [round(100*results[protocol]["m"]/(L*nr_exp), 1), 100*results[protocol]["c"]/(L*nr_exp), avg_island_len]
+                res = [round(100*results[protocol]["m"]/(L*nr_exp), 1), 100*results[protocol]["c"]/(L*nr_exp), avg_island_len, e_size]
                 print(protocol, " & ".join([ str(round(r, 1)) for r in res]) )
             else:
                 for params in results[protocol]:
                     flat = [g for l in results[protocol][params]["islands"] for g in l]
                     if flat:
                         avg_island_len = sum(flat)/len(flat)
+                        e_size = get_e_size(flat, L, nr_exp)
                     else:
                         avg_island_len = 0
-                    res = [round(100*results[protocol][params]["m"]/(L*nr_exp), 1), 100*results[protocol][params]["c"]/(L*nr_exp), avg_island_len]
+                    res = [round(100*results[protocol][params]["m"]/(L*nr_exp), 1), 100*results[protocol][params]["c"]/(L*nr_exp), avg_island_len, e_size]
                     print(protocol, params, " & ".join([ str(round(r, 1)) for r in res]) )
 
     # print(results)
