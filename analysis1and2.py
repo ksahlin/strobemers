@@ -85,7 +85,7 @@ def statistics(ivls, seq, k):
 
 
 
-def analyze_strobemers(seq1, seq2, k_size, order, hash_fcn, w_1 = 50, w_2 = 50 ):
+def analyze_strobemers(seq1, seq2, k_size, order, hash_fcn, w_1 = 50, w_2 = 50, w_3 = 50 ):
     # minstrobes
     if order == 2:
         assert k_size % 2 == 0, "Not even kmer length, results will be different"
@@ -103,6 +103,15 @@ def analyze_strobemers(seq1, seq2, k_size, order, hash_fcn, w_1 = 50, w_2 = 50 )
         elif hash_fcn == "minstrobes":
             strobemers1 = indexing.minstrobes(seq1, k_size, order = 3, w_1 = w_1, w_2 = w_2)
             strobemers2 = indexing.minstrobes(seq2, k_size, order = 3, w_1 = w_1, w_2 = w_2 )
+
+    elif order == 4:
+        assert k_size % 4 == 0, "Not div by 4 kmer length, results will be different"
+        if hash_fcn == "randstrobes":
+            strobemers1 = indexing.randstrobes(seq1, k_size, order = 4, w_1 = w_1, w_2 = w_2, w_3 = w_3)
+            strobemers2 = indexing.randstrobes(seq2, k_size, order = 4, w_1 = w_1, w_2 = w_2, w_3 = w_3)
+        # elif hash_fcn == "minstrobes":
+        #     strobemers1 = indexing.minstrobes(seq1, k_size, order = 3, w_1 = w_1, w_2 = w_2)
+        #     strobemers2 = indexing.minstrobes(seq2, k_size, order = 3, w_1 = w_1, w_2 = w_2 )
 
     matches = set(strobemers1.values()) & set(strobemers2.values())
     m = len(matches)
@@ -290,10 +299,13 @@ def get_e_size(all_islands, L, nr_exp):
 def main(args):
     L = 10000
     k_size = 30
-    nr_exp = 1000
+    nr_exp = 10
     mut_freqs = [0.01, 0.05, 0.1] #[0.1] 
+    w_2strobe = 50
+    w_3strobe = 25
+    w_4strobe = 25
     # experiment_type choose between 'only_subs', 'controlled' or 'all'
-    experiment_type = "controlled" #"only_subs" # "" # for spaced kmers
+    experiment_type = "all" #"only_subs" # "" # for spaced kmers
     # mut_freq = 0.5 #0.01 #, 0.05, 0.1]
     list_for_illustration = [[],[],[],[]]
 
@@ -302,8 +314,11 @@ def main(args):
         results = {"kmers" : {"m": 0, "c": 0, "islands": []}, 
                     "spaced_kmers_dense" : {"m": 0, "c": 0, "islands": []},
                     "spaced_kmers_sparse" : {"m": 0, "c": 0, "islands": []},
-                    "minstrobes" : { (2,15,50): {"m": 0, "c": 0, "islands": []}, (3,10,25): {"m": 0, "c": 0, "islands": []} },
-                    "randstrobes" : { (2,15,50): {"m": 0, "c": 0, "islands": []}, (3,10,25): {"m": 0, "c": 0, "islands": []} }
+                    "minstrobes" : { (2,15,w_2strobe): {"m": 0, "c": 0, "islands": []}, 
+                                     (3,10,w_3strobe): {"m": 0, "c": 0, "islands": []} },
+                    "randstrobes" : { (2,15,w_2strobe): {"m": 0, "c": 0, "islands": []}, 
+                                      (3,10,w_3strobe): {"m": 0, "c": 0, "islands": []},
+                                      (4,7,w_4strobe): {"m": 0, "c": 0, "islands": []} }
                    }
         for exp_id in range(nr_exp):
             seq1 = "".join([random.choice("ACGT") for i in range(L)])
@@ -347,37 +362,49 @@ def main(args):
             # print_matches(all_pos_vector, "Spaced kmers")
 
 
-            m,c,islands,all_pos_vector = analyze_strobemers(seq1, seq2, k_size, 2, "minstrobes", w_1 = 50 )
-            results["minstrobes"][(2,15,50)]["m"] += m 
-            results["minstrobes"][(2,15,50)]["c"] += c 
-            results["minstrobes"][(2,15,50)]["islands"].append(islands) 
+            m,c,islands,all_pos_vector = analyze_strobemers(seq1, seq2, k_size, 2, "minstrobes", w_1 = w_2strobe )
+            results["minstrobes"][(2,15,w_2strobe)]["m"] += m 
+            results["minstrobes"][(2,15,w_2strobe)]["c"] += c 
+            results["minstrobes"][(2,15,w_2strobe)]["islands"].append(islands) 
             # print_matches(all_pos_vector, "minstrobes2")
             list_for_illustration[0].append(all_pos_vector)
             # print(islands)
 
-            m,c,islands,all_pos_vector = analyze_strobemers(seq1, seq2, k_size, 3, "minstrobes", w_1 = 25, w_2 = 25 )
-            results["minstrobes"][(3,10,25)]["m"] += m 
-            results["minstrobes"][(3,10,25)]["c"] += c 
-            results["minstrobes"][(3,10,25)]["islands"].append(islands) 
+            m,c,islands,all_pos_vector = analyze_strobemers(seq1, seq2, k_size, 3, "minstrobes", w_1 = w_3strobe, w_2 = w_3strobe )
+            results["minstrobes"][(3,10,w_3strobe)]["m"] += m 
+            results["minstrobes"][(3,10,w_3strobe)]["c"] += c 
+            results["minstrobes"][(3,10,w_3strobe)]["islands"].append(islands) 
             # print_matches(all_pos_vector, "minstrobes3") 
             list_for_illustration[1].append(all_pos_vector)
             # print(islands)
 
-            m,c,islands,all_pos_vector = analyze_strobemers(seq1, seq2, k_size, 2, "randstrobes", w_1 = 50 )
-            results["randstrobes"][(2,15,50)]["m"] += m 
-            results["randstrobes"][(2,15,50)]["c"] += c 
-            results["randstrobes"][(2,15,50)]["islands"].append(islands) 
+            m,c,islands,all_pos_vector = analyze_strobemers(seq1, seq2, k_size, 2, "randstrobes", w_1 = w_2strobe )
+            results["randstrobes"][(2,15,w_2strobe)]["m"] += m 
+            results["randstrobes"][(2,15,w_2strobe)]["c"] += c 
+            results["randstrobes"][(2,15,w_2strobe)]["islands"].append(islands) 
             # print_matches(all_pos_vector, "randstrobes2") 
             list_for_illustration[2].append(all_pos_vector)
             # print(islands)
 
-            m,c,islands,all_pos_vector = analyze_strobemers(seq1, seq2, k_size, 3, "randstrobes", w_1 = 25, w_2 = 25 )
-            results["randstrobes"][(3,10,25)]["m"] += m 
-            results["randstrobes"][(3,10,25)]["c"] += c 
-            results["randstrobes"][(3,10,25)]["islands"].append(islands) 
+            # Tried randstrobe n=3 with w1=17 and w2=40 and it further decreases E-size of gaps over results in paper
+            # for higher mutation rates 0.05 and 0.1
+            m,c,islands,all_pos_vector = analyze_strobemers(seq1, seq2, k_size, 3, "randstrobes", w_1 = w_3strobe, w_2 = w_3strobe )
+            results["randstrobes"][(3,10,w_3strobe)]["m"] += m 
+            results["randstrobes"][(3,10,w_3strobe)]["c"] += c 
+            results["randstrobes"][(3,10,w_3strobe)]["islands"].append(islands) 
             # print_matches(all_pos_vector, "randstrobes3") 
             list_for_illustration[3].append(all_pos_vector)
             # print(islands)
+            
+            # m,c,islands,all_pos_vector = analyze_strobemers(seq1, seq2, 28, 4, "randstrobes", w_1 = 7, w_2 = 10, w_3 = 25 )
+            # results["randstrobes"][(4,7,w_4strobe)]["m"] += m 
+            # results["randstrobes"][(4,7,w_4strobe)]["c"] += c 
+            # results["randstrobes"][(4,7,w_4strobe)]["islands"].append(islands) 
+            # # print_matches(all_pos_vector, "randstrobes3") 
+            # # list_for_illustration[4].append(all_pos_vector)
+            # # print(islands)
+
+            
             # print(len(list_for_illustration))
         
         # plot_matches(list_for_illustration, "m", L, k_size, args.outfolder)

@@ -66,8 +66,6 @@ def kmers(seq, k_size):
 
 def randstrobe_order2(subseq, m_size):
     k1 = subseq[0:m_size]
-    f = lambda x: x
-    mod = 2**26
     min_index, min_value = argmin([ hash(k1+ subseq[i:i+m_size]) for i in range(m_size, len(subseq) - m_size + 1)])
     min_k2 = subseq[m_size+ min_index:m_size+ min_index+m_size]
     # print(len(k1 + min_k2))
@@ -78,8 +76,6 @@ def randstrobe_order2(subseq, m_size):
 def randstrobe_order3(subseq, m_size, w_1, w_2):
     # print(len(subseq),m_size, w_1, w_2, m_size, m_size+ w_1 - m_size + 1, [i for i in range(m_size + w_1, m_size + w_1 + w_2 - m_size + 1)])
     k1 = subseq[0:m_size]
-    f = lambda x: x
-    mod = 2**26
     min_index, min_value = argmin([ hash(k1+subseq[i:i+m_size]) for i in range(m_size, m_size+ w_1 - m_size + 1)])
     min_k2 = subseq[m_size + min_index: m_size+ min_index+m_size]
 
@@ -87,6 +83,20 @@ def randstrobe_order3(subseq, m_size, w_1, w_2):
     min_k3 = subseq[m_size + w_1 + min_index: m_size + w_1+ min_index+m_size]
 
     return k1 + min_k2 + min_k3
+
+
+def randstrobe_order4(subseq, m_size, w_1, w_2, w_3):
+    k1 = subseq[0:m_size]
+    min_index, min_value = argmin([ hash(k1+subseq[i:i+m_size]) for i in range(m_size, m_size+ w_1 - m_size + 1)])
+    min_k2 = subseq[m_size + min_index: m_size+ min_index+m_size]
+
+    min_index, min_value = argmin([ hash(k1 + min_k2 + subseq[i:i+m_size]) for i in range(m_size + w_1, m_size + w_1 + w_2 - m_size + 1)])
+    min_k3 = subseq[m_size + w_1 + min_index: m_size + w_1+ min_index+m_size]
+
+    min_index, min_value = argmin([ hash(k1 + min_k2 + min_k3 + subseq[i:i+m_size]) for i in range(m_size + w_1 + w_2, m_size + w_1 + w_2 + w_3 - m_size + 1)])
+    min_k4 = subseq[m_size + w_1 + min_index: m_size + w_1+ min_index+m_size]
+
+    return k1 + min_k2 + min_k3 + min_k4
 
 
 def randstrobes(seq, k_size, order = 2, **kwargs):
@@ -107,7 +117,25 @@ def randstrobes(seq, k_size, order = 2, **kwargs):
             print("WARNING: kmer size is not evenly divisible with 3, will use {0} as kmer size: ".format(k_size - k_size % 3))
             k_size = k_size - k_size % 3
         m_size = k_size//3
-        randstrobes = {p: randstrobe_order3(seq[p:min(p+m_size+w_1+w_2, len(seq))], m_size, min(w_1 + w_2, len(seq)-p - m_size)//2, min(w_1 + w_2, len(seq)-p - m_size)//2) for p in range(len(seq) - k_size +1)}
+        randstrobes = {p: randstrobe_order3(seq[p:min(p+m_size+w_1+w_2, len(seq))], m_size, 
+                                            w_1 if w_1 + w_2 < len(seq) - p - m_size else (w_1 - ( w_1 + w_2 - len(seq)-p - m_size)//2), 
+                                            w_2 if w_1 + w_2 < len(seq) - p - m_size else (w_2 - ( w_1 + w_2 - len(seq)-p - m_size)//2)) 
+                                            for p in range(len(seq) - k_size +1)}
+        return randstrobes
+
+    elif order == 4:
+        w_1 = kwargs["w_1"]
+        w_2 = kwargs["w_2"]  
+        w_3 = kwargs["w_3"]  
+        if k_size % 4 != 0:
+            print("WARNING: kmer size is not evenly divisible with 4, will use {0} as kmer size: ".format(k_size - k_size % 4))
+            k_size = k_size - k_size % 4
+        m_size = k_size//4
+        randstrobes = {p: randstrobe_order4(seq[p:min(p+m_size+w_1+w_2+w_3, len(seq))], m_size, 
+                                                w_1 if w_1 + w_2 + w_3 < len(seq) - p - m_size else (w_1 - ( w_1 + w_2 + w_3 - len(seq)-p - m_size)//3), 
+                                                w_2 if w_1 + w_2 + w_3 < len(seq) - p - m_size else (w_2 - ( w_1 + w_2 + w_3 - len(seq)-p - m_size)//3),
+                                                w_3 if w_1 + w_2 + w_3 < len(seq) - p - m_size else (w_3 - ( w_1 + w_2 + w_3 - len(seq)-p - m_size)//3))
+                                                for p in range(len(seq) - k_size +1)}
         return randstrobes
 
 
@@ -130,14 +158,27 @@ def randstrobes_iter(seq, k_size, order = 2, **kwargs):
             k_size = k_size - k_size % 3
         m_size = k_size//3
         for p in range(len(seq) - k_size +1):
-            yield randstrobe_order3(seq[p:min(p+m_size+w_1+w_2, len(seq))], m_size, min(w_1 + w_2, len(seq)-p - m_size)//2, min(w_1 + w_2, len(seq)-p - m_size)//2)
+            yield randstrobe_order3(seq[p:min(p+m_size+w_1+w_2, len(seq))], m_size, 
+                                    w_1 if w_1 + w_2 < len(seq) - p - m_size else (w_1 - ( w_1 + w_2 - len(seq)-p - m_size)//2), 
+                                    w_2 if w_1 + w_2 < len(seq) - p - m_size else (w_2 - ( w_1 + w_2 - len(seq)-p - m_size)//2))
 
+    elif order == 4:
+        w_1 = kwargs["w_1"]
+        w_2 = kwargs["w_2"]  
+        w_3 = kwargs["w_3"]  
+        if k_size % 4 != 0:
+            print("WARNING: kmer size is not evenly divisible with 4, will use {0} as kmer size: ".format(k_size - k_size % 4))
+            k_size = k_size - k_size % 4
+        m_size = k_size//4
+        for p in range(len(seq) - k_size +1):
+            yield randstrobe_order4(seq[p:min(p+m_size+w_1+w_2+w_3, len(seq))], m_size, 
+                                    w_1 if w_1 + w_2 + w_3 < len(seq) - p - m_size else (w_1 - ( w_1 + w_2 + w_3 - len(seq)-p - m_size)//3), 
+                                    w_2 if w_1 + w_2 + w_3 < len(seq) - p - m_size else (w_2 - ( w_1 + w_2 + w_3 - len(seq)-p - m_size)//3),
+                                    w_3 if w_1 + w_2 + w_3 < len(seq) - p - m_size else (w_3 - ( w_1 + w_2 + w_3 - len(seq)-p - m_size)//3))
 
 
 def minstrobe_order2(subseq, m_size):
     k1 = subseq[0:m_size]
-    f = lambda x: x
-    mod = 2**26
     min_index, min_value = argmin([ hash(k1) - hash(subseq[i:i+m_size]) for i in range(m_size, len(subseq) - m_size + 1)])
     min_k2 = subseq[m_size+ min_index:m_size+ min_index+m_size]
     # print(len(k1 + min_k2))
@@ -148,8 +189,6 @@ def minstrobe_order2(subseq, m_size):
 def minstrobe_order3(subseq, m_size, w_1, w_2):
     # print(len(subseq),m_size, w_1, w_2, m_size, m_size+ w_1 - m_size + 1, [i for i in range(m_size + w_1, m_size + w_1 + w_2 - m_size + 1)])
     k1 = subseq[0:m_size]
-    f = lambda x: x
-    mod = 2**26
     min_index, min_value = argmin([ hash(k1) - hash(subseq[i:i+m_size]) for i in range(m_size, m_size+ w_1 - m_size + 1)])
     min_k2 = subseq[m_size + min_index: m_size+ min_index+m_size]
 
