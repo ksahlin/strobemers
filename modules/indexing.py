@@ -107,7 +107,7 @@ def randstrobes(seq, k_size, order = 2, **kwargs):
             print("WARNING: kmer size is not evenly divisible with 2, will use {0} as kmer size: ".format(k_size - k_size % 2))
             k_size = k_size - k_size % 2
         m_size = k_size//2
-        randstrobes = {p : randstrobe_order2(seq[p:min(p+w_1, len(seq))], m_size) for p in range(len(seq) - k_size +1)}
+        randstrobes = {p : randstrobe_order2(seq[p:min(p+m_size+w_1, len(seq))], m_size) for p in range(len(seq) - k_size +1)}
         return randstrobes
 
     elif order == 3:
@@ -148,7 +148,7 @@ def randstrobes_iter(seq, k_size, order = 2, **kwargs):
             k_size = k_size - k_size % 2
         m_size = k_size//2
         for p in range(len(seq) - k_size +1):
-            yield randstrobe_order2(seq[p:min(p+w_1, len(seq))], m_size)
+            yield randstrobe_order2(seq[p:min(p+m_size+w_1, len(seq))], m_size)
 
     elif order == 3:
         w_1 = kwargs["w_1"]
