@@ -8,9 +8,9 @@ import argparse
 # from time import time
 # import re
 
-import random
-import parasail
-import pysam
+# import random
+# import parasail
+# import pysam
 
 from collections import defaultdict, deque
 from sys import stdout
@@ -72,7 +72,47 @@ def build_strobemer_index(refs, k_size, w, prime):
         # print(hash_val, r_id, pos)
     return idx, ref_id_to_accession, cntr
 
-def get_matches(strobes, idx, k, dont_merge_matches):
+
+def sort_merge(sorted_list):
+    sort_merged_list = []
+    curr_merge = sorted_list[0]
+    for i, t1 in enumerate( sorted_list[:-1] ):
+        r_id, r_pos, q_pos, length = t1
+        r2_id, r2_pos, q2_pos, length2 = sorted_list[i+1]
+        # print(i, r_id, r_pos, r2_id, r2_pos)
+        # print(r2_pos, q2_pos)
+        if r_id == r2_id:  
+            # print("OK", q2_pos <= q_pos + length <= q2_pos+ length, r2_pos <= r_pos + length <= r2_pos + length)
+            # print("2", q2_pos, q_pos + length, q2_pos+ length, r2_pos, r_pos + length, r2_pos + length)
+            # overlapping on both query and ref
+            if q2_pos <= q_pos + length <= q2_pos+ length  and r2_pos <= r_pos + length <= r2_pos + length:
+                curr_merge = (r_id, curr_merge[1], curr_merge[2], curr_merge[3] + (q2_pos + length - (q_pos + length) )  )
+                # print("HERER")
+
+            else:
+                # time to add old element
+                sort_merged_list.append(curr_merge)
+                curr_merge = sorted_list[i+1]
+
+        else:
+            # time to add old element
+            sort_merged_list.append(curr_merge)
+            curr_merge = sorted_list[i+1]
+        # print(curr_merge)
+        # print(sort_merged_list)
+    # print(curr_merge)
+    sort_merged_list.append(curr_merge)
+    return sort_merged_list
+
+def get_matches(strobes, idx, k, dont_merge_matches,  ref_id_to_accession, acc):
+    """
+        The merging of matches is a simple linear merging. If there are repetitive matches across e.g. a chromosome
+        the merging will be broken up at the repetitive kmer. To solve the merging exactly, we would need
+        to solve the collinear chaining problem after we have out matches. There is no such functionality here.
+
+        Another way to solve this is to do a post merging after sorting the merged matches.
+        If two merged matches also overlaps, they can be merged again.
+    """
     if dont_merge_matches:
         matches = []
         for q_p1, q_p2, h in strobes:
@@ -81,19 +121,25 @@ def get_matches(strobes, idx, k, dont_merge_matches):
                     matches.append( (r_id, r_p1, q_p1, k) )
         return matches
     else:
-        cpm = {} # currnet potential merges
+        cpm = {} # current potential merges
         merged_matches = []
         for q_p1, q_p2, h in strobes:
             if h in idx:
                 for r_id, r_p1, r_p2 in grouper(idx[h], 3):
+                    # if ref_id_to_accession[r_id] == acc:
+                    #     continue
                     if r_id in cpm:
                         # # there is overlap in both reference and query to previous hit and of exact same distance
                         # if q_p1 < cpm[r_id][1] and r_p1 < cpm[r_id][3] and (q_p1 - cpm[r_id][0]) == (r_p1 - cpm[r_id][2]):
 
                         # there is overlap in both reference and query to previous hit
                         if q_p1 < cpm[r_id][1] and cpm[r_id][2] <= r_p1 <= cpm[r_id][3]:
-                            cpm[r_id][1] = q_p2 + k
-                            cpm[r_id][3] = r_p2 + k
+                            cpm[r_id][1] = max(cpm[r_id][1], q_p2 + k)
+                            cpm[r_id][3] = max(cpm[r_id][3], r_p2 + k)
+                            # if cpm[r_id][1] > q_p2 + k:
+                            #     print("LOOL")
+                            # if cpm[r_id][3] > r_p2 + k:
+                            #     print("LOOL222")                                
                         else: # no overlap in at least one sequence. Output previous match region and add beginning of new match
                             prev_q_p1, prev_q_p2, prev_ref_p1, prev_ref_p2 = cpm[r_id]
                             # assert  prev_q_p2 - prev_q_p1 == prev_ref_p2 - prev_ref_p1
@@ -106,7 +152,25 @@ def get_matches(strobes, idx, k, dont_merge_matches):
         for r_id, (q_p1, q_pos_stop, r_pos, r_pos_stop) in cpm.items():
             merged_matches.append( (r_id, r_pos, q_p1, q_pos_stop - q_p1) )
 
-        return sorted(merged_matches, key = lambda x: x[0]) 
+        # print(acc, merged_matches)
+        # return sorted(merged_matches, key = lambda x: x[2]) 
+
+        # If there are repetitive matches across e.g. a chromosome
+        # the merging will be broken up at the repetitive kmer.
+        # here we post merge such spuriously broken up overlapping matches
+
+        # sort first by reference id then by sum of reference and query position to resolve perfect repeats!
+        new_sort = sorted(merged_matches, key = lambda x: (x[0], x[1]+x[2], x[1] ) )
+        merged_matches = sort_merge(new_sort)
+
+        # sort first by reference id then by reference position
+
+        new_sort = sorted(merged_matches, key = lambda x: (x[0], x[1] ) )
+        merged_matches = sort_merge(new_sort)
+
+        return sorted(merged_matches, key = lambda x: (x[0], x[2]) )
+
+
         
 
 def seq_to_kmer_iter(seq, k_size):
@@ -145,7 +209,7 @@ def main(args):
         idx, ref_id_to_accession, cntr = build_kmer_index(open(args.references,'r'), args.k)
         print("{0} kmers created from references".format(cntr))
     else:
-        idx, ref_id_to_accession, cntr = build_strobemer_index(open(args.references,'r'),args.k, args.w, PRIME)
+        idx, ref_id_to_accession, cntr = build_strobemer_index(open(args.references,'r'),args.k, args.strobe_w_size, PRIME)
         print("{0} strobemers created from references".format(cntr))
 
 
@@ -160,9 +224,9 @@ def main(args):
         if args.kmer_index:
             strobes = [(p1, p2, h) for p1, p2, h in seq_to_kmer_iter(seq, args.k)] 
         else:    
-            strobes = [(p1, p2, h) for p1, p2, h in seq_to_strobes_iter(seq, args.k, 0, args.w, PRIME)]
+            strobes = [(p1, p2, h) for p1, p2, h in seq_to_strobes_iter(seq, args.k, 0, args.strobe_w_size, PRIME)]
 
-        read_matches = get_matches(strobes, idx, args.k, args.dont_merge_matches)
+        read_matches = get_matches(strobes, idx, args.k, args.dont_merge_matches, ref_id_to_accession, acc)
         query_matches.append( (acc, read_matches) )
 
         if i % 1000 == 0:
@@ -174,14 +238,14 @@ def main(args):
             if args.kmer_index:
                 strobes_rc = [(p1, p2, h) for p1, p2, h in seq_to_kmer_iter(rc(seq), args.k)] 
             else:    
-                strobes_rc = [(p1, p2, h) for p1, p2, h in seq_to_strobes_iter(rc(seq), args.k, 0, args.w, PRIME)]
-            read_matches_rc = get_matches(strobes_rc, idx, args.k, args.dont_merge_matches)
+                strobes_rc = [(p1, p2, h) for p1, p2, h in seq_to_strobes_iter(rc(seq), args.k, 0, args.strobe_w_size, PRIME)]
+            read_matches_rc = get_matches(strobes_rc, idx, args.k, args.dont_merge_matches,ref_id_to_accession, acc)
             matches_rc.append((acc, read_matches_rc))
             if i % 1000 == 0:
                 print_matches_to_file(matches_rc, ref_id_to_accession, outfile_rc)
                 matches_rc = []
 
-
+        # sys.exit()
     print_matches_to_file(query_matches, ref_id_to_accession, outfile)
     
     if args.rev_comp:
@@ -196,7 +260,8 @@ if __name__ == '__main__':
     parser.add_argument('--queries', type=str,  default=False, help='Path to query fasta or fastq file')
     parser.add_argument('--references', type=str,  default=False, help='Path to reference fasta or fastq file')
     parser.add_argument('--k', type=int, default=15, help='Strobe size')
-    parser.add_argument('--w', type=int, default=50, help='Window sizes')
+    parser.add_argument('--strobe_w_size', type=int, default=50, help='Strobemer window sizes')
+    parser.add_argument('--w', type=int, default=1, help='Thinning window size (default = 1, i.e., no thinning)')
     parser.add_argument('--n', type=int, default=2, help='Order on strobes')
     parser.add_argument('--dont_merge_matches', action="store_true",  help='Do not merge matches with this option. It is seriously advised to\
                                                                      merge matches as the files can become huge otherwise and fill up all diskspace.\
