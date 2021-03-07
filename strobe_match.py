@@ -54,16 +54,18 @@ def grouper(iterable, n, fillvalue=None):
     args = [iter(iterable)] * n
     return zip_longest(*args, fillvalue=fillvalue)
 
-def build_index(refs, k_size, w, prime):
+def build_strobemer_index(refs, k_size, w, prime):
     idx = defaultdict(lambda :array("L"))
     ref_id_to_accession = {}
     cntr = 0
     for r_id, (ref_acc, (seq, _)) in enumerate(help_functions.readfq(refs)):
         ref_id_to_accession[r_id] = ref_acc
-        for pos, hash_val in  seq_to_strobes_iter(seq, k_size, 0, w, prime):
+        for pos, hash_val in seq_to_strobes_iter(seq, k_size, 0, w, prime):
             idx[hash_val].append(r_id)
             idx[hash_val].append(pos)
             cntr += 1
+            if cntr % 1000000 == 0:
+                print("{0} strobemers created from references".format(cntr))
         # print(hash_val, r_id, pos)
     return idx, ref_id_to_accession, cntr
 
@@ -86,7 +88,7 @@ def get_matches(strobes, idx, k, dont_merge_matches):
                         # if q_pos < cpm[r_id][1] and p < cpm[r_id][3] and (q_pos - cpm[r_id][0]) == (p - cpm[r_id][2]):
 
                         # there is overlap in both reference and query to previous hit
-                        if q_pos < cpm[r_id][1] and p < cpm[r_id][3]:
+                        if q_pos < cpm[r_id][1] and cpm[r_id][2] <= p <= cpm[r_id][3]:
                             cpm[r_id][1] = q_pos+2*k
                             cpm[r_id][3] = p+2*k
                         else: # no overlap in at least one sequence output previous match region and add beginning of new match
@@ -104,6 +106,27 @@ def get_matches(strobes, idx, k, dont_merge_matches):
         return sorted(merged_matches, key = lambda x: x[0]) 
         
 
+def seq_to_kmer_iter(seq, k_size):
+    hash_seq_list = [hash(seq[i:i+k_size]) for i in range(len(seq) - k_size +1)]
+    for p in range(len(seq) - k_size + 1):
+        yield p, hash_seq_list[p]
+
+def build_kmer_index(refs, k_size):
+    idx = defaultdict(lambda :array("L"))
+    ref_id_to_accession = {}
+    cntr = 0
+    for r_id, (ref_acc, (seq, _)) in enumerate(help_functions.readfq(refs)):
+        ref_id_to_accession[r_id] = ref_acc
+        for pos, hash_val in seq_to_kmer_iter(seq, k_size):
+            idx[hash_val].append(r_id)
+            idx[hash_val].append(pos)
+            cntr += 1
+            if cntr % 1000000 == 0:
+                print("{0} kmers created from references".format(cntr))
+        # print(hash_val, r_id, pos)
+    return idx, ref_id_to_accession, cntr
+
+
 def print_matches_to_file(query_matches, ref_id_to_accession, outfile):
     for q_acc, read_matches in query_matches:
         outfile.write(">{0}\n".format(q_acc))
@@ -113,8 +136,14 @@ def print_matches_to_file(query_matches, ref_id_to_accession, outfile):
 
 def main(args):
     PRIME = 97
-    idx, ref_id_to_accession, cntr = build_index(open(args.references,'r'),args.k, args.w, PRIME)
-    print("{0} strobemers created from references".format(cntr))
+
+    if args.kmer_index:
+        idx, ref_id_to_accession, cntr = build_kmer_index(open(args.references,'r'),2*args.k)
+        print("{0} kmers created from references".format(cntr))
+    else:
+        idx, ref_id_to_accession, cntr = build_strobemer_index(open(args.references,'r'),args.k, args.w, PRIME)
+        print("{0} strobemers created from references".format(cntr))
+
 
     outfile = open(args.outfile, 'w')
     query_matches = []
@@ -124,21 +153,36 @@ def main(args):
         matches_rc = []
 
     for i, (acc, (seq, _)) in enumerate(help_functions.readfq(open(args.queries, 'r'))):
-        strobes = [(pos, h) for pos, h in seq_to_strobes_iter(seq, args.k, 0, args.w, PRIME)] #get_stobes(seq)
+        if args.kmer_index:
+            strobes = [(pos, h) for pos, h in seq_to_kmer_iter(seq, 2*args.k)] 
+        else:    
+            strobes = [(pos, h) for pos, h in seq_to_strobes_iter(seq, args.k, 0, args.w, PRIME)]
+
         read_matches = get_matches(strobes, idx, args.k, args.dont_merge_matches)
         query_matches.append( (acc, read_matches) )
 
-        if i % 100 == 0:
+        if i % 1000 == 0:
+            print("Finished processing {0} query sequences.".format(i))
             print_matches_to_file(query_matches, ref_id_to_accession, outfile)
             query_matches = []
 
         if args.rev_comp:
-            strobes_rc = get_stobes(rc(seq))
-            read_matches_rc = get_matches(strobes_rc, idx)
+            if args.kmer_index:
+                strobes_rc = [(pos, h) for pos, h in seq_to_kmer_iter(rc(seq), 2*args.k)] 
+            else:    
+                strobes_rc = [(pos, h) for pos, h in seq_to_strobes_iter(rc(seq), args.k, 0, args.w, PRIME)]
+            read_matches_rc = get_matches(strobes_rc, idx, args.k, args.dont_merge_matches)
             matches_rc.append((acc, read_matches_rc))
-            if i % 100 == 0:
+            if i % 1000 == 0:
                 print_matches_to_file(matches_rc, ref_id_to_accession, outfile_rc)
                 matches_rc = []
+
+
+    print_matches_to_file(query_matches, ref_id_to_accession, outfile)
+    
+    if args.rev_comp:
+        print_matches_to_file(matches_rc, ref_id_to_accession, outfile_rc)
+
     outfile.close()
 
 
@@ -160,6 +204,7 @@ if __name__ == '__main__':
     parser.add_argument('--outfile', type=str,  default=None, help='TSV match file.')
     parser.add_argument('--compress', type=str,  default=None, help='Compress output')
     parser.add_argument('--rev_comp', action="store_true",  help='Match reverse complement of reads (output to separate file)')
+    parser.add_argument('--kmer_index', action="store_true",  help='Kmers can be used instead of strobemers, used for performance comparison')
     # parser.add_argument('--pickled_subreads', type=str, help='Path to an already parsed subreads file in pickle format')
     # parser.set_defaults(which='main')
     args = parser.parse_args()
