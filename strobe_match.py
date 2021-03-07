@@ -44,8 +44,9 @@ def seq_to_strobes_iter(seq, k_size, w_min, w_max, prime):
         hash_m1 = hash_seq_list[p]
         window_p_start = p + k_size + w_min if p + w_max <= len(hash_seq_list) else max( (p + k_size + w_min) -  (p+k_size+w_max - len(hash_seq_list)), p+ k_size )
         window_p_end = min(p + w_max, len(hash_seq_list))
-        min_index2, hash_value = randstrobe_order2(hash_seq_list, window_p_start, window_p_end, hash_m1, k_size, prime)
-        yield p, hash_value
+        min_index, hash_value = randstrobe_order2(hash_seq_list, window_p_start, window_p_end, hash_m1, k_size, prime)
+        p2 = window_p_start + min_index
+        yield p, p2, hash_value
 
 
 def grouper(iterable, n, fillvalue=None):
@@ -54,15 +55,17 @@ def grouper(iterable, n, fillvalue=None):
     args = [iter(iterable)] * n
     return zip_longest(*args, fillvalue=fillvalue)
 
+
 def build_strobemer_index(refs, k_size, w, prime):
     idx = defaultdict(lambda :array("L"))
     ref_id_to_accession = {}
     cntr = 0
     for r_id, (ref_acc, (seq, _)) in enumerate(help_functions.readfq(refs)):
         ref_id_to_accession[r_id] = ref_acc
-        for pos, hash_val in seq_to_strobes_iter(seq, k_size, 0, w, prime):
+        for p1, p2, hash_val in seq_to_strobes_iter(seq, k_size, 0, w, prime):
             idx[hash_val].append(r_id)
-            idx[hash_val].append(pos)
+            idx[hash_val].append(p1)
+            idx[hash_val].append(p2)
             cntr += 1
             if cntr % 1000000 == 0:
                 print("{0} strobemers created from references".format(cntr))
@@ -72,36 +75,36 @@ def build_strobemer_index(refs, k_size, w, prime):
 def get_matches(strobes, idx, k, dont_merge_matches):
     if dont_merge_matches:
         matches = []
-        for q_pos, h in strobes:
+        for q_p1, q_p2, h in strobes:
             if h in idx:
-                for r_id, ref_p in grouper(idx[h], 2):
-                    matches.append( (q_pos, r_id, ref_p, k) )
+                for r_id, r_p1, r_p2 in grouper(idx[h], 3):
+                    matches.append( (r_id, r_p1, q_p1, k) )
         return matches
     else:
         cpm = {} # currnet potential merges
         merged_matches = []
-        for q_pos, h in strobes:
+        for q_p1, q_p2, h in strobes:
             if h in idx:
-                for r_id, p in grouper(idx[h], 2):
+                for r_id, r_p1, r_p2 in grouper(idx[h], 3):
                     if r_id in cpm:
                         # # there is overlap in both reference and query to previous hit and of exact same distance
-                        # if q_pos < cpm[r_id][1] and p < cpm[r_id][3] and (q_pos - cpm[r_id][0]) == (p - cpm[r_id][2]):
+                        # if q_p1 < cpm[r_id][1] and r_p1 < cpm[r_id][3] and (q_p1 - cpm[r_id][0]) == (r_p1 - cpm[r_id][2]):
 
                         # there is overlap in both reference and query to previous hit
-                        if q_pos < cpm[r_id][1] and cpm[r_id][2] <= p <= cpm[r_id][3]:
-                            cpm[r_id][1] = q_pos+2*k
-                            cpm[r_id][3] = p+2*k
-                        else: # no overlap in at least one sequence output previous match region and add beginning of new match
-                            prev_q_pos, prev_q_pos_stop, prev_ref_pos, prev_ref_pos_stop = cpm[r_id]
-                            # assert  prev_q_pos_stop - prev_q_pos == prev_ref_pos_stop - prev_ref_pos
-                            merged_matches.append( (prev_q_pos, r_id, prev_ref_pos, prev_q_pos_stop - prev_q_pos) )
-                            cpm[r_id] = [q_pos, q_pos + 2*k, p, p+2*k ]
+                        if q_p1 < cpm[r_id][1] and cpm[r_id][2] <= r_p1 <= cpm[r_id][3]:
+                            cpm[r_id][1] = q_p2 + k
+                            cpm[r_id][3] = r_p2 + k
+                        else: # no overlap in at least one sequence. Output previous match region and add beginning of new match
+                            prev_q_p1, prev_q_p2, prev_ref_p1, prev_ref_p2 = cpm[r_id]
+                            # assert  prev_q_p2 - prev_q_p1 == prev_ref_p2 - prev_ref_p1
+                            merged_matches.append( (r_id, prev_ref_p1, prev_q_p1, prev_q_p2 - prev_q_p1) )
+                            cpm[r_id] = [q_p1, q_p2 + k, r_p1, r_p2 + k ]
                     else:
-                        cpm[r_id] = [q_pos, q_pos + 2*k, p, p+2*k ]
+                        cpm[r_id] = [q_p1, q_p2 + k, r_p1, r_p2 + k ]
 
         # close all open merge intervals
-        for r_id, (q_pos, q_pos_stop, r_pos, r_pos_stop) in cpm.items():
-            merged_matches.append( (q_pos, r_id, r_pos, q_pos_stop - q_pos) )
+        for r_id, (q_p1, q_pos_stop, r_pos, r_pos_stop) in cpm.items():
+            merged_matches.append( (r_id, r_pos, q_p1, q_pos_stop - q_p1) )
 
         return sorted(merged_matches, key = lambda x: x[0]) 
         
@@ -109,7 +112,7 @@ def get_matches(strobes, idx, k, dont_merge_matches):
 def seq_to_kmer_iter(seq, k_size):
     hash_seq_list = [hash(seq[i:i+k_size]) for i in range(len(seq) - k_size +1)]
     for p in range(len(seq) - k_size + 1):
-        yield p, hash_seq_list[p]
+        yield p, p, hash_seq_list[p]
 
 def build_kmer_index(refs, k_size):
     idx = defaultdict(lambda :array("L"))
@@ -117,9 +120,10 @@ def build_kmer_index(refs, k_size):
     cntr = 0
     for r_id, (ref_acc, (seq, _)) in enumerate(help_functions.readfq(refs)):
         ref_id_to_accession[r_id] = ref_acc
-        for pos, hash_val in seq_to_kmer_iter(seq, k_size):
+        for p1, p2, hash_val in seq_to_kmer_iter(seq, k_size):
             idx[hash_val].append(r_id)
-            idx[hash_val].append(pos)
+            idx[hash_val].append(p1)
+            idx[hash_val].append(p2)
             cntr += 1
             if cntr % 1000000 == 0:
                 print("{0} kmers created from references".format(cntr))
@@ -130,7 +134,7 @@ def build_kmer_index(refs, k_size):
 def print_matches_to_file(query_matches, ref_id_to_accession, outfile):
     for q_acc, read_matches in query_matches:
         outfile.write(">{0}\n".format(q_acc))
-        for (q_pos, r_id, ref_p, k) in read_matches:
+        for (r_id, ref_p, q_pos, k) in read_matches:
                 ref_acc = ref_id_to_accession[r_id]
                 outfile.write("{0}\t{1}\t{2}\t{3}\n".format(ref_acc, ref_p, q_pos, k))
 
@@ -138,7 +142,7 @@ def main(args):
     PRIME = 97
 
     if args.kmer_index:
-        idx, ref_id_to_accession, cntr = build_kmer_index(open(args.references,'r'),2*args.k)
+        idx, ref_id_to_accession, cntr = build_kmer_index(open(args.references,'r'), args.k)
         print("{0} kmers created from references".format(cntr))
     else:
         idx, ref_id_to_accession, cntr = build_strobemer_index(open(args.references,'r'),args.k, args.w, PRIME)
@@ -154,9 +158,9 @@ def main(args):
 
     for i, (acc, (seq, _)) in enumerate(help_functions.readfq(open(args.queries, 'r'))):
         if args.kmer_index:
-            strobes = [(pos, h) for pos, h in seq_to_kmer_iter(seq, 2*args.k)] 
+            strobes = [(p1, p2, h) for p1, p2, h in seq_to_kmer_iter(seq, args.k)] 
         else:    
-            strobes = [(pos, h) for pos, h in seq_to_strobes_iter(seq, args.k, 0, args.w, PRIME)]
+            strobes = [(p1, p2, h) for p1, p2, h in seq_to_strobes_iter(seq, args.k, 0, args.w, PRIME)]
 
         read_matches = get_matches(strobes, idx, args.k, args.dont_merge_matches)
         query_matches.append( (acc, read_matches) )
@@ -168,9 +172,9 @@ def main(args):
 
         if args.rev_comp:
             if args.kmer_index:
-                strobes_rc = [(pos, h) for pos, h in seq_to_kmer_iter(rc(seq), 2*args.k)] 
+                strobes_rc = [(p1, p2, h) for p1, p2, h in seq_to_kmer_iter(rc(seq), args.k)] 
             else:    
-                strobes_rc = [(pos, h) for pos, h in seq_to_strobes_iter(rc(seq), args.k, 0, args.w, PRIME)]
+                strobes_rc = [(p1, p2, h) for p1, p2, h in seq_to_strobes_iter(rc(seq), args.k, 0, args.w, PRIME)]
             read_matches_rc = get_matches(strobes_rc, idx, args.k, args.dont_merge_matches)
             matches_rc.append((acc, read_matches_rc))
             if i % 1000 == 0:
