@@ -36,37 +36,39 @@ The script `analysis1and1.py` at the top level in this repository contains code 
 
 # Using the tool
 
-Currently, the tool only implements order 2 randstrobes and kmers. The tool produces MAMs (Maximal Approximate non-overlapping Matches) for both strobemers and kmers. 
+Currently, the tool only implements order 2 randstrobes and kmers. The tool produces MAMs (Maximal Approximate non-overlapping Matches; see explanation below) for both strobemers and kmers. Test data is found in the folder `data` in this repository.
+Here are some example uses:
 
 ```
-# Generate randstrobe matches (randstrobe parametrization (2,15,50)) between ONT SIRV reads and the true reference sequences
+# Generate randstrobe matches (randstrobe parametrization (2,15,50)) 
+# between ONT SIRV reads and the true reference sequences
 
 python strobe_match.py --queries data/sirv_transcripts.fasta \
-					   --references data/ONT_sirv_cDNA_seqs.fasta \
-					   --outfile strobemer_hits.txt --k 15  --strobe_w_size 50
+                       --references data/ONT_sirv_cDNA_seqs.fasta \
+                       --outfile strobemer_hits.txt --k 15  --strobe_w_size 50
 
 
-# Generate kmer matches (k=30) between ONT SIRV reads and the true reference sequences
+# Generate kmer matches (k=30) 
+# between ONT SIRV reads and the true reference sequences
 
 python strobe_match.py --queries data/sirv_transcripts.fasta \
-					   --references data/ONT_sirv_cDNA_seqs.fasta \
-					   --outfile strobemer_hits.txt --k 30 --kmer_index
+                       --references data/ONT_sirv_cDNA_seqs.fasta \
+                       --outfile strobemer_hits.txt --k 30 --kmer_index
 
 # Reads vs reads matching
 
 python strobe_match.py --queries data/sirv_transcripts.fasta \
-					   --references data/sirv_transcripts.fasta \
-					   --outfile strobemer_hits.txt --k 15  --strobe_w_size 50
-    
+                       --references data/sirv_transcripts.fasta \
+                       --outfile strobemer_hits.txt --k 15  --strobe_w_size 50
 ```
 
 ## Output
 
-Output format similar to MUMmer:
+Output format is similar to MUMmer:
 
 ```
 >query_accession
-ref_id	ref_pos	query_pos	match_length_on_query
+ref_id  ref_pos query_pos   match_length_on_query
 ```
 
 Truncated example output from aligning sirv reads to transcripts (data above) which also highlights the stobemers strength compared to kmers:
@@ -112,6 +114,8 @@ For kmers, this means that any two k-mer matches spanning positions `(q_1, q_1+k
 
 For strobemers, `strobe_match.py` saves the positions for both the first and second strobe. Two strobemers with start positions `(q_1, p_1)` and `(q_2, p_2)` on the query and length `k` strobes overlap if `q_1 <= q_2 <= p_1` and the same holds on the reference. Notice that because of the random length between the strobes, we can either have `q_1 <= q_2 <= p_1 <= p_2` or `q_1 <= q_2 <= p_2 <= p_1`. They are merged into one match of length `max(p_2 + k, p_1+k) - q_1`. Any chain of such overlapping matches are merged into one match. 
 
+
+The tool currently have a known bug of not being able to merge matches when there exist a repeat occuring at least twice within _both_ the query and reference sequence. In this case the matches may become fragmented, i.e., not merged into MAMs.
 
 
 CREDITS
