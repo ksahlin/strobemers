@@ -71,7 +71,8 @@ Output format is similar to MUMmer:
 ref_id  ref_pos query_pos   match_length_on_query
 ```
 
-Truncated example output from aligning sirv reads to transcripts (data above) which also highlights the stobemers strength compared to kmers:
+Small example output from aligning sirv reads to transcripts (data above) which also highlights the stobemers strength compared to kmers. While kmers can give a more nuanced differentiation (compare read hits to `SIRV606` and `SIRV616`) both the sequences are good candidates for downstream processing. In this small example, the strobemers produce fewer hits/less output needed for post clustering of matches, e.g., for downstream clustering/alignment/mapping.
+
 
 **Strobemers (2,15,50)**
 ```
@@ -80,6 +81,10 @@ SIRV606 33      90      485
 SIRV616 33      90      485
 >55:474|ed91d713-ef66-4526-9f8f-3ca0206564ab
 SIRV704 2       0       409
+>56:842|9d29a5f2-3704-4d73-bcf2-8a3f3d8b66ce
+SIRV309 19      19      220
+SIRV309 297     297     136
+SIRV309 454     452     331
 ```
 
 **kmers (k=30)**
@@ -97,12 +102,19 @@ SIRV616 219     275     81
 SIRV616 349     408     60
 SIRV616 409     482     44
 SIRV616 467     540     42
-
 >55:474|ed91d713-ef66-4526-9f8f-3ca0206564ab
 SIRV704 2       0       92
 SIRV704 95      91      80
 SIRV704 224     218     58
 SIRV704 331     321     88
+>56:842|9d29a5f2-3704-4d73-bcf2-8a3f3d8b66ce
+SIRV309 43      45      107
+SIRV309 187     189     50
+SIRV309 297     297     136
+SIRV309 470     465     59
+SIRV309 530     523     33
+SIRV309 586     579     38
+SIRV309 660     650     133
 ```
 
 ## What is a MAM?
