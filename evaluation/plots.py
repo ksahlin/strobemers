@@ -21,7 +21,7 @@ def plot_coverage(input_csv, outfolder):
     indata = pd.read_csv(input_csv)
     # ax = sns.violinplot(x="day", y="total_bill", hue="smoker",
     #                 data=tips, palette="muted")
-    ax = sns.lineplot(x="ref_id", y="coverage", hue="method",
+    ax = sns.lineplot(x="ref_id", y="coverage", hue="method", ci = "sd",
                           hue_order= ["strobemers", "kmers"], data=indata, markers=True)
     # ax = sns.violinplot(x="ref_id", y="coverage", hue="method",
     #                       hue_order= ["strobemers", "kmers"], data=indata)
@@ -43,7 +43,7 @@ def plot_nr_hits(input_csv, outfolder):
     indata = pd.read_csv(input_csv)
     # ax = sns.barplot(x="ref_id", y="nr_hits", hue="method", data=indata,
     #                       hue_order= ["strobemers", "kmers"])
-    ax = sns.lineplot(x="ref_id", y="nr_hits", hue="method",
+    ax = sns.lineplot(x="ref_id", y="nr_hits", hue="method", ci = "sd",
                           hue_order= ["strobemers", "kmers"], data=indata, markers=True)
     plt.xlabel('SIRV', fontsize=14)
     plt.ylabel('Number matches (MAMs)',fontsize=16)
@@ -65,7 +65,7 @@ def plot_normalized_match_length(input_csv, outfolder):
     # ax = sns.barplot(x="ref_id", y="nr_hits", hue="method", data=indata,
     #                       hue_order= ["strobemers", "kmers"])
     plt.tick_params(axis='x', which='minor', labelsize=7)
-    ax = sns.lineplot(x="ref_id", y="normalized_match_length", hue="method",
+    ax = sns.lineplot(x="ref_id", y="normalized_match_length", hue="method", ci = "sd",
                           hue_order= ["strobemers", "kmers"], data=indata, markers=True)
     plt.xlabel('SIRV', fontsize=14)
     plt.ylabel('Normalized match length',fontsize=16)
