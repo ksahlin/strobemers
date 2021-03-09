@@ -142,12 +142,12 @@ I aligned ONT cDNA reads (meadian error rate 7.0%) from [this synthetic RNA data
 The aim is that the matching should provide candidate regions/sequences to perform exact alignment against. Match coverage and number of hits are two important features for sequence matching. Match coverage in this experiment is the fraction of reference sequence covered. Number of hits is the number of MAMs per read. We want the match coverage to be high in this experiment since we know that the reads align well to the their respective SIRV reference. However, together with a high coverage, we want the number of matches to be as low as possible (where 1 is best) in order for fast post prosessing/clustering of matches (a.k.a. seeds) and low disk space. Below we show the match coverage and number of hits for strobemers and kmers in this experiment separated for each of the 63 SIRVs with more than 100 primary alignment.
 
 
-![match coverage](data/plot_coverage.pdf)
-![number of hits](data/plot_nr_hits.pdf)
+![match coverage](data/plot_coverage.png)
+![number of hits](data/plot_nr_hits.png)
 
 The two above metrics could be studied from another angle, which is the match length normalized with the SIRV transcript length. The plot below shows the mean normalized match length for kmers and strobemers.
 
-![norm match length](data/plot_normalized_match_length.pdf)
+![norm match length](data/plot_normalized_match_length.png)
 
 CREDITS
 ----------------

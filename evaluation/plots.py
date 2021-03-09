@@ -69,6 +69,7 @@ def plot_normalized_match_length(input_csv, outfolder):
                           hue_order= ["strobemers", "kmers"], data=indata, markers=True)
     plt.xlabel('SIRV', fontsize=14)
     plt.ylabel('Normalized match length',fontsize=16)
+    plt.tick_params(rotation=90)
     # ax.set_xticklabels(size = 10)
     plt.ylim(0, 1)
     plt.tight_layout()
