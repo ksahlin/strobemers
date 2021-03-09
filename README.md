@@ -70,7 +70,7 @@ Output format is similar to MUMmer:
 
 ```
 >query_accession
-ref_id  ref_pos query_pos   match_length_on_query
+ref_id  ref_pos query_pos   match_length_on_reference
 ```
 
 Small example output from aligning sirv reads to transcripts (data above) which also highlights the stobemers strength compared to kmers. While kmers can give a more nuanced differentiation (compare read hits to `SIRV606` and `SIRV616`) both the sequences are good candidates for downstream processing. In this small example, the strobemers produce fewer hits/less output needed for post clustering of matches, e.g., for downstream clustering/alignment/mapping.
@@ -79,14 +79,16 @@ Small example output from aligning sirv reads to transcripts (data above) which 
 **Strobemers (2,15,50)**
 ```
 >41:650|d00e6247-9de6-485c-9b44-806023c51f13
-SIRV606 33      90      485
-SIRV616 33      90      485
->55:474|ed91d713-ef66-4526-9f8f-3ca0206564ab
-SIRV704 2       0       409
->56:842|9d29a5f2-3704-4d73-bcf2-8a3f3d8b66ce
-SIRV309 19      19      220
-SIRV309 297     297     136
-SIRV309 454     452     331
+SIRV606 37      94      288
+SIRV606 349     408     174
+SIRV616 37      94      288
+SIRV616 349     408     174
+>56:954|a23755a1-d138-489e-8efb-f119e679daf4
+SIRV509 3       3       515
+SIRV509 520     529     214
+SIRV509 762     767     121
+>106:777|0f79c12f-efed-4548-8fcc-49657f97a126
+SIRV404 53      131     535
 ```
 
 **kmers (k=30)**
@@ -104,19 +106,21 @@ SIRV616 219     275     81
 SIRV616 349     408     60
 SIRV616 409     482     44
 SIRV616 467     540     42
->55:474|ed91d713-ef66-4526-9f8f-3ca0206564ab
-SIRV704 2       0       92
-SIRV704 95      91      80
-SIRV704 224     218     58
-SIRV704 331     321     88
->56:842|9d29a5f2-3704-4d73-bcf2-8a3f3d8b66ce
-SIRV309 43      45      107
-SIRV309 187     189     50
-SIRV309 297     297     136
-SIRV309 470     465     59
-SIRV309 530     523     33
-SIRV309 586     579     38
-SIRV309 660     650     133
+>56:954|a23755a1-d138-489e-8efb-f119e679daf4
+SIRV509 68      72      141
+SIRV509 230     233     101
+SIRV509 331     335     105
+SIRV509 435     442     40
+SIRV509 475     483     36
+SIRV509 579     585     41
+SIRV509 621     627     46
+SIRV509 695     701     44
+SIRV509 812     815     53
+>106:777|0f79c12f-efed-4548-8fcc-49657f97a126
+SIRV404 53      131     58
+SIRV404 128     208     128
+SIRV404 283     364     30
+SIRV404 422     494     143
 ```
 
 ## What is a MAM?

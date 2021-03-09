@@ -56,13 +56,11 @@ do
 done
 
 
-
-# python $experiment_dir/plot_match_lengths.py $results_file $plot_file".pdf"
-# python $experiment_dir/plot_number_matches.py $results_file $plot_file".pdf"
-
 # Plot1: Sort plot sirvs by length on x-axis! normalized_hit_length.csv
 # Plot2: Plot total coverage of hits  covarage.csv
 # Plot3 number of hits per read nr_hits.csv
+
+# python $experiment_dir/plots.py $normalized_hit_length_file $coverage_file $nr_hits_file $plot_file".pdf"
 
 
 

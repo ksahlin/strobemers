@@ -69,7 +69,7 @@ def main(args):
                 nr_hits = 0
                 coverage = 0
 
-            read_acc = line[1:] 
+            read_acc = line[1:].strip()
             continue
         else: 
             ref, r_pos, q_pos, match_length = line.split()

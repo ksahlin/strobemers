@@ -85,8 +85,9 @@ def sort_merge(sorted_list):
             # print("OK", q2_pos <= q_pos + length <= q2_pos+ length, r2_pos <= r_pos + length <= r2_pos + length)
             # print("2", q2_pos, q_pos + length, q2_pos+ length, r2_pos, r_pos + length, r2_pos + length)
             # overlapping on both query and ref
+            print(q2_pos + length2, q_pos + length, curr_merge[3])
             if q2_pos <= q_pos + length <= q2_pos+ length  and r2_pos <= r_pos + length <= r2_pos + length:
-                curr_merge = (r_id, curr_merge[1], curr_merge[2], curr_merge[3] + (q2_pos + length - (q_pos + length) )  )
+                curr_merge = (r_id, curr_merge[1], curr_merge[2], max(q2_pos + length2, q_pos + length ) -  q_pos )
                 # print("HERER")
 
             else:
@@ -126,6 +127,7 @@ def get_matches(strobes, idx, k, dont_merge_matches,  ref_id_to_accession, acc):
         for q_p1, q_p2, h in strobes:
             if h in idx:
                 for r_id, r_p1, r_p2 in grouper(idx[h], 3):
+                    # print(r_p1, r_p2)
                     # if ref_id_to_accession[r_id] == acc:
                     #     continue
                     if r_id in cpm:
@@ -136,6 +138,8 @@ def get_matches(strobes, idx, k, dont_merge_matches,  ref_id_to_accession, acc):
                         if q_p1 < cpm[r_id][1] and cpm[r_id][0] < q_p2  and cpm[r_id][2] <= r_p1 <= cpm[r_id][3]:
                             cpm[r_id][1] = max(cpm[r_id][1], q_p2 + k)
                             cpm[r_id][3] = max(cpm[r_id][3], r_p2 + k)
+                            # print(cpm[r_id][0], q_p2 + k)
+                            # print(cpm[r_id][2], r_p2 + k)
                             # if cpm[r_id][1] > q_p2 + k:
                             #     print("LOOL")
                             # if cpm[r_id][3] > r_p2 + k:
@@ -143,6 +147,8 @@ def get_matches(strobes, idx, k, dont_merge_matches,  ref_id_to_accession, acc):
                         else: # no overlap in at least one sequence. Output previous match region and add beginning of new match
                             prev_q_p1, prev_q_p2, prev_ref_p1, prev_ref_p2 = cpm[r_id]
                             # assert  prev_q_p2 - prev_q_p1 == prev_ref_p2 - prev_ref_p1
+                            print(prev_q_p1,prev_q_p2, prev_q_p2 - prev_q_p1)
+                            print(prev_ref_p1,prev_ref_p2, prev_ref_p2 - prev_ref_p1)
                             merged_matches.append( (r_id, prev_ref_p1, prev_q_p1, prev_q_p2 - prev_q_p1) )
                             cpm[r_id] = [q_p1, q_p2 + k, r_p1, r_p2 + k ]
                     else:
@@ -151,7 +157,7 @@ def get_matches(strobes, idx, k, dont_merge_matches,  ref_id_to_accession, acc):
         # close all open merge intervals
         for r_id, (q_p1, q_pos_stop, r_pos, r_pos_stop) in cpm.items():
             merged_matches.append( (r_id, r_pos, q_p1, q_pos_stop - q_p1) )
-
+        print(merged_matches)
         if not merged_matches:
             return []
         # print(acc, merged_matches)
@@ -164,14 +170,17 @@ def get_matches(strobes, idx, k, dont_merge_matches,  ref_id_to_accession, acc):
         # sort first by reference id then by sum of reference and query position to resolve perfect repeats!
         new_sort = sorted(merged_matches, key = lambda x: (x[0], x[1]+x[2], x[1] ) )
         merged_matches = sort_merge(new_sort)
+        print(merged_matches)
 
         # sort first by reference id then by reference position
         new_sort = sorted(merged_matches, key = lambda x: (x[0], x[1] ) )
         merged_matches = sort_merge(new_sort)
+        print(merged_matches)
 
         # sort first by reference id then by query position
         new_sort = sorted(merged_matches, key = lambda x: (x[0], x[2] ) )
         merged_matches = sort_merge(new_sort)
+        print(merged_matches)
 
         return sorted(merged_matches, key = lambda x: (x[0], x[2], x[1]) )
 
