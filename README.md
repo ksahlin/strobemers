@@ -45,7 +45,7 @@ Here are some example uses:
 
 python strobe_match.py --queries data/sirv_transcripts.fasta \
                        --references data/ONT_sirv_cDNA_seqs.fasta \
-                       --outfile strobemer_hits.txt --k 15  --strobe_w_size 50
+                       --outfolder strobemer_output/  --k 15  --strobe_w_size 50
 
 
 # Generate kmer matches (k=30) 
@@ -53,14 +53,16 @@ python strobe_match.py --queries data/sirv_transcripts.fasta \
 
 python strobe_match.py --queries data/sirv_transcripts.fasta \
                        --references data/ONT_sirv_cDNA_seqs.fasta \
-                       --outfile strobemer_hits.txt --k 30 --kmer_index
+                       --outfolder kmer_output/  --k 30 --kmer_index
 
 # Reads vs reads matching
 
 python strobe_match.py --queries data/sirv_transcripts.fasta \
                        --references data/sirv_transcripts.fasta \
-                       --outfile strobemer_hits.txt --k 15  --strobe_w_size 50
+                       --outfolder strobemer_output/ --k 15  --strobe_w_size 50
 ```
+
+This will produce a file `matches.tsv` in the output folder. You can se a custom outfile name with the parameter `--prefix`.
 
 ## Output
 

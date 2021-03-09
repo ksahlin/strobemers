@@ -1,5 +1,6 @@
 '''
-    Below function taken from https://github.com/lh3/readfq/blob/master/readfq.py
+    Below awesome fast[a/q] reader function taken 
+    from https://github.com/lh3/readfq/blob/master/readfq.py
 '''
 
 def readfq(fp): # this is a generator function

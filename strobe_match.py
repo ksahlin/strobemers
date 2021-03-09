@@ -80,10 +80,10 @@ def sort_merge(sorted_list):
         r_id, r_pos, q_pos, length = t1
         r2_id, r2_pos, q2_pos, length2 = sorted_list[i+1]
         # print(i, r_id, r_pos, r2_id, r2_pos)
-        print(r2_pos, q2_pos)
+        # print(r2_pos, q2_pos)
         if r_id == r2_id:  
             # print("OK", q2_pos <= q_pos + length <= q2_pos+ length, r2_pos <= r_pos + length <= r2_pos + length)
-            print("2", q2_pos, q_pos + length, q2_pos+ length, r2_pos, r_pos + length, r2_pos + length)
+            # print("2", q2_pos, q_pos + length, q2_pos+ length, r2_pos, r_pos + length, r2_pos + length)
             # overlapping on both query and ref
             if q2_pos <= q_pos + length <= q2_pos+ length  and r2_pos <= r_pos + length <= r2_pos + length:
                 curr_merge = (r_id, curr_merge[1], curr_merge[2], curr_merge[3] + (q2_pos + length - (q_pos + length) )  )
@@ -152,6 +152,8 @@ def get_matches(strobes, idx, k, dont_merge_matches,  ref_id_to_accession, acc):
         for r_id, (q_p1, q_pos_stop, r_pos, r_pos_stop) in cpm.items():
             merged_matches.append( (r_id, r_pos, q_p1, q_pos_stop - q_p1) )
 
+        if not merged_matches:
+            return []
         # print(acc, merged_matches)
         # return sorted(merged_matches, key = lambda x: x[2]) 
 
@@ -216,11 +218,11 @@ def main(args):
         print("{0} strobemers created from references".format(cntr))
 
 
-    outfile = open(args.outfile, 'w')
+    outfile = open(os.path.join(args.outfolder, args.prefix + ".tsv"), 'w')
     query_matches = []
 
     if args.rev_comp:
-        outfile_rc = open(args.outfile + "_revcomp", 'w')
+        outfile_rc = open(os.path.join(args.outfolder, args.prefix + "_revcomp.tsv"), 'w')
         matches_rc = []
 
     for i, (acc, (seq, _)) in enumerate(help_functions.readfq(open(args.queries, 'r'))):
@@ -250,11 +252,11 @@ def main(args):
 
         # sys.exit()
     print_matches_to_file(query_matches, ref_id_to_accession, outfile)
+    outfile.close()
     
     if args.rev_comp:
         print_matches_to_file(matches_rc, ref_id_to_accession, outfile_rc)
-
-    outfile.close()
+        outfile_rc.close()
 
 
 
@@ -273,7 +275,8 @@ if __name__ == '__main__':
                                                                      are consectutive on both query and reference to create MAM-like matches \
                                                                      (maximal approximate matches) of various lengths, much like the output of MUMmer. This is\
                                                                      disk space frendilier, although these files can get large too.')
-    parser.add_argument('--outfile', type=str,  default=None, help='TSV match file.')
+    parser.add_argument('--outfolder', type=str,  default=None, help='Folder to output TSV match file.')
+    parser.add_argument('--prefix', type=str,  default="matches", help='Filename prefix (default "matches").')
     parser.add_argument('--compress', type=str,  default=None, help='Compress output')
     parser.add_argument('--rev_comp', action="store_true",  help='Match reverse complement of reads (output to separate file)')
     parser.add_argument('--kmer_index', action="store_true",  help='Kmers can be used instead of strobemers, used for performance comparison')
@@ -286,6 +289,9 @@ if __name__ == '__main__':
     if len(sys.argv)==1:
         parser.print_help()
         sys.exit()
+
+    if args.outfolder and not os.path.exists(args.outfolder):
+        os.makedirs(args.outfolder)
 
     main(args)
 
