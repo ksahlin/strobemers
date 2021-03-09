@@ -73,7 +73,7 @@ Output format is similar to MUMmer:
 ref_id  ref_pos query_pos   match_length_on_reference
 ```
 
-Small example output from aligning sirv reads to transcripts (data above) which also highlights the stobemers strength compared to kmers. While kmers can give a more nuanced differentiation (compare read hits to `SIRV606` and `SIRV616`) both the sequences are good candidates for downstream processing. In this small example, the strobemers produce fewer hits/less output needed for post clustering of matches, e.g., for downstream clustering/alignment/mapping.
+Small example output from aligning sirv reads to transcripts (data above) which also highlights the stobemers strength compared to kmers. While kmers can give a more nuanced differentiation (compare read hits to `SIRV606` and `SIRV616`) both the sequences are good candidates for downstream processing. In this small example, the strobemers produce fewer hits/less output needed for post clustering of matches, e.g., for downstream clustering/alignment/mapping. Notice that randstobe hit positions are currently not deterministic due to hash seed is set at each new pyhon instantiation. I will fix the hash seed in future implementations.
 
 
 **Strobemers (2,15,50)**
@@ -95,20 +95,20 @@ SIRV404 53      131     535
 ```
 >41:650|d00e6247-9de6-485c-9b44-806023c51f13
 SIRV606 33      90      46
-SIRV606 92      150     124
+SIRV606 92      150     125
 SIRV606 219     275     81
 SIRV606 349     408     70
 SIRV606 420     479     47
 SIRV606 481     540     42
 SIRV616 33      90      46
-SIRV616 92      150     124
+SIRV616 92      150     125
 SIRV616 219     275     81
 SIRV616 349     408     60
 SIRV616 409     482     44
 SIRV616 467     540     42
 >56:954|a23755a1-d138-489e-8efb-f119e679daf4
 SIRV509 68      72      141
-SIRV509 230     233     101
+SIRV509 230     233     100
 SIRV509 331     335     105
 SIRV509 435     442     40
 SIRV509 475     483     36
@@ -118,9 +118,9 @@ SIRV509 695     701     44
 SIRV509 812     815     53
 >106:777|0f79c12f-efed-4548-8fcc-49657f97a126
 SIRV404 53      131     58
-SIRV404 128     208     128
+SIRV404 128     208     127
 SIRV404 283     364     30
-SIRV404 422     494     143
+SIRV404 422     494     142
 ```
 
 ## What is a MAM?

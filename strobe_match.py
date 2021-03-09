@@ -85,9 +85,10 @@ def sort_merge(sorted_list):
             # print("OK", q2_pos <= q_pos + length <= q2_pos+ length, r2_pos <= r_pos + length <= r2_pos + length)
             # print("2", q2_pos, q_pos + length, q2_pos+ length, r2_pos, r_pos + length, r2_pos + length)
             # overlapping on both query and ref
-            print(q2_pos + length2, q_pos + length, curr_merge[3])
+            # print(q2_pos + length2, q_pos + length, curr_merge[3])
             if q2_pos <= q_pos + length <= q2_pos+ length  and r2_pos <= r_pos + length <= r2_pos + length:
-                curr_merge = (r_id, curr_merge[1], curr_merge[2], max(q2_pos + length2, q_pos + length ) -  q_pos )
+                # curr_merge = (r_id, curr_merge[1], curr_merge[2], max(q2_pos + length2, q_pos + length ) -  q_pos ) # hit length on query sequence
+                curr_merge = (r_id, curr_merge[1], curr_merge[2], max(r2_pos + length2, r_pos + length ) -  r_pos ) # hit length on reference sequence
                 # print("HERER")
 
             else:
@@ -149,14 +150,14 @@ def get_matches(strobes, idx, k, dont_merge_matches,  ref_id_to_accession, acc):
                             # assert  prev_q_p2 - prev_q_p1 == prev_ref_p2 - prev_ref_p1
                             print(prev_q_p1,prev_q_p2, prev_q_p2 - prev_q_p1)
                             print(prev_ref_p1,prev_ref_p2, prev_ref_p2 - prev_ref_p1)
-                            merged_matches.append( (r_id, prev_ref_p1, prev_q_p1, prev_q_p2 - prev_q_p1) )
+                            merged_matches.append( (r_id, prev_ref_p1, prev_q_p1, prev_ref_p2 - prev_ref_p1) )
                             cpm[r_id] = [q_p1, q_p2 + k, r_p1, r_p2 + k ]
                     else:
                         cpm[r_id] = [q_p1, q_p2 + k, r_p1, r_p2 + k ]
 
         # close all open merge intervals
         for r_id, (q_p1, q_pos_stop, r_pos, r_pos_stop) in cpm.items():
-            merged_matches.append( (r_id, r_pos, q_p1, q_pos_stop - q_p1) )
+            merged_matches.append( (r_id, r_pos, q_p1, r_pos_stop - r_pos) )
         print(merged_matches)
         if not merged_matches:
             return []
