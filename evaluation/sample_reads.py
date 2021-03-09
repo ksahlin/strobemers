@@ -64,7 +64,7 @@ def get_abundance_aligned_reads(sam_file, sample_size):
     transcript_cov = defaultdict(set)
     # amgiguous_primary = defaultdict(set)
     for read in SAM_file.fetch(until_eof=True):
-        if (read.flag == 0 or read.flag == 16) and read.mapping_quality >= 10:
+        if (read.flag == 0 or read.flag == 16) and read.mapping_quality > 0:
             transcript_id = read.reference_name
             transcript_cov[transcript_id].add(read.query_name)
 
