@@ -129,6 +129,7 @@ def get_matches(strobes, idx, k, dont_merge_matches,  ref_id_to_accession, acc):
             if h in idx:
                 for r_id, r_p1, r_p2 in grouper(idx[h], 3):
                     # print(r_p1, r_p2)
+                    # remove self matches with below if statement, for now commented out to find eventual bugs
                     # if ref_id_to_accession[r_id] == acc:
                     #     continue
                     if r_id in cpm:
@@ -136,7 +137,8 @@ def get_matches(strobes, idx, k, dont_merge_matches,  ref_id_to_accession, acc):
                         # if q_p1 < cpm[r_id][1] and r_p1 < cpm[r_id][3] and (q_p1 - cpm[r_id][0]) == (r_p1 - cpm[r_id][2]):
 
                         # there is overlap in both reference and query to previous hit
-                        if q_p1 < cpm[r_id][1] and cpm[r_id][0] < q_p2  and cpm[r_id][2] <= r_p1 <= cpm[r_id][3]:
+                        # `q_1 <= q_2 <= q'_1 +k` and `r_1 <= r_2 <= r'_2+k`
+                        if cpm[r_id][0] < q_p1 and q_p1 < cpm[r_id][1]  and cpm[r_id][2] <= r_p1 <= cpm[r_id][3]:
                             cpm[r_id][1] = max(cpm[r_id][1], q_p2 + k)
                             cpm[r_id][3] = max(cpm[r_id][3], r_p2 + k)
                             # print(cpm[r_id][0], q_p2 + k)
@@ -218,7 +220,7 @@ def print_matches_to_file(query_matches, ref_id_to_accession, outfile):
                 outfile.write("{0}\t{1}\t{2}\t{3}\n".format(ref_acc, ref_p, q_pos, k))
 
 def main(args):
-    PRIME = 97
+    PRIME = 997
 
     if args.kmer_index:
         idx, ref_id_to_accession, cntr = build_kmer_index(open(args.references,'r'), args.k)
@@ -302,6 +304,9 @@ if __name__ == '__main__':
 
     if args.outfolder and not os.path.exists(args.outfolder):
         os.makedirs(args.outfolder)
+
+    if args.w != 1:
+        raise NotImplementedError("Currently only w=1 is allowed, i.e., no thinning is implemented")
 
     main(args)
 

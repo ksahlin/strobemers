@@ -38,7 +38,7 @@ original_reads_mapped=/Users/kxs624/Documents/data/ont/sirv/cDNA/lc19_pcs109_sub
 ###############
 
 mkdir -p $outbase/results/strobmers/
-mkrir -p $outbase/refs/
+mkdir -p $outbase/refs/
 
 FILES=$outbase/fastq/*
 for f in $FILES

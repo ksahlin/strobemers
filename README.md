@@ -79,10 +79,8 @@ Small example output from aligning sirv reads to transcripts (data above) which 
 **Strobemers (2,15,50)**
 ```
 >41:650|d00e6247-9de6-485c-9b44-806023c51f13
-SIRV606 37      94      288
-SIRV606 349     408     174
-SIRV616 37      94      288
-SIRV616 349     408     174
+SIRV606 35      92      487
+SIRV616 35      92      473
 >56:954|a23755a1-d138-489e-8efb-f119e679daf4
 SIRV509 3       3       515
 SIRV509 520     529     214
@@ -125,12 +123,14 @@ SIRV404 422     494     142
 
 ## What is a MAM?
 
-Currently it not yet properly defined but I'm working on it as the development progresses. The aim is to output regions that approxiamtely match eachother that can be used as candidate regions for alignment, clustering, etc. What is currently output can be thought of as regions with overlapping matches (overlap both in query and reference required). 
+I have not yet rigorously defined a MAM (maximal approximate match) but I'm working on it as the development progresses. The aim is to output regions that _approximately match eachother_ on the reference and query (just like MEMs are exact matches between query and reference). The MAM regions can then be used to detect as candidate regions for alignment, clustering, or any other downstream analysis. 
 
-For kmers, this means that any two k-mer matches spanning positions `(q_1, q_1+k)` and `(q_2, q_2+k`) on the query and positions `(r_1, r_1+k)` and `(r_2, r_2+k)` where `q_1 <= q_2 <= q_1+k <= q_2+k` and `r_1 <= r_2 <= r_1+k <= r_2+k` are merget into one match of length `q_2+k - q_1`. Any chain of such overlapping matches are merged into one match. 
+The 'approximate' part is that there is a strobemer match, and the maximal is that we will merge MAMs overlapping if correct order on both query and reference sequence. The _maximal_ is well defined if there are no repetitive matches in either the query or the reference. However, is is not well defined if there are nested repeats in _both_ the query and reference. Currently, this is what is implemented:
+
+For kmers, any two k-mer matches spanning positions `(q_1, q_1+k)` and `(q_2, q_2+k`) on the query and positions `(r_1, r_1+k)` and `(r_2, r_2+k)` on the reference where `q_1 <= q_2 <= q_1+k <= q_2+k` and `r_1 <= r_2 <= r_1+k <= r_2+k` are merged into one match of length `r_2+k - r_1`. Any chain of such overlapping matches are merged into one match. 
 
 
-For strobemers, `strobe_match.py` saves the positions for both the first and second strobe. Two strobemers with start positions `(q_1, p_1)` and `(q_2, p_2)` on the query and length `k` strobes overlap if `q_1 <= q_2 <= p_1` and the same holds on the reference. Notice that because of the random length between the strobes, we can either have `q_1 <= q_2 <= p_1 <= p_2` or `q_1 <= q_2 <= p_2 <= p_1`. They are merged into one match of length `max(p_2 + k, p_1+k) - q_1`. Any chain of such overlapping matches are merged into one match. 
+For strobemers, `strobe_match.py` saves the positions for both the first and second strobe. Two strobemers with start positions `(q_1, q'_1)` and `(q_2, q'_2)` on the query and `(r_1, r'_1)` and `(r_2, r'_2)` on the reference with length `k` strobes overlap if `q_1 <= q_2 <= q'_1 +k` and `r_1 <= r_2 <= r'_2+k`. Notice that because of the random length between the strobes, we can either have `q_1 <= q_2 <= q'_1 <= q'_2` or `q_1 <= q_2 <= q'_2 <= q'_1`. They are merged into one match of length `max(p_2 + k, p_1+k) - q_1`. Any chain of such overlapping matches are merged into one match. 
 
 
 The tool currently have a known bug of not being able to merge matches when there exist a repeat occuring at least twice within _both_ the query and reference sequence. In this case the matches may become fragmented, i.e., not merged into MAMs.
