@@ -19,10 +19,8 @@ from itertools import zip_longest
 
 from modules import help_functions
 
-
-
-
 import operator
+
 def argmin(values):
     min_index, min_value = min(enumerate(values), key=operator.itemgetter(1))
     return min_index, min_value
@@ -33,17 +31,55 @@ def rc(string):
     return(rev_comp)
 
 
+def thinner(hash_list, w):
+    """
+        Input: a list with hash values 
+        Output: A list with tuples: (pos in original list, minimim hash value) for each window of w hashes
+    """
+    window_hashes = deque(hash_list[:w])
+    min_index, curr_min_hash = argmin(window_hashes)
+    thinned_hash_list = [ (min_index, curr_min_hash) ]
+
+    for i in range(w, len(hash_list)):
+        new_hash = hash_list[i]
+        # updating window
+        discarded_hash = window_hashes.popleft()
+        window_hashes.append(new_hash)
+
+        # we have discarded previous windows minimizer, look for new minimizer brute force
+        if curr_min_hash == discarded_hash: 
+            min_index, curr_min_hash = argmin(window_hashes)
+            thinned_hash_list.append( (min_index, curr_min_hash) )
+
+        # Previous minimizer still in window, we only need to compare with the recently added kmer 
+        elif new_hash < curr_min_hash:
+            curr_min_hash = new_hash
+            thinned_hash_list.append( (i, curr_min_hash) )
+
+    return thinned_hash_list
+
 def randstrobe_order2(hash_seq_list, start, stop, hash_m1, k_size, prime):
-    min_index, min_value = argmin([ (hash_m1+ hash_seq_list[i]) % prime for i in range(start, stop)])
-    min_hash_val = hash_m1 + hash_seq_list[start + min_index]
+    min_index, min_value = argmin([ (hash_m1+ hash_seq_list[i][1]) % prime for i in range(start, stop)])
+    min_hash_val = hash_m1 + hash_seq_list[start + min_index][1]
     return min_index, min_hash_val
 
-def seq_to_strobes_iter(seq, k_size, w_min, w_max, prime):
-    hash_seq_list = [hash(seq[i:i+k_size]) for i in range(len(seq) - k_size +1)]
-    for p in range(len(seq) - 2*k_size + 1):
-        hash_m1 = hash_seq_list[p]
-        window_p_start = p + k_size + w_min if p + w_max <= len(hash_seq_list) else max( (p + k_size + w_min) -  (p+k_size+w_max - len(hash_seq_list)), p+ k_size )
-        window_p_end = min(p + w_max, len(hash_seq_list))
+
+def seq_to_strobes_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
+    hash_seq_list = [(i, hash(seq[i:i+k_size])) for i in range(len(seq) - k_size +1)]
+    if w > 1:
+        hash_seq_list_thinned = thinner([h for i,h in hash_seq_list], w) # produce a subset of positions, still with samme index as in full sequence
+    else:
+        hash_seq_list_thinned = hash_seq_list
+    
+    # assert len(hash_seq_list[:-k_size]) == len(hash_seq_list) - k_size
+
+    for (p, hash_m1) in hash_seq_list_thinned: #[:-k_size]:
+        if p >= len(hash_seq_list) - k_size:
+            break
+        # hash_m1 = hash_seq_list[p]
+        window_p_start = p + k_size + strobe_w_min_offset if p + strobe_w_max_offset <= len(hash_seq_list) else max( (p + k_size + strobe_w_min_offset) -  (p+k_size+strobe_w_max_offset - len(hash_seq_list)), p+ k_size )
+        window_p_end = min(p + strobe_w_max_offset, len(hash_seq_list))
+        # print(window_p_start, window_p_end)
         min_index, hash_value = randstrobe_order2(hash_seq_list, window_p_start, window_p_end, hash_m1, k_size, prime)
         p2 = window_p_start + min_index
         yield p, p2, hash_value
@@ -56,13 +92,13 @@ def grouper(iterable, n, fillvalue=None):
     return zip_longest(*args, fillvalue=fillvalue)
 
 
-def build_strobemer_index(refs, k_size, w, prime):
+def build_strobemer_index(refs, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
     idx = defaultdict(lambda :array("L"))
     ref_id_to_accession = {}
     cntr = 0
     for r_id, (ref_acc, (seq, _)) in enumerate(help_functions.readfq(refs)):
         ref_id_to_accession[r_id] = ref_acc
-        for p1, p2, hash_val in seq_to_strobes_iter(seq, k_size, 0, w, prime):
+        for p1, p2, hash_val in seq_to_strobes_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
             idx[hash_val].append(r_id)
             idx[hash_val].append(p1)
             idx[hash_val].append(p2)
@@ -190,18 +226,21 @@ def get_matches(strobes, idx, k, dont_merge_matches,  ref_id_to_accession, acc):
 
         
 
-def seq_to_kmer_iter(seq, k_size):
-    hash_seq_list = [hash(seq[i:i+k_size]) for i in range(len(seq) - k_size +1)]
-    for p in range(len(seq) - k_size + 1):
-        yield p, p, hash_seq_list[p]
+def seq_to_kmer_iter(seq, k_size, w):
+    hash_seq_list = [(i, hash(seq[i:i+k_size])) for i in range(len(seq) - k_size +1)]
+    if w > 1:
+        hash_seq_list = thinner([h for i,h in hash_seq_list], w)
+    # assert range(len(seq) - k_size + 1) == range(len(hash_seq_list))
+    for (p, hash_val) in hash_seq_list:
+        yield p, p, hash_val
 
-def build_kmer_index(refs, k_size):
+def build_kmer_index(refs, k_size, w):
     idx = defaultdict(lambda :array("L"))
     ref_id_to_accession = {}
     cntr = 0
     for r_id, (ref_acc, (seq, _)) in enumerate(help_functions.readfq(refs)):
         ref_id_to_accession[r_id] = ref_acc
-        for p1, p2, hash_val in seq_to_kmer_iter(seq, k_size):
+        for p1, p2, hash_val in seq_to_kmer_iter(seq, k_size, w):
             idx[hash_val].append(r_id)
             idx[hash_val].append(p1)
             idx[hash_val].append(p2)
@@ -221,12 +260,13 @@ def print_matches_to_file(query_matches, ref_id_to_accession, outfile):
 
 def main(args):
     PRIME = 997
+    w = args.w
 
     if args.kmer_index:
-        idx, ref_id_to_accession, cntr = build_kmer_index(open(args.references,'r'), args.k)
+        idx, ref_id_to_accession, cntr = build_kmer_index(open(args.references,'r'), args.k, w)
         print("{0} kmers created from references".format(cntr))
     else:
-        idx, ref_id_to_accession, cntr = build_strobemer_index(open(args.references,'r'),args.k, args.strobe_w_size, PRIME)
+        idx, ref_id_to_accession, cntr = build_strobemer_index(open(args.references,'r'),args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)
         print("{0} strobemers created from references".format(cntr))
 
 
@@ -239,9 +279,9 @@ def main(args):
 
     for i, (acc, (seq, _)) in enumerate(help_functions.readfq(open(args.queries, 'r'))):
         if args.kmer_index:
-            strobes = [(p1, p2, h) for p1, p2, h in seq_to_kmer_iter(seq, args.k)] 
+            strobes = [(p1, p2, h) for p1, p2, h in seq_to_kmer_iter(seq, args.k, w)] 
         else:    
-            strobes = [(p1, p2, h) for p1, p2, h in seq_to_strobes_iter(seq, args.k, 0, args.strobe_w_size, PRIME)]
+            strobes = [(p1, p2, h) for p1, p2, h in seq_to_strobes_iter(seq, args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)]
 
         read_matches = get_matches(strobes, idx, args.k, args.dont_merge_matches, ref_id_to_accession, acc)
         query_matches.append( (acc, read_matches) )
@@ -253,9 +293,9 @@ def main(args):
 
         if args.rev_comp:
             if args.kmer_index:
-                strobes_rc = [(p1, p2, h) for p1, p2, h in seq_to_kmer_iter(rc(seq), args.k)] 
+                strobes_rc = [(p1, p2, h) for p1, p2, h in seq_to_kmer_iter(rc(seq), args.k, w)] 
             else:    
-                strobes_rc = [(p1, p2, h) for p1, p2, h in seq_to_strobes_iter(rc(seq), args.k, 0, args.strobe_w_size, PRIME)]
+                strobes_rc = [(p1, p2, h) for p1, p2, h in seq_to_strobes_iter(rc(seq), args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)]
             read_matches_rc = get_matches(strobes_rc, idx, args.k, args.dont_merge_matches,ref_id_to_accession, acc)
             matches_rc.append((acc, read_matches_rc))
             if i % 1000 == 0:
@@ -277,7 +317,10 @@ if __name__ == '__main__':
     parser.add_argument('--queries', type=str,  default=False, help='Path to query fasta or fastq file')
     parser.add_argument('--references', type=str,  default=False, help='Path to reference fasta or fastq file')
     parser.add_argument('--k', type=int, default=15, help='Strobe size')
-    parser.add_argument('--strobe_w_size', type=int, default=50, help='Strobemer window sizes')
+    parser.add_argument('--strobe_w_min_offset', type=int, default=20, help='Strobemer window start offset from first k-mer. If kmer start at pos i, first\
+                                                                            window will start at i+k+strobe_w_min_offset. Default: 20nt donwstream from end of first kmer.')
+    parser.add_argument('--strobe_w_max_offset', type=int, default=70, help='Strobemer window end. If kmer start at pos i, first\
+                                                                            window will stop at i+k+strobe_w_max_offset. Default: 70nt donwstream from end of first kmer.')
     parser.add_argument('--w', type=int, default=1, help='Thinning window size (default = 1, i.e., no thinning)')
     parser.add_argument('--n', type=int, default=2, help='Order on strobes')
     parser.add_argument('--dont_merge_matches', action="store_true",  help='Do not merge matches with this option. It is seriously advised to\
@@ -305,8 +348,8 @@ if __name__ == '__main__':
     if args.outfolder and not os.path.exists(args.outfolder):
         os.makedirs(args.outfolder)
 
-    if args.w != 1:
-        raise NotImplementedError("Currently only w=1 is allowed, i.e., no thinning is implemented")
+    # if args.w != 1:
+    #     raise NotImplementedError("Currently only w=1 is allowed, i.e., no thinning is implemented")
 
     main(args)
 
