@@ -18,6 +18,7 @@ import seaborn as sns
 import pandas as pd
 
 def plot_coverage(input_csv, outfolder):
+    sns.set(font_scale=1.0)
     indata = pd.read_csv(input_csv)
     # ax = sns.violinplot(x="day", y="total_bill", hue="smoker",
     #                 data=tips, palette="muted")
@@ -29,6 +30,7 @@ def plot_coverage(input_csv, outfolder):
     plt.ylabel('Fraction covered',fontsize=16)
     plt.tick_params(rotation=90)
     # ax.set_xticklabels(size = 10)
+    ax.set_xticklabels(ax.get_xmajorticklabels(), fontsize = 8)
     plt.ylim(0, 1)
     plt.tight_layout()
     # plt.legend(loc='lower right')
@@ -40,6 +42,7 @@ def plot_coverage(input_csv, outfolder):
     plt.close()
 
 def plot_nr_hits(input_csv, outfolder):
+    sns.set(font_scale=1.0)
     indata = pd.read_csv(input_csv)
     # ax = sns.barplot(x="ref_id", y="nr_hits", hue="method", data=indata,
     #                       hue_order= ["strobemers", "kmers"])
@@ -49,6 +52,7 @@ def plot_nr_hits(input_csv, outfolder):
     plt.ylabel('Number matches (MAMs)',fontsize=16)
     plt.tick_params(rotation=90)
     # ax.set_xticklabels(size = 10)
+    ax.set_xticklabels(ax.get_xmajorticklabels(), fontsize = 8)
     # plt.ylim(0, 1)
     plt.tight_layout()
     # plt.legend(loc='lower right')
@@ -61,6 +65,7 @@ def plot_nr_hits(input_csv, outfolder):
 
 
 def plot_normalized_match_length(input_csv, outfolder):
+    sns.set(font_scale=1.0)
     indata = pd.read_csv(input_csv)
     # ax = sns.barplot(x="ref_id", y="nr_hits", hue="method", data=indata,
     #                       hue_order= ["strobemers", "kmers"])
@@ -71,6 +76,7 @@ def plot_normalized_match_length(input_csv, outfolder):
     plt.ylabel('Normalized match length',fontsize=16)
     plt.tick_params(rotation=90)
     # ax.set_xticklabels(size = 10)
+    ax.set_xticklabels(ax.get_xmajorticklabels(), fontsize = 8)
     plt.ylim(0, 1)
     plt.tight_layout()
     # plt.legend(loc='lower right')

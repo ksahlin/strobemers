@@ -49,7 +49,7 @@ def thinner(hash_list, w):
         # we have discarded previous windows minimizer, look for new minimizer brute force
         if curr_min_hash == discarded_hash: 
             min_index, curr_min_hash = argmin(window_hashes)
-            thinned_hash_list.append( (min_index, curr_min_hash) )
+            thinned_hash_list.append( (min_index + i - w, curr_min_hash) )
 
         # Previous minimizer still in window, we only need to compare with the recently added kmer 
         elif new_hash < curr_min_hash:
@@ -154,72 +154,172 @@ def get_matches(strobes, idx, k, dont_merge_matches,  ref_id_to_accession, acc):
     if dont_merge_matches:
         matches = []
         for q_p1, q_p2, h in strobes:
+            # print()
+            # print("Q", q_p1)
             if h in idx:
                 for r_id, r_p1, r_p2 in grouper(idx[h], 3):
+                    # print("R", r_id, r_p1)
                     matches.append( (r_id, r_p1, q_p1, k) )
-        return matches
+        return sorted(matches, key = lambda x: (x[0], x[2], x[1]) )
     else:
         cpm = {} # current potential merges
         merged_matches = []
-        for q_p1, q_p2, h in strobes:
+        for q_p1, q_p2, h in strobes: # iterate over query in ascending order
             if h in idx:
-                for r_id, r_p1, r_p2 in grouper(idx[h], 3):
+                # print()
+                # print("----------------", q_p1)
+                # print(cpm)
+                # print("All pos:", idx[h])
+                # prev_r_id, prev_hit_r_p1,prev_hit_r_p2 = 0,0,0 # these only keep track of identical consecutive kmers/strobes
+                for r_id, r_p1, r_p2 in grouper(idx[h], 3): # iterate over references, all in ascending order
+                    # if prev_r_id == r_id and r_p1 == prev_hit_r_p1 + 1 and r_p2 == prev_hit_r_p2+1:
+                    #     prev_r_id = r_id
+                    #     prev_hit_r_p1 = r_p1
+                    #     prev_hit_r_p2 = r_p2
+                    #     update_relevant_pos()
+
+                    #     continue
+
                     # print(r_p1, r_p2)
                     # remove self matches with below if statement, for now commented out to find eventual bugs
                     # if ref_id_to_accession[r_id] == acc:
                     #     continue
                     if r_id in cpm:
-                        # # there is overlap in both reference and query to previous hit and of exact same distance
-                        # if q_p1 < cpm[r_id][1] and r_p1 < cpm[r_id][3] and (q_p1 - cpm[r_id][0]) == (r_p1 - cpm[r_id][2]):
+                        is_added_to_an_interval_query = False
+                        # print(q_p1, list(cpm[r_id].keys()))
+                        for end_q in list(cpm[r_id].keys()):
+                            # print()
+                            # print("r_id",r_id, "end_q", end_q)
+                            if q_p1 <= end_q: # overlap on query
+                                is_added_to_an_interval_query = True  
+                                is_added_to_an_interval_reference = False  
+                                # print(list(cpm[r_id][end_q].keys()))  
+                                for end_r in list(cpm[r_id][end_q].keys()):
+                                    # print("Case1 end_r", end_r)
+                                    # print(q_p1, )
+                                    prev_q_p1, prev_q_p2, prev_ref_p1, prev_ref_p2 = cpm[r_id][end_q][end_r]
+                                    # print(r_id,q_p1, "CRUCIAL:",prev_q_p1, prev_q_p2, prev_ref_p1, prev_ref_p2)
+                                    # print(r_id, q_p1, cpm[r_id][end_q][end_r])
+                                    # check all refs
+                                    new_q_p2 = max(prev_q_p2, q_p2 + k)
+                                    if prev_ref_p1 <= r_p1 <= end_r: # Overlap on reference
+                                        is_added_to_an_interval_reference = True  
+                                        # print("OK", prev_ref_p1, r_p1, end_r)
+                                        # print("lol", prev_ref_p1, r_p1, end_r)
+                                        new_r_p2 = max(end_r, r_p2 + k)
+                                        del cpm[r_id][end_q][end_r]
+                                        if not cpm[r_id][end_q]:
+                                            del cpm[r_id][end_q]
+                                        if new_q_p2 not in cpm[r_id]:
+                                            cpm[r_id][ new_q_p2 ] = {}
+                                            cpm[r_id][ new_q_p2 ][new_r_p2] = ( prev_q_p1, new_q_p2, prev_ref_p1, new_r_p2)
+                                            # print("new:", ( prev_q_p1, new_q_p2, prev_ref_p1, new_r_p2) )
+                                        elif new_r_p2 not in cpm[r_id][ new_q_p2 ]:
+                                            cpm[r_id][ new_q_p2 ][new_r_p2] = ( prev_q_p1, new_q_p2, prev_ref_p1, new_r_p2)
+                                            # print("appended:", ( prev_q_p1, new_q_p2, prev_ref_p1, new_r_p2) )
+                                        else:
+                                            # print("Was already present:", cpm[r_id][ new_q_p2 ][new_r_p2], "attempted new:", ( prev_q_p1, new_q_p2, prev_ref_p1, new_r_p2) )
+                                            ( old_q_p1, new_q_p2, old_ref_p1, new_r_p2) = cpm[r_id][ new_q_p2 ][new_r_p2]
+                                            cpm[r_id][ new_q_p2 ][new_r_p2] = ( min(old_q_p1, prev_q_p1), new_q_p2, min(old_ref_p1, prev_ref_p1), new_r_p2)
 
-                        # there is overlap in both reference and query to previous hit
-                        # `q_1 <= q_2 <= q'_1 +k` and `r_1 <= r_2 <= r'_2+k`
-                        if cpm[r_id][0] < q_p1 and q_p1 < cpm[r_id][1]  and cpm[r_id][2] <= r_p1 <= cpm[r_id][3]:
-                            cpm[r_id][1] = max(cpm[r_id][1], q_p2 + k)
-                            cpm[r_id][3] = max(cpm[r_id][3], r_p2 + k)
-                            # print(cpm[r_id][0], q_p2 + k)
-                            # print(cpm[r_id][2], r_p2 + k)
-                            # if cpm[r_id][1] > q_p2 + k:
-                            #     print("LOOL")
-                            # if cpm[r_id][3] > r_p2 + k:
-                            #     print("LOOL222")                                
-                        else: # no overlap in at least one sequence. Output previous match region and add beginning of new match
-                            prev_q_p1, prev_q_p2, prev_ref_p1, prev_ref_p2 = cpm[r_id]
+                                        # cpm[r_id][ new_q_p2 ][new_r_p2] = [ prev_q_p1, new_q_p2, prev_ref_p1, new_r_p2]
+                                    
+                                if not is_added_to_an_interval_reference:
+                                    if new_q_p2 not in cpm[r_id]:
+                                        cpm[r_id][ new_q_p2 ] = {} 
+                                        cpm[r_id][ new_q_p2 ][r_p2 + k] = (q_p1, new_q_p2, r_p1, r_p2 + k)
+                                        # print("new added1:", (q_p1, new_q_p2, r_p1, r_p2 + k) )
+
+                                    elif r_p2 + k not in cpm[r_id][new_q_p2]:
+                                        cpm[r_id][ new_q_p2 ][r_p2 + k] = (q_p1, new_q_p2, r_p1, r_p2 + k )
+                                        # print("new added2:", (q_p1, new_q_p2, r_p1, r_p2 + k ) )
+                                    else:
+                                        # print("Was already present:", cpm[r_id][ new_q_p2 ][r_p2 + k], "attempted new:", (q_p1, new_q_p2, r_p1, r_p2 + k ) )
+                                        ( old_q_p1, new_q_p2, old_ref_p1, new_r_p2) = cpm[r_id][ new_q_p2 ][r_p2 + k]
+                                        cpm[r_id][ new_q_p2 ][new_r_p2] = ( min(old_q_p1, q_p1), new_q_p2, min(old_ref_p1, r_p1), new_r_p2)
+
+                            else:
+                                # print("Case2 end_r", end_r)
+                            # revove the intervals that we have passed on the query here to not make the cpm dict too large...
+                            # add to merged_matches dict
+                                for r_end in cpm[r_id][end_q]:
+                                    (q_pos_start, q_pos_stop, r_pos, r_pos_stop) = cpm[r_id][end_q][r_end]
+                                    merged_matches.append( (r_id, r_pos, q_pos_start, r_pos_stop - r_pos) )
+                                del cpm[r_id][end_q]
+
+
+                                # # print(end_q, cpm[r_id][end_q][1])
+                                # # assert end_q == cpm[r_id][end_q][1]
+                                # # there is overlap in both reference and query to previous hit
+                                # # `q_1 <= q_2 <= q'_1 +k` and `r_1 <= r_2 <= r'_2+k`
+                                # if cpm[r_id][end_q][0] < q_p1 and q_p1 < cpm[r_id][end_q][1] and cpm[r_id][end_q][2] <= r_p1 <= cpm[r_id][end_q][3]:
+                                #     prev_q_p1, prev_q_p2, prev_ref_p1, prev_ref_p2 = cpm[r_id][end_q]
+                                #     new_q_p2 = max(cpm[r_id][end_q][1], q_p2 + k)
+                                #     new_r_p2 = max(cpm[r_id][end_q][3], r_p2 + k)
+                                #     del cpm[r_id][end_q]
+                                #     cpm[r_id][ new_q_p2 ] = [ prev_q_p1, new_q_p2, prev_ref_p1, new_r_p2]
+                                #     is_added_to_an_interval_query = True
+                                #     # break
+                                # else:
+                                #     prev_q_p1, prev_q_p2, prev_ref_p1, prev_ref_p2 = cpm[r_id][end_q]
+                                #     new_q_p2 = max(cpm[r_id][end_q][1], q_p2 + k)
+                                #     new_r_p2 = max(cpm[r_id][end_q][3], r_p2 + k)
+                                #     del cpm[r_id][end_q]
+                                #     cpm[r_id][ new_q_p2 ] = [ prev_q_p1, new_q_p2, prev_ref_p1, new_r_p2]
+                                #     is_added_to_an_interval_query = True
+
+                                #     # cpm[r_id][end_q][1] = max(cpm[r_id][end_q][1], q_p2 + k)
+                                #     # cpm[r_id][end_q][3] = max(cpm[r_id][end_q][3], r_p2 + k)
+                                #     # print(cpm[r_id][0], q_p2 + k)
+                                #     # print(cpm[r_id][2], r_p2 + k)
+                                #     # if cpm[r_id][1] > q_p2 + k:
+                                #     #     print("LOOL")
+                                #     # if cpm[r_id][3] > r_p2 + k:
+                                #     #     print("LOOL222")                                
+                        if not is_added_to_an_interval_query: # no overlap with prev query sequences
+                            # prev_q_p1, prev_q_p2, prev_ref_p1, prev_ref_p2 = cpm[r_id][end_q]
                             # assert  prev_q_p2 - prev_q_p1 == prev_ref_p2 - prev_ref_p1
                             # print(prev_q_p1,prev_q_p2, prev_q_p2 - prev_q_p1)
                             # print(prev_ref_p1,prev_ref_p2, prev_ref_p2 - prev_ref_p1)
-                            merged_matches.append( (r_id, prev_ref_p1, prev_q_p1, prev_ref_p2 - prev_ref_p1) )
-                            cpm[r_id] = [q_p1, q_p2 + k, r_p1, r_p2 + k ]
+                            # merged_matches.append( (r_id, prev_ref_p1, prev_q_p1, prev_ref_p2 - prev_ref_p1) )
+                            # cpm[r_id] = [q_p1, q_p2 + k, r_p1, r_p2 + k ]
+                            # print("HERE")
+                            cpm[r_id][q_p2 + k] = {}
+                            cpm[r_id][q_p2 + k][r_p2 + k] = (q_p1, q_p2 + k, r_p1, r_p2 + k)
                     else:
-                        cpm[r_id] = [q_p1, q_p2 + k, r_p1, r_p2 + k ]
+                        cpm[r_id] = { q_p2 + k : {r_p2 + k : (q_p1, q_p2 + k, r_p1, r_p2 + k) }}
+                        # cpm[r_id] = [q_p1, q_p2 + k, r_p1, r_p2 + k ]
 
         # close all open merge intervals
-        for r_id, (q_p1, q_pos_stop, r_pos, r_pos_stop) in cpm.items():
-            merged_matches.append( (r_id, r_pos, q_p1, r_pos_stop - r_pos) )
+        for r_id  in cpm.keys():
+            for q_stop in cpm[r_id]:
+                for r_stop in cpm[r_id][q_stop]:
+                    (q_p1, q_pos_stop, r_pos, r_pos_stop) = cpm[r_id][q_stop][r_stop]
+                    merged_matches.append( (r_id, r_pos, q_p1, r_pos_stop - r_pos) )
         # print(merged_matches)
         if not merged_matches:
             return []
         # print(acc, merged_matches)
         # return sorted(merged_matches, key = lambda x: x[2]) 
 
-        # If there are repetitive matches across e.g. a chromosome
-        # the merging will be broken up at the repetitive kmer.
-        # here we post merge such spuriously broken up overlapping matches
+        # # If there are repetitive matches across e.g. a chromosome
+        # # the merging will be broken up at the repetitive kmer.
+        # # here we post merge such spuriously broken up overlapping matches
 
-        # sort first by reference id then by sum of reference and query position to resolve perfect repeats!
-        new_sort = sorted(merged_matches, key = lambda x: (x[0], x[1]+x[2], x[1] ) )
-        merged_matches = sort_merge(new_sort)
-        # print(merged_matches)
+        # # sort first by reference id then by sum of reference and query position to resolve perfect repeats!
+        # new_sort = sorted(merged_matches, key = lambda x: (x[0], x[1]+x[2], x[1] ) )
+        # merged_matches = sort_merge(new_sort)
+        # # print(merged_matches)
 
-        # sort first by reference id then by reference position
-        new_sort = sorted(merged_matches, key = lambda x: (x[0], x[1] ) )
-        merged_matches = sort_merge(new_sort)
-        # print(merged_matches)
+        # # sort first by reference id then by reference position
+        # new_sort = sorted(merged_matches, key = lambda x: (x[0], x[1] ) )
+        # merged_matches = sort_merge(new_sort)
+        # # print(merged_matches)
 
-        # sort first by reference id then by query position
-        new_sort = sorted(merged_matches, key = lambda x: (x[0], x[2] ) )
-        merged_matches = sort_merge(new_sort)
-        # print(merged_matches)
+        # # sort first by reference id then by query position
+        # new_sort = sorted(merged_matches, key = lambda x: (x[0], x[2] ) )
+        # merged_matches = sort_merge(new_sort)
+        # # print(merged_matches)
 
         return sorted(merged_matches, key = lambda x: (x[0], x[2], x[1]) )
 
@@ -265,6 +365,7 @@ def main(args):
     if args.kmer_index:
         idx, ref_id_to_accession, cntr = build_kmer_index(open(args.references,'r'), args.k, w)
         print("{0} kmers created from references".format(cntr))
+        # print(idx)
     else:
         idx, ref_id_to_accession, cntr = build_strobemer_index(open(args.references,'r'),args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)
         print("{0} strobemers created from references".format(cntr))
@@ -282,7 +383,7 @@ def main(args):
             strobes = [(p1, p2, h) for p1, p2, h in seq_to_kmer_iter(seq, args.k, w)] 
         else:    
             strobes = [(p1, p2, h) for p1, p2, h in seq_to_strobes_iter(seq, args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)]
-
+        # print(strobes)
         read_matches = get_matches(strobes, idx, args.k, args.dont_merge_matches, ref_id_to_accession, acc)
         query_matches.append( (acc, read_matches) )
 
