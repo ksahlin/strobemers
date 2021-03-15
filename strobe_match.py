@@ -321,7 +321,7 @@ def get_matches(strobes, idx, k, dont_merge_matches,  ref_id_to_accession, acc):
         # merged_matches = sort_merge(new_sort)
         # # print(merged_matches)
 
-        return sorted(merged_matches, key = lambda x: (x[0], x[2], x[1]) )
+        return sorted(set(merged_matches), key = lambda x: (x[0], x[2], x[1]) )
 
 
         
@@ -353,10 +353,10 @@ def build_kmer_index(refs, k_size, w):
 
 def print_matches_to_file(query_matches, ref_id_to_accession, outfile):
     for q_acc, read_matches in query_matches:
-        outfile.write(">{0}\n".format(q_acc))
+        outfile.write("> {0}\n".format(q_acc))
         for (r_id, ref_p, q_pos, k) in read_matches:
                 ref_acc = ref_id_to_accession[r_id]
-                outfile.write("{0}\t{1}\t{2}\t{3}\n".format(ref_acc, ref_p, q_pos, k))
+                outfile.write("  {0} {1} {2} {3}\n".format(ref_acc, ref_p, q_pos, k))
 
 def main(args):
     PRIME = 997
