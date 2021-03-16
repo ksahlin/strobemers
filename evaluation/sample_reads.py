@@ -62,17 +62,21 @@ def get_subsamples(transcript_cov, coverage):
     return subsamples
 
 
-def get_abundance_aligned_reads(sam_file, sample_size):
+def get_abundance_aligned_full_length_reads(sam_file, sample_size, ref_fasta):
     SAM_file = pysam.AlignmentFile(sam_file, "r", check_sq=False)
     references = SAM_file.references
     
     transcript_cov = defaultdict(set)
     # amgiguous_primary = defaultdict(set)
     for read in SAM_file.fetch(until_eof=True):
-        if read.flag == 0 and read.mapping_quality > 0 and read.reference_start < 10:
+        ref_acc = read.reference_name
+        # print(ref_acc)
+        if ref_acc:
+            ref_len = len(ref_fasta[ref_acc])
+        if read.flag == 0 and read.mapping_quality > 0 and read.reference_start < 10 and (ref_len - read.reference_end) < 10 :
             transcript_id = read.reference_name
             transcript_cov[transcript_id].add(read.query_name)
-        elif read.flag == 16 and read.mapping_quality > 0 and read.reference_start < 10: 
+        elif read.flag == 16 and read.mapping_quality > 0 and read.reference_start < 10 and (ref_len - read.reference_end) < 10: 
             transcript_id = read.reference_name
             transcript_cov[transcript_id + '_rev'].add(read.query_name)
 
@@ -83,7 +87,9 @@ def get_abundance_aligned_reads(sam_file, sample_size):
     return transcript_cov #, amgiguous_primary
 
 def main(args):
-    transcript_cov = get_abundance_aligned_reads(args.alignments, args.sample_size)
+
+    ref_fasta = { acc : seq for acc, (seq,qual) in readfq(open(args.ref_fasta, 'r'))}
+    transcript_cov = get_abundance_aligned_full_length_reads(args.alignments, args.sample_size, ref_fasta)
     min_cov = min([len(v) for v in transcript_cov.values()])
     for k, v in transcript_cov.items():
         print(k, len(v))
@@ -92,7 +98,6 @@ def main(args):
     subsamples = get_subsamples(transcript_cov,  args.sample_size)
 
     fastq = { acc : (seq,qual) for acc, (seq,qual) in readfq(open(args.fastq, 'r'))}
-    ref_fasta = { acc : seq for acc, (seq,qual) in readfq(open(args.ref_fasta, 'r'))}
     is_rc = False
     for tr_id in subsamples:
         if tr_id[-4:] == "_rev":

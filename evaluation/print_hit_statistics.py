@@ -50,10 +50,17 @@ def readfq(fp): # this is a generator function
 def main(args):
     if args.refs:
         ref_lengths = { acc : len(seq) for acc, (seq,qual) in readfq(open(args.refs, 'r'))}
+        ref_ids = { k : i for i, (k,v) in enumerate(ref_lengths.items()) }
         # print(ref_lengths)
         # assert len(ref_lengths) == 1
         # ref_len = ref_lengths[0][1]
         # ref_acc = ref_lengths[0][0]
+
+    ref_coverages = {}
+    ref_nr_hits = {}
+    for acc in ref_lengths:
+        ref_coverages[acc] = 0
+        ref_nr_hits[acc] = 0
 
     if args.setting == "r_vs_r":
         coverage_file = open( os.path.join(args.outfolder, 'coverage_read_vs_read.csv'), "a+")
@@ -67,24 +74,42 @@ def main(args):
     for i, line in enumerate(open(args.infile, 'r')):
         if line[0] == ">":
             if i == 0:
-                nr_hits = 0
-                coverage = 0
+                # nr_hits = 0
+                # coverage = 0
+                ref_coverages = {}
+                ref_nr_hits = {}
+                for acc in ref_lengths:
+                    ref_coverages[acc] = 0
+                    ref_nr_hits[acc] = 0
             else:
-                ref_len = ref_lengths[ref_acc]
-                nr_hits_file.write(",".join([str(x) for x in [args.method,read_acc, ref_acc, ref_len, nr_hits ]]) + "\n")
-                coverage_file.write(",".join([str(x) for x in [args.method,read_acc, ref_acc, ref_len, coverage ]]) + "\n")
-                nr_hits = 0
-                coverage = 0
+                for r_acc in ref_lengths:
+                    if read_acc == r_acc:
+                        continue
+                    ref_len = ref_lengths[r_acc]
+                    coverage = ref_coverages[r_acc]
+                    nr_hits = ref_nr_hits[r_acc]
+                    ref_id = ref_ids[r_acc]
+                    nr_hits_file.write(",".join([str(x) for x in [args.method,read_acc, ref_id, ref_len, nr_hits ]]) + "\n")
+                    coverage_file.write(",".join([str(x) for x in [args.method,read_acc, ref_id, ref_len, coverage ]]) + "\n")
+                    # nr_hits = 0
+                    # coverage = 0
+                    ref_coverages[r_acc] = 0
+                    ref_nr_hits[r_acc] = 0
 
             read_acc = line[1:].strip()
             continue
         else: 
             ref_acc, r_pos, q_pos, match_length = line.split()
-            ref_len = ref_lengths[ref_acc]
-            normalized_hit_length_file.write(",".join([str(x) for x in [args.method,read_acc, ref_acc, ref_len, match_length, int(match_length)/ref_len ]]) + "\n")
-            nr_hits += 1
-            coverage += int(match_length)/ref_len
+            if read_acc == ref_acc: 
+                continue
 
+            ref_len = ref_lengths[ref_acc]
+            ref_id = ref_ids[ref_acc]
+            normalized_hit_length_file.write(",".join([str(x) for x in [args.method,read_acc, ref_id, ref_len, match_length, int(match_length)/ref_len ]]) + "\n")
+            # nr_hits += 1
+            # coverage += int(match_length)/ref_len
+            ref_coverages[ref_acc] += int(match_length)/ref_len
+            ref_nr_hits[ref_acc] += 1
 
 
 

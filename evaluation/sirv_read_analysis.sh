@@ -62,10 +62,13 @@ IFS=$'\n'       # make newlines the only separator
 # # Plot2: Plot total coverage of hits  covarage.csv
 # # Plot3 number of hits per read nr_hits.csv
 
-# python $experiment_dir/plots.py $normalized_hit_length_file $coverage_file $nr_hits_file $plot_file".pdf"
+# python $experiment_dir/plots.py $coverage_file $nr_hits_file $normalized_hit_length_file  $outbase
 
-# ########### READS TO REFERENCES #######################
 # #######################################################
+# #######################################################
+# #######################################################
+
+
 
 
 
@@ -102,11 +105,11 @@ do
   echo "Processing $f_base file..."
 
   # run strobmers
-  python strobe_match.py --queries $f --references $f --outfolder $outbase/results/strobmers_r_vs_r/ --prefix $f_base --k 15 --w 10
+  python strobe_match.py --queries $f --references $f --outfolder $outbase/results/strobmers_r_vs_r/ --prefix $f_base --k 10 --w 1
   python $experiment_dir/print_hit_statistics.py $outbase/results/strobmers_r_vs_r/$f_base.tsv --refs $f --outfolder $outbase/ --method strobemers  --setting r_vs_r
 
   #run kmers
-  python strobe_match.py --queries $f --references $f --outfolder $outbase/results/kmers_r_vs_r/ --prefix $f_base --k 30 --kmer_index --w 10
+  python strobe_match.py --queries $f --references $f --outfolder $outbase/results/kmers_r_vs_r/ --prefix $f_base --k 20 --kmer_index --w 1
   python $experiment_dir/print_hit_statistics.py $outbase/results/kmers_r_vs_r/$f_base.tsv --refs $f --outfolder $outbase/ --method kmers --setting r_vs_r
 done
 
@@ -115,6 +118,9 @@ done
 # Plot2: Plot total coverage of hits  covarage.csv
 # Plot3 number of hits per read nr_hits.csv
 
-python $experiment_dir/plots.py $normalized_hit_length_file $coverage_file $nr_hits_file $plot_file".pdf"
+python $experiment_dir/plots.py $coverage_file $nr_hits_file $normalized_hit_length_file $outbase/reads_vs_reads
 
+#######################################################
+#######################################################
+#######################################################
 
