@@ -50,7 +50,7 @@ def readfq(fp): # this is a generator function
 def main(args):
     if args.refs:
         ref_lengths = { acc : len(seq) for acc, (seq,qual) in readfq(open(args.refs, 'r'))}
-        ref_ids = { k : i for i, (k,v) in enumerate(ref_lengths.items()) }
+        # ref_ids = { k : i for i, (k,v) in enumerate(ref_lengths.items()) }
         # print(ref_lengths)
         # assert len(ref_lengths) == 1
         # ref_len = ref_lengths[0][1]
@@ -88,9 +88,9 @@ def main(args):
                     ref_len = ref_lengths[r_acc]
                     coverage = ref_coverages[r_acc]
                     nr_hits = ref_nr_hits[r_acc]
-                    ref_id = ref_ids[r_acc]
-                    nr_hits_file.write(",".join([str(x) for x in [args.method,read_acc, ref_id, ref_len, nr_hits ]]) + "\n")
-                    coverage_file.write(",".join([str(x) for x in [args.method,read_acc, ref_id, ref_len, coverage ]]) + "\n")
+                    # ref_id = ref_ids[r_acc]
+                    nr_hits_file.write(",".join([str(x) for x in [args.method,read_acc, r_acc, ref_len, nr_hits ]]) + "\n")
+                    coverage_file.write(",".join([str(x) for x in [args.method,read_acc, r_acc, ref_len, coverage ]]) + "\n")
                     # nr_hits = 0
                     # coverage = 0
                     ref_coverages[r_acc] = 0
@@ -104,8 +104,8 @@ def main(args):
                 continue
 
             ref_len = ref_lengths[ref_acc]
-            ref_id = ref_ids[ref_acc]
-            normalized_hit_length_file.write(",".join([str(x) for x in [args.method,read_acc, ref_id, ref_len, match_length, int(match_length)/ref_len ]]) + "\n")
+            # ref_id = ref_ids[ref_acc]
+            normalized_hit_length_file.write(",".join([str(x) for x in [args.method,read_acc, ref_acc, ref_len, match_length, int(match_length)/ref_len ]]) + "\n")
             # nr_hits += 1
             # coverage += int(match_length)/ref_len
             ref_coverages[ref_acc] += int(match_length)/ref_len
