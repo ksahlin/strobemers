@@ -49,14 +49,20 @@ def readfq(fp): # this is a generator function
 
 def main(args):
     if args.refs:
-        ref_lengths = [ (acc, len(seq)) for acc, (seq,qual) in readfq(open(args.refs, 'r'))]
-        assert len(ref_lengths) == 1
-        ref_len = ref_lengths[0][1]
-        ref_acc = ref_lengths[0][0]
+        ref_lengths = { acc : len(seq) for acc, (seq,qual) in readfq(open(args.refs, 'r'))}
+        # print(ref_lengths)
+        # assert len(ref_lengths) == 1
+        # ref_len = ref_lengths[0][1]
+        # ref_acc = ref_lengths[0][0]
 
-    coverage_file = open( os.path.join(args.outfolder, 'coverage.csv'), "a+")
-    normalized_hit_length_file = open( os.path.join(args.outfolder, 'normalized_hit_length.csv'), "a+")
-    nr_hits_file = open( os.path.join(args.outfolder, 'nr_hits.csv'), "a+")
+    if args.setting == "r_vs_r":
+        coverage_file = open( os.path.join(args.outfolder, 'coverage_read_vs_read.csv'), "a+")
+        normalized_hit_length_file = open( os.path.join(args.outfolder, 'normalized_hit_length_read_vs_read.csv'), "a+")
+        nr_hits_file = open( os.path.join(args.outfolder, 'nr_hits_read_vs_read.csv'), "a+")
+    else:
+        coverage_file = open( os.path.join(args.outfolder, 'coverage.csv'), "a+")
+        normalized_hit_length_file = open( os.path.join(args.outfolder, 'normalized_hit_length.csv'), "a+")
+        nr_hits_file = open( os.path.join(args.outfolder, 'nr_hits.csv'), "a+")
 
     for i, line in enumerate(open(args.infile, 'r')):
         if line[0] == ">":
@@ -64,6 +70,7 @@ def main(args):
                 nr_hits = 0
                 coverage = 0
             else:
+                ref_len = ref_lengths[ref_acc]
                 nr_hits_file.write(",".join([str(x) for x in [args.method,read_acc, ref_acc, ref_len, nr_hits ]]) + "\n")
                 coverage_file.write(",".join([str(x) for x in [args.method,read_acc, ref_acc, ref_len, coverage ]]) + "\n")
                 nr_hits = 0
@@ -72,7 +79,8 @@ def main(args):
             read_acc = line[1:].strip()
             continue
         else: 
-            ref, r_pos, q_pos, match_length = line.split()
+            ref_acc, r_pos, q_pos, match_length = line.split()
+            ref_len = ref_lengths[ref_acc]
             normalized_hit_length_file.write(",".join([str(x) for x in [args.method,read_acc, ref_acc, ref_len, match_length, int(match_length)/ref_len ]]) + "\n")
             nr_hits += 1
             coverage += int(match_length)/ref_len
@@ -88,6 +96,7 @@ if __name__ == '__main__':
     parser.add_argument('--refs', type=str, help='Used for lengths ')
     parser.add_argument('--method', type=str, help='Method ')
     parser.add_argument('--outfolder', type=str, help='outfolder ')
+    parser.add_argument('--setting', type=str, help=' "r_vs_r" for read vs read or leave unspecified ')
 
     args = parser.parse_args()
 

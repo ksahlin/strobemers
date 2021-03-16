@@ -142,7 +142,7 @@ def sort_merge(sorted_list):
     sort_merged_list.append(curr_merge)
     return sort_merged_list
 
-def get_matches(strobes, idx, k, dont_merge_matches,  ref_id_to_accession, acc):
+def get_matches(strobes, idx, k, dont_merge_matches,  ref_id_to_accession, acc, selfalign):
     """
         The merging of matches is a simple linear merging. If there are repetitive matches across e.g. a chromosome
         the merging will be broken up at the repetitive kmer. To solve the merging exactly, we would need
@@ -182,8 +182,8 @@ def get_matches(strobes, idx, k, dont_merge_matches,  ref_id_to_accession, acc):
 
                     # print(r_p1, r_p2)
                     # remove self matches with below if statement, for now commented out to find eventual bugs
-                    # if ref_id_to_accession[r_id] == acc:
-                    #     continue
+                    if not selfalign and ref_id_to_accession[r_id] == acc:
+                        continue
                     if r_id in cpm:
                         is_added_to_an_interval_query = False
                         # print(q_p1, list(cpm[r_id].keys()))
@@ -351,9 +351,12 @@ def build_kmer_index(refs, k_size, w):
     return idx, ref_id_to_accession, cntr
 
 
-def print_matches_to_file(query_matches, ref_id_to_accession, outfile):
+def print_matches_to_file(query_matches, ref_id_to_accession, outfile, reverse):
     for q_acc, read_matches in query_matches:
-        outfile.write("> {0}\n".format(q_acc))
+        if reverse:
+            outfile.write("> {0} Reverse\n".format(q_acc))
+        else:
+            outfile.write("> {0}\n".format(q_acc))
         for (r_id, ref_p, q_pos, k) in read_matches:
                 ref_acc = ref_id_to_accession[r_id]
                 outfile.write("  {0} {1} {2} {3}\n".format(ref_acc, ref_p, q_pos, k))
@@ -375,7 +378,7 @@ def main(args):
     query_matches = []
 
     if args.rev_comp:
-        outfile_rc = open(os.path.join(args.outfolder, args.prefix + "_revcomp.tsv"), 'w')
+        # outfile_rc = open(os.path.join(args.outfolder, args.prefix + "_revcomp.tsv"), 'w')
         matches_rc = []
 
     for i, (acc, (seq, _)) in enumerate(help_functions.readfq(open(args.queries, 'r'))):
@@ -384,12 +387,12 @@ def main(args):
         else:    
             strobes = [(p1, p2, h) for p1, p2, h in seq_to_strobes_iter(seq, args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)]
         # print(strobes)
-        read_matches = get_matches(strobes, idx, args.k, args.dont_merge_matches, ref_id_to_accession, acc)
+        read_matches = get_matches(strobes, idx, args.k, args.dont_merge_matches, ref_id_to_accession, acc, args.selfalign)
         query_matches.append( (acc, read_matches) )
 
         if i % 1000 == 0:
             print("Finished processing {0} query sequences.".format(i))
-            print_matches_to_file(query_matches, ref_id_to_accession, outfile)
+            print_matches_to_file(query_matches, ref_id_to_accession, outfile, False)
             query_matches = []
 
         if args.rev_comp:
@@ -397,20 +400,19 @@ def main(args):
                 strobes_rc = [(p1, p2, h) for p1, p2, h in seq_to_kmer_iter(rc(seq), args.k, w)] 
             else:    
                 strobes_rc = [(p1, p2, h) for p1, p2, h in seq_to_strobes_iter(rc(seq), args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)]
-            read_matches_rc = get_matches(strobes_rc, idx, args.k, args.dont_merge_matches,ref_id_to_accession, acc)
+            read_matches_rc = get_matches(strobes_rc, idx, args.k, args.dont_merge_matches,ref_id_to_accession, acc, args.selfalign)
             matches_rc.append((acc, read_matches_rc))
             if i % 1000 == 0:
-                print_matches_to_file(matches_rc, ref_id_to_accession, outfile_rc)
+                print_matches_to_file(matches_rc, ref_id_to_accession, outfile, True)
                 matches_rc = []
 
         # sys.exit()
-    print_matches_to_file(query_matches, ref_id_to_accession, outfile)
-    outfile.close()
+    print_matches_to_file(query_matches, ref_id_to_accession, outfile, False)
     
     if args.rev_comp:
-        print_matches_to_file(matches_rc, ref_id_to_accession, outfile_rc)
-        outfile_rc.close()
-
+        print_matches_to_file(matches_rc, ref_id_to_accession, outfile, True)
+        # outfile_rc.close()
+    outfile.close()
 
 
 if __name__ == '__main__':
@@ -433,9 +435,11 @@ if __name__ == '__main__':
                                                                      disk space frendilier, although these files can get large too.')
     parser.add_argument('--outfolder', type=str,  default=None, help='Folder to output TSV match file.')
     parser.add_argument('--prefix', type=str,  default="matches", help='Filename prefix (default "matches").')
-    parser.add_argument('--compress', type=str,  default=None, help='Compress output')
-    parser.add_argument('--rev_comp', action="store_true",  help='Match reverse complement of reads (output to separate file)')
     parser.add_argument('--kmer_index', action="store_true",  help='Kmers can be used instead of strobemers, used for performance comparison')
+    parser.add_argument('--selfalign', action="store_true",  help='Aligns sequences to itself (mainly used for bugfixing). Default is not align\
+                                                                    sequneces to themselves if the same file is given as references and queries.')
+    # parser.add_argument('--compress', type=str,  default=None, help='Compress output')
+    parser.add_argument('--rev_comp', action="store_true",  help='Match reverse complement of reads (output to separate file)')
     # parser.add_argument('--pickled_subreads', type=str, help='Path to an already parsed subreads file in pickle format')
     # parser.set_defaults(which='main')
     args = parser.parse_args()

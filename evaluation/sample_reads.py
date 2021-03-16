@@ -45,6 +45,11 @@ def readfq(fp): # this is a generator function
                 break
 
 
+def reverse_complement(string):
+    rev_nuc = {'A':'T', 'C':'G', 'G':'C', 'T':'A', 'a':'t', 'c':'g', 'g':'c', 't':'a', 'N':'N', 'X':'X', 'n':'n', 'Y':'R', 'R':'Y', 'K':'M', 'M':'K', 'S':'S', 'W':'W', 'B':'V', 'V':'B', 'H':'D', 'D':'H', 'y':'r', 'r':'y', 'k':'m', 'm':'k', 's':'s', 'w':'w', 'b':'v', 'v':'b', 'h':'d', 'd':'h'}
+    rev_comp = ''.join([rev_nuc[nucl] for nucl in reversed(string)])
+    return(rev_comp)
+
 def get_subsamples(transcript_cov, coverage):
     subsamples = {}
 
@@ -64,9 +69,12 @@ def get_abundance_aligned_reads(sam_file, sample_size):
     transcript_cov = defaultdict(set)
     # amgiguous_primary = defaultdict(set)
     for read in SAM_file.fetch(until_eof=True):
-        if (read.flag == 0 or read.flag == 16) and read.mapping_quality > 0:
+        if read.flag == 0 and read.mapping_quality > 0 and read.reference_start < 10:
             transcript_id = read.reference_name
             transcript_cov[transcript_id].add(read.query_name)
+        elif read.flag == 16 and read.mapping_quality > 0 and read.reference_start < 10: 
+            transcript_id = read.reference_name
+            transcript_cov[transcript_id + '_rev'].add(read.query_name)
 
         # elif (read.flag == 0 or read.flag == 16) and read.mapping_quality < 10:
         #     transcript_id = read.reference_name
@@ -77,17 +85,32 @@ def get_abundance_aligned_reads(sam_file, sample_size):
 def main(args):
     transcript_cov = get_abundance_aligned_reads(args.alignments, args.sample_size)
     min_cov = min([len(v) for v in transcript_cov.values()])
+    for k, v in transcript_cov.items():
+        print(k, len(v))
     print("Minimum SIRV coverage is:", min_cov)
 
     subsamples = get_subsamples(transcript_cov,  args.sample_size)
 
     fastq = { acc : (seq,qual) for acc, (seq,qual) in readfq(open(args.fastq, 'r'))}
     ref_fasta = { acc : seq for acc, (seq,qual) in readfq(open(args.ref_fasta, 'r'))}
+    is_rc = False
     for tr_id in subsamples:
-        ref_outfile = open(os.path.join(args.outfolder, str(tr_id) + '_ref.fastq'), "w")
-        ref_outfile.write(">{0}\n{1}\n".format(tr_id, ref_fasta[tr_id]))
+        if tr_id[-4:] == "_rev":
+            continue
+            # is_rc = True
+            # ref_seq = reverse_complement(ref_fasta[tr_id])
+        else:
+            is_rc = False
+            ref_seq = ref_fasta[tr_id]
 
-        reads_outfile = open(os.path.join(args.outfolder, str(tr_id) + '.fastq'), "w")
+        # if is_rc:
+        #     ref_acc = tr_id[-4:]
+        # else:
+        ref_acc = tr_id
+        ref_outfile = open(os.path.join(args.outfolder, str(ref_acc) + '_ref.fastq'), "w")
+        ref_outfile.write(">{0}\n{1}\n".format(ref_acc, ref_seq))
+
+        reads_outfile = open(os.path.join(args.outfolder, str(ref_acc) + '.fastq'), "w")
         sampled_reads = subsamples[tr_id]
         for acc in sampled_reads:
             seq, qual = fastq[acc]

@@ -34,6 +34,7 @@ echo -n  "method","read_id","ref_id","ref_length","coverage"$'\n' > $coverage_fi
 original_reads_mapped=/Users/kxs624/Documents/data/ont/sirv/cDNA/lc19_pcs109_subsample_full_length_pychopper2_phmmer.sam  #premapped 
 
 # Subsample nr_reads reads from each transcript
+echo python $experiment_dir/sample_reads.py $original_reads $inbase/data/sirv_transcripts.fasta $original_reads_mapped $outbase/fastq $nr_reads
 # python $experiment_dir/sample_reads.py $original_reads $inbase/data/sirv_transcripts.fasta $original_reads_mapped $outbase/fastq $nr_reads
 ###############
 
@@ -47,11 +48,11 @@ do
   echo "Processing $f_base file..."
 
   # run strobmers
-  python strobe_match.py --queries $f --references $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/results/strobmers/ --prefix $f_base --k 15 --w 1
+  python strobe_match.py --queries $f --references $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/results/strobmers/ --prefix $f_base --k 15 --w 10
   python $experiment_dir/print_hit_statistics.py $outbase/results/strobmers/$f_base.tsv --refs $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/ --method strobemers  
 
   #run kmers
-  python strobe_match.py --queries $f --references $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/results/kmers/ --prefix $f_base --k 30 --kmer_index --w 1
+  python strobe_match.py --queries $f --references $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/results/kmers/ --prefix $f_base --k 30 --kmer_index --w 10
   python $experiment_dir/print_hit_statistics.py $outbase/results/kmers/$f_base.tsv --refs $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/ --method kmers 
 done
 
