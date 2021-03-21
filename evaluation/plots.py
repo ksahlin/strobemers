@@ -22,10 +22,10 @@ def plot_coverage(input_csv, outfolder):
     indata = pd.read_csv(input_csv,sep='\t')
     # ax = sns.violinplot(x="day", y="total_bill", hue="smoker",
     #                 data=tips, palette="muted")
-    ax = sns.lineplot(x="ref_id", y="coverage", hue="method", ci = "sd", hue_order= ["strobemers-(3,10,20,70)", "strobemers-(2,15,20,70)", "kmers"], 
+    ax = sns.lineplot(x="ref_id", y="coverage", hue="method", ci = "sd", hue_order= ["randstrobes-(3,10,20,70)", "randstrobes-(2,15,20,70)", "minstrobes-(3,10,20,70)", "minstrobes-(2,15,20,70)", "kmers"], 
                          data=indata, markers=True)
     # ax = sns.violinplot(x="ref_id", y="coverage", hue="method",
-    #                       hue_order= ["strobemers", "kmers"], data=indata)
+    #                       hue_order= ["randstrobes", "kmers"], data=indata)
     plt.xlabel('SIRV', fontsize=14)
     plt.ylabel('Fraction covered',fontsize=16)
     plt.tick_params(rotation=90)
@@ -45,8 +45,8 @@ def plot_nr_hits(input_csv, outfolder):
     sns.set(font_scale=1.0)
     indata = pd.read_csv(input_csv,sep='\t')
     # ax = sns.barplot(x="ref_id", y="nr_hits", hue="method", data=indata,
-    #                       hue_order= ["strobemers", "kmers"])
-    ax = sns.lineplot(x="ref_id", y="nr_hits", hue="method", ci = "sd", hue_order= ["strobemers-(3,10,20,70)", "strobemers-(2,15,20,70)", "kmers"], 
+    #                       hue_order= ["randstrobes", "kmers"])
+    ax = sns.lineplot(x="ref_id", y="nr_hits", hue="method", ci = "sd", hue_order= ["randstrobes-(3,10,20,70)", "randstrobes-(2,15,20,70)", "minstrobes-(3,10,20,70)", "minstrobes-(2,15,20,70)", "kmers"], 
                           data=indata, markers=True)
     plt.xlabel('SIRV', fontsize=14)
     plt.ylabel('Number matches (MAMs)',fontsize=16)
@@ -68,9 +68,9 @@ def plot_normalized_match_length(input_csv, outfolder):
     sns.set(font_scale=1.0)
     indata = pd.read_csv(input_csv,sep='\t')
     # ax = sns.barplot(x="ref_id", y="nr_hits", hue="method", data=indata,
-    #                       hue_order= ["strobemers", "kmers"])
+    #                       hue_order= ["randstrobes", "kmers"])
     plt.tick_params(axis='x', which='minor', labelsize=7)
-    ax = sns.lineplot(x="ref_id", y="normalized_match_length", hue="method", ci = "sd", hue_order= ["strobemers-(3,10,20,70)", "strobemers-(2,15,20,70)", "kmers"], 
+    ax = sns.lineplot(x="ref_id", y="normalized_match_length", hue="method", ci = "sd", hue_order= ["randstrobes-(3,10,20,70)", "randstrobes-(2,15,20,70)", "minstrobes-(3,10,20,70)", "minstrobes-(2,15,20,70)", "kmers"], 
                         data=indata, markers=True)
     plt.xlabel('SIRV', fontsize=14)
     plt.ylabel('Normalized match length',fontsize=16)
@@ -100,7 +100,7 @@ def main(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Evalueate strobemers.")
+    parser = argparse.ArgumentParser(description="Evalueate randstrobes.")
     parser.add_argument('coverage', type=str, help='Path to coverage stats file')
     parser.add_argument('nr_hits', type=str, help='Path to nr_hits file')
     parser.add_argument('normalized_match_length', type=str, help='Path to normalized_match_length file')
