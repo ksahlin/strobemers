@@ -22,7 +22,7 @@ def plot_coverage(input_csv, outfolder):
     indata = pd.read_csv(input_csv,sep='\t')
     # ax = sns.violinplot(x="day", y="total_bill", hue="smoker",
     #                 data=tips, palette="muted")
-    ax = sns.lineplot(x="ref_id", y="coverage", hue="method", ci = "sd", hue_order= ["randstrobes-(3,10,20,70)", "randstrobes-(2,15,20,70)", "minstrobes-(3,10,20,70)", "minstrobes-(2,15,20,70)", "kmers"], 
+    ax = sns.lineplot(x="ref_id", y="coverage", hue="method", ci = "sd", hue_order= ["randstrobes-(3,10,20,70)", "randstrobes-(2,15,20,70)", "kmers", "minstrobes-(3,10,20,70)", "minstrobes-(2,15,20,70)"], 
                          data=indata, markers=True)
     # ax = sns.violinplot(x="ref_id", y="coverage", hue="method",
     #                       hue_order= ["randstrobes", "kmers"], data=indata)
