@@ -4,6 +4,7 @@ from __future__ import print_function
 import os,sys
 import argparse
 
+import copy
 # import errno
 # from time import time
 # import re
@@ -70,7 +71,7 @@ def randstrobe_order3(hash_seq_list, start1, stop1, start2, stop2, hash_m1, k_si
     min_hash_val = hash_m1 - hash_seq_list[start1 + min_index1][1]
 
     min_index2, min_value = argmin([ (min_hash_val - hash_seq_list[i][1]) % prime for i in range(start2, stop2)])
-    min_hash_val = min_hash_val + hash_seq_list[start2 + min_index2][1]
+    min_hash_val = min_hash_val + 2*hash_seq_list[start2 + min_index2][1]
 
     return min_index1, min_index2, min_hash_val
 
@@ -186,8 +187,10 @@ def seq_to_minstrobes2_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offse
         if p >= len(hash_seq_list) - k_size:
             break
         # print(p,len(hash_seq_list) - k_size, len(hash_seq_list), len(seq), len(strobes), strobes)
-        while strobes[0][0] < p + k_size:
-            l = strobes.popleft()
+        if p + k_size + strobe_w_min_offset < len(seq):
+            while strobes[0][0] < min(p + k_size + strobe_w_min_offset, len(hash_seq_list)-1):
+                l = strobes.popleft()
+
         # print(p, len(hash_seq_list) - k_size, len(hash_seq_list), len(seq), len(strobes), strobes[0])
         p2, hash_val = strobes[0]
         hash_value = hash_m1 - hash_val
@@ -204,6 +207,55 @@ def build_minstrobe2_index(refs, k_size, strobe_w_min_offset, strobe_w_max_offse
             idx[hash_val].append(r_id)
             idx[hash_val].append(p1)
             idx[hash_val].append(p2)
+            cntr += 1
+            if cntr % 1000000 == 0:
+                print("{0} minstrobes created from references".format(cntr))
+        # print(hash_val, r_id, pos)
+    return idx, ref_id_to_accession, cntr
+
+
+def seq_to_minstrobes3_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
+    hash_seq_list = [(i, hash(seq[i:i+k_size])) for i in range(len(seq) - k_size +1)]
+    strobes = deque(thinner([h for i,h in hash_seq_list], strobe_w_max_offset - strobe_w_min_offset)) # produce a subset of positions, still with samme index as in full sequence
+    strobes2 = copy.deepcopy(strobes)
+    if w > 1:
+        hash_seq_list_thinned = thinner([h for i,h in hash_seq_list], w) # produce a subset of positions, still with same index as in full sequence
+    else:
+        hash_seq_list_thinned = hash_seq_list
+    
+    # assert len(hash_seq_list[:-k_size]) == len(hash_seq_list) - k_size
+
+    for (p, hash_m1) in hash_seq_list_thinned: #[:-k_size]:
+        if p >= len(hash_seq_list) - 2*k_size:
+            break
+        # print(p,len(hash_seq_list) - k_size, len(hash_seq_list), len(seq), len(strobes), strobes)
+
+        if p + strobe_w_max_offset + strobe_w_min_offset < len(seq):
+            while strobes2[0][0] <  min(p + strobe_w_min_offset + strobe_w_max_offset, len(hash_seq_list)-1):
+                l = strobes2.popleft()
+
+        if p + k_size + strobe_w_min_offset < len(seq):
+            while strobes[0][0] <  min(p + k_size + strobe_w_min_offset, len(hash_seq_list)-1):
+                l = strobes.popleft()
+        # print(p, len(hash_seq_list) - k_size, len(hash_seq_list), len(seq), len(strobes), strobes[0], len(strobes2))
+
+        p2, hash_val2 = strobes[0]
+        p3, hash_val3 = strobes2[0]
+        hash_value = hash_m1 - hash_val2 + 2*hash_val3
+        yield p, p2, p3, hash_value
+
+
+def build_minstrobe3_index(refs, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
+    idx = defaultdict(lambda :array("L"))
+    ref_id_to_accession = {}
+    cntr = 0
+    for r_id, (ref_acc, (seq, _)) in enumerate(help_functions.readfq(refs)):
+        ref_id_to_accession[r_id] = ref_acc
+        for p1, p2, p3, hash_val in seq_to_minstrobes3_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
+            idx[hash_val].append(r_id)
+            idx[hash_val].append(p1)
+            idx[hash_val].append(p2)
+            idx[hash_val].append(p3)
             cntr += 1
             if cntr % 1000000 == 0:
                 print("{0} minstrobes created from references".format(cntr))
