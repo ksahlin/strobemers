@@ -90,8 +90,8 @@ def main(args):
                     coverage = ref_coverages[r_acc]
                     nr_hits = ref_nr_hits[r_acc]
                     # ref_id = ref_ids[r_acc]
-                    nr_hits_file.write(",".join([str(x) for x in [args.method,read_acc, exp_identifier, ref_len, nr_hits ]]) + "\n")
-                    coverage_file.write(",".join([str(x) for x in [args.method,read_acc, exp_identifier, ref_len, coverage ]]) + "\n")
+                    nr_hits_file.write("\t".join([str(x) for x in [args.method,read_acc, exp_identifier, ref_len, nr_hits ]]) + "\n")
+                    coverage_file.write("\t".join([str(x) for x in [args.method,read_acc, exp_identifier, ref_len, coverage ]]) + "\n")
                     # nr_hits = 0
                     # coverage = 0
                     ref_coverages[r_acc] = 0
@@ -106,7 +106,7 @@ def main(args):
 
             ref_len = ref_lengths[ref_acc]
             # ref_id = ref_ids[ref_acc]
-            normalized_hit_length_file.write(",".join([str(x) for x in [args.method,read_acc, exp_identifier, ref_len, match_length, int(match_length)/ref_len ]]) + "\n")
+            normalized_hit_length_file.write("\t".join([str(x) for x in [args.method,read_acc, exp_identifier, ref_len, match_length, int(match_length)/ref_len ]]) + "\n")
             # nr_hits += 1
             # coverage += int(match_length)/ref_len
             ref_coverages[ref_acc] += int(match_length)/ref_len

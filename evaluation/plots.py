@@ -19,11 +19,11 @@ import pandas as pd
 
 def plot_coverage(input_csv, outfolder):
     sns.set(font_scale=1.0)
-    indata = pd.read_csv(input_csv)
+    indata = pd.read_csv(input_csv,sep='\t')
     # ax = sns.violinplot(x="day", y="total_bill", hue="smoker",
     #                 data=tips, palette="muted")
-    ax = sns.lineplot(x="ref_id", y="coverage", hue="method", ci = "sd",
-                          hue_order= ["strobemers", "kmers"], data=indata, markers=True)
+    ax = sns.lineplot(x="ref_id", y="coverage", hue="method", ci = "sd", hue_order= ["strobemers-(3,10,20,70)", "strobemers-(2,15,20,70)", "kmers"], 
+                         data=indata, markers=True)
     # ax = sns.violinplot(x="ref_id", y="coverage", hue="method",
     #                       hue_order= ["strobemers", "kmers"], data=indata)
     plt.xlabel('SIRV', fontsize=14)
@@ -43,11 +43,11 @@ def plot_coverage(input_csv, outfolder):
 
 def plot_nr_hits(input_csv, outfolder):
     sns.set(font_scale=1.0)
-    indata = pd.read_csv(input_csv)
+    indata = pd.read_csv(input_csv,sep='\t')
     # ax = sns.barplot(x="ref_id", y="nr_hits", hue="method", data=indata,
     #                       hue_order= ["strobemers", "kmers"])
-    ax = sns.lineplot(x="ref_id", y="nr_hits", hue="method", ci = "sd",
-                          hue_order= ["strobemers", "kmers"], data=indata, markers=True)
+    ax = sns.lineplot(x="ref_id", y="nr_hits", hue="method", ci = "sd", hue_order= ["strobemers-(3,10,20,70)", "strobemers-(2,15,20,70)", "kmers"], 
+                          data=indata, markers=True)
     plt.xlabel('SIRV', fontsize=14)
     plt.ylabel('Number matches (MAMs)',fontsize=16)
     plt.tick_params(rotation=90)
@@ -66,12 +66,12 @@ def plot_nr_hits(input_csv, outfolder):
 
 def plot_normalized_match_length(input_csv, outfolder):
     sns.set(font_scale=1.0)
-    indata = pd.read_csv(input_csv)
+    indata = pd.read_csv(input_csv,sep='\t')
     # ax = sns.barplot(x="ref_id", y="nr_hits", hue="method", data=indata,
     #                       hue_order= ["strobemers", "kmers"])
     plt.tick_params(axis='x', which='minor', labelsize=7)
-    ax = sns.lineplot(x="ref_id", y="normalized_match_length", hue="method", ci = "sd",
-                          hue_order= ["strobemers", "kmers"], data=indata, markers=True)
+    ax = sns.lineplot(x="ref_id", y="normalized_match_length", hue="method", ci = "sd", hue_order= ["strobemers-(3,10,20,70)", "strobemers-(2,15,20,70)", "kmers"], 
+                        data=indata, markers=True)
     plt.xlabel('SIRV', fontsize=14)
     plt.ylabel('Normalized match length',fontsize=16)
     plt.tick_params(rotation=90)

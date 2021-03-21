@@ -21,6 +21,8 @@ from modules import help_functions
 
 import operator
 
+MAX = sys.maxsize
+
 def argmin(values):
     min_index, min_value = min(enumerate(values), key=operator.itemgetter(1))
     return min_index, min_value
@@ -40,8 +42,11 @@ def thinner(hash_list, w):
     min_index, curr_min_hash = argmin(window_hashes)
     thinned_hash_list = [ (min_index, curr_min_hash) ]
 
-    for i in range(w, len(hash_list)):
-        new_hash = hash_list[i]
+    for i in range(w, len(hash_list) + w-1):
+        if i >= len(hash_list):
+            new_hash = MAX
+        else:
+            new_hash = hash_list[i]
         # updating window
         discarded_hash = window_hashes.popleft()
         window_hashes.append(new_hash)
@@ -49,12 +54,13 @@ def thinner(hash_list, w):
         # we have discarded previous windows minimizer, look for new minimizer brute force
         if curr_min_hash == discarded_hash: 
             min_index, curr_min_hash = argmin(window_hashes)
-            thinned_hash_list.append( (min_index + i - w, curr_min_hash) )
+            thinned_hash_list.append( (min_index + i + 1 - w, curr_min_hash) )
 
         # Previous minimizer still in window, we only need to compare with the recently added kmer 
         elif new_hash < curr_min_hash:
             curr_min_hash = new_hash
             thinned_hash_list.append( (i, curr_min_hash) )
+
 
     return thinned_hash_list
 
@@ -68,7 +74,7 @@ def randstrobe_order3(hash_seq_list, start1, stop1, start2, stop2, hash_m1, k_si
 
     return min_index1, min_index2, min_hash_val
 
-def seq_to_strobes_iter3(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
+def seq_to_randstrobes3_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
     hash_seq_list = [(i, hash(seq[i:i+k_size])) for i in range(len(seq) - k_size +1)]
     if w > 1:
         hash_seq_list_thinned = thinner([h for i,h in hash_seq_list], w) # produce a subset of positions, still with samme index as in full sequence
@@ -101,7 +107,7 @@ def randstrobe_order2(hash_seq_list, start, stop, hash_m1, k_size, prime):
     return min_index, min_hash_val
 
 
-def seq_to_strobes_iter2(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
+def seq_to_randstrobes2_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
     hash_seq_list = [(i, hash(seq[i:i+k_size])) for i in range(len(seq) - k_size +1)]
     if w > 1:
         hash_seq_list_thinned = thinner([h for i,h in hash_seq_list], w) # produce a subset of positions, still with samme index as in full sequence
@@ -129,40 +135,80 @@ def grouper(iterable, n, fillvalue=None):
     return zip_longest(*args, fillvalue=fillvalue)
 
 
-def build_strobemer_index_n3(refs, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
+def build_randstrobe3_index(refs, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
     idx = defaultdict(lambda :array("L"))
     ref_id_to_accession = {}
     cntr = 0
     for r_id, (ref_acc, (seq, _)) in enumerate(help_functions.readfq(refs)):
         ref_id_to_accession[r_id] = ref_acc
-        for p1, p2, p3, hash_val in seq_to_strobes_iter3(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
+        for p1, p2, p3, hash_val in seq_to_randstrobes3_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
             idx[hash_val].append(r_id)
             idx[hash_val].append(p1)
             idx[hash_val].append(p2)
             idx[hash_val].append(p3)
             cntr += 1
             if cntr % 1000000 == 0:
-                print("{0} strobemers created from references".format(cntr))
+                print("{0} randstrobes created from references".format(cntr))
         # print(hash_val, r_id, pos)
     return idx, ref_id_to_accession, cntr
 
 
-def build_strobemer_index(refs, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
+def build_randstrobe2_index(refs, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
     idx = defaultdict(lambda :array("L"))
     ref_id_to_accession = {}
     cntr = 0
     for r_id, (ref_acc, (seq, _)) in enumerate(help_functions.readfq(refs)):
         ref_id_to_accession[r_id] = ref_acc
-        for p1, p2, hash_val in seq_to_strobes_iter2(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
+        for p1, p2, hash_val in seq_to_randstrobes2_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
             idx[hash_val].append(r_id)
             idx[hash_val].append(p1)
             idx[hash_val].append(p2)
             cntr += 1
             if cntr % 1000000 == 0:
-                print("{0} strobemers created from references".format(cntr))
+                print("{0} randstrobes created from references".format(cntr))
         # print(hash_val, r_id, pos)
     return idx, ref_id_to_accession, cntr
 
+
+
+def seq_to_minstrobes2_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
+    hash_seq_list = [(i, hash(seq[i:i+k_size])) for i in range(len(seq) - k_size +1)]
+    strobes = deque(thinner([h for i,h in hash_seq_list], strobe_w_max_offset - strobe_w_min_offset)) # produce a subset of positions, still with samme index as in full sequence
+
+    if w > 1:
+        hash_seq_list_thinned = thinner([h for i,h in hash_seq_list], w) # produce a subset of positions, still with same index as in full sequence
+    else:
+        hash_seq_list_thinned = hash_seq_list
+    
+    # assert len(hash_seq_list[:-k_size]) == len(hash_seq_list) - k_size
+
+    for (p, hash_m1) in hash_seq_list_thinned: #[:-k_size]:
+        if p >= len(hash_seq_list) - k_size:
+            break
+        # print(p,len(hash_seq_list) - k_size, len(hash_seq_list), len(seq), len(strobes), strobes)
+        while strobes[0][0] < p + k_size:
+            l = strobes.popleft()
+        # print(p, len(hash_seq_list) - k_size, len(hash_seq_list), len(seq), len(strobes), strobes[0])
+        p2, hash_val = strobes[0]
+        hash_value = hash_m1 - hash_val
+        yield p, p2, hash_value
+
+
+def build_minstrobe2_index(refs, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
+    idx = defaultdict(lambda :array("L"))
+    ref_id_to_accession = {}
+    cntr = 0
+    for r_id, (ref_acc, (seq, _)) in enumerate(help_functions.readfq(refs)):
+        ref_id_to_accession[r_id] = ref_acc
+        for p1, p2, hash_val in seq_to_minstrobes2_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
+            idx[hash_val].append(r_id)
+            idx[hash_val].append(p1)
+            idx[hash_val].append(p2)
+            cntr += 1
+            if cntr % 1000000 == 0:
+                print("{0} minstrobes created from references".format(cntr))
+        # print(hash_val, r_id, pos)
+    return idx, ref_id_to_accession, cntr
 
 # def sort_merge(sorted_list):
 #     sort_merged_list = []
@@ -539,13 +585,20 @@ def main(args):
         idx, ref_id_to_accession, cntr = build_kmer_index(open(args.references,'r'), args.k, w)
         print("{0} kmers created from references".format(cntr))
         # print(idx)
+    elif args.minstrobe_index:
+        if args.n == 2:
+            idx, ref_id_to_accession, cntr = build_minstrobe2_index(open(args.references,'r'),args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)
+            print("{0} minstrobes created from references".format(cntr))
+        elif args.n == 3:
+            idx, ref_id_to_accession, cntr = build_minstrobe3_index(open(args.references,'r'),args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)
+            print("{0} minstrobes created from references".format(cntr))            
     else:
         if args.n == 2:
-            idx, ref_id_to_accession, cntr = build_strobemer_index(open(args.references,'r'),args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)
-            print("{0} strobemers created from references".format(cntr))
+            idx, ref_id_to_accession, cntr = build_randstrobe2_index(open(args.references,'r'),args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)
+            print("{0} randstrobes created from references".format(cntr))
         elif args.n == 3:
-            idx, ref_id_to_accession, cntr = build_strobemer_index_n3(open(args.references,'r'),args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)
-            print("{0} strobemers created from references".format(cntr))            
+            idx, ref_id_to_accession, cntr = build_randstrobe3_index(open(args.references,'r'),args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)
+            print("{0} randstrobes created from references".format(cntr))            
 
 
     outfile = open(os.path.join(args.outfolder, args.prefix + ".tsv"), 'w')
@@ -560,16 +613,27 @@ def main(args):
             strobes = [(p1, p2, h) for p1, p2, h in seq_to_kmer_iter(seq, args.k, w)] 
             read_matches = get_matches(strobes, idx, args.k, args.dont_merge_matches, ref_id_to_accession, acc, args.selfalign)
 
-        elif args.n == 2: 
-            strobes = [(p1, p2, h) for p1, p2, h in seq_to_strobes_iter2(seq, args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)]
-            read_matches = get_matches(strobes, idx, args.k, args.dont_merge_matches, ref_id_to_accession, acc, args.selfalign)
+        elif args.minstrobe_index:
+            if args.n == 2: 
+                strobes = [(p1, p2, h) for p1, p2, h in seq_to_minstrobes2_iter(seq, args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)]
+                read_matches = get_matches(strobes, idx, args.k, args.dont_merge_matches, ref_id_to_accession, acc, args.selfalign)
 
-        elif args.n == 3: 
-            strobes = [(p1, p2, p3, h) for p1, p2, p3, h in seq_to_strobes_iter3(seq, args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)]
-            read_matches = get_matches3(strobes, idx, args.k, args.dont_merge_matches, ref_id_to_accession, acc, args.selfalign)
+            elif args.n == 3: 
+                strobes = [(p1, p2, p3, h) for p1, p2, p3, h in seq_to_minstrobes3_iter(seq, args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)]
+                read_matches = get_matches3(strobes, idx, args.k, args.dont_merge_matches, ref_id_to_accession, acc, args.selfalign)
 
-        else: 
-            raise NotImplementedError
+
+        else:
+            if args.n == 2: 
+                strobes = [(p1, p2, h) for p1, p2, h in seq_to_randstrobes2_iter(seq, args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)]
+                read_matches = get_matches(strobes, idx, args.k, args.dont_merge_matches, ref_id_to_accession, acc, args.selfalign)
+
+            elif args.n == 3: 
+                strobes = [(p1, p2, p3, h) for p1, p2, p3, h in seq_to_randstrobes3_iter(seq, args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)]
+                read_matches = get_matches3(strobes, idx, args.k, args.dont_merge_matches, ref_id_to_accession, acc, args.selfalign)
+
+            else:
+                raise NotImplementedError
 
         # print(strobes)
         query_matches.append( (acc, read_matches) )
@@ -584,16 +648,29 @@ def main(args):
                 strobes_rc = [(p1, p2, h) for p1, p2, h in seq_to_kmer_iter(rc(seq), args.k, w)] 
                 read_matches_rc = get_matches(strobes_rc, idx, args.k, args.dont_merge_matches,ref_id_to_accession, acc, args.selfalign)
 
-            elif args.n == 2: 
-                strobes_rc = [(p1, p2, h) for p1, p2, h in seq_to_strobes_iter2(rc(seq), args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)]
-                read_matches_rc = get_matches(strobes_rc, idx, args.k, args.dont_merge_matches,ref_id_to_accession, acc, args.selfalign)
+            elif args.minstrobe_index:
+                if args.n == 2: 
+                    strobes = [(p1, p2, h) for p1, p2, h in seq_to_minstrobes2_iter(rc(seq), args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)]
+                    read_matches = get_matches(strobes, idx, args.k, args.dont_merge_matches, ref_id_to_accession, acc, args.selfalign)
 
-            elif args.n == 3: 
-                strobes_rc = [(p1, p2, p3, h) for p1, p2, p3, h in seq_to_strobes_iter3(rc(seq), args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)]
-                read_matches_rc = get_matches3(strobes_rc, idx, args.k, args.dont_merge_matches,ref_id_to_accession, acc, args.selfalign)
+                elif args.n == 3: 
+                    strobes = [(p1, p2, p3, h) for p1, p2, p3, h in seq_to_minstrobes3_iter(rc(seq), args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)]
+                    read_matches = get_matches3(strobes, idx, args.k, args.dont_merge_matches, ref_id_to_accession, acc, args.selfalign)
 
-            else: 
-                raise NotImplementedError
+                else:
+                    raise NotImplementedError
+
+            else:
+                if args.n == 2: 
+                    strobes_rc = [(p1, p2, h) for p1, p2, h in seq_to_randstrobes2_iter(rc(seq), args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)]
+                    read_matches_rc = get_matches(strobes_rc, idx, args.k, args.dont_merge_matches,ref_id_to_accession, acc, args.selfalign)
+
+                elif args.n == 3: 
+                    strobes_rc = [(p1, p2, p3, h) for p1, p2, p3, h in seq_to_randstrobes3_iter(rc(seq), args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)]
+                    read_matches_rc = get_matches3(strobes_rc, idx, args.k, args.dont_merge_matches,ref_id_to_accession, acc, args.selfalign)
+
+                else:
+                    raise NotImplementedError
 
             matches_rc.append((acc, read_matches_rc))
             if i % 1000 == 0:
@@ -629,7 +706,8 @@ if __name__ == '__main__':
                                                                      disk space frendilier, although these files can get large too.')
     parser.add_argument('--outfolder', type=str,  default=None, help='Folder to output TSV match file.')
     parser.add_argument('--prefix', type=str,  default="matches", help='Filename prefix (default "matches").')
-    parser.add_argument('--kmer_index', action="store_true",  help='Kmers can be used instead of strobemers, used for performance comparison')
+    parser.add_argument('--kmer_index', action="store_true",  help='Kmers can be used instead of randstrobes (default), used for performance comparison')
+    parser.add_argument('--minstrobe_index', action="store_true",  help='Kmers can be used instead of randstrobes (default), used for performance comparison')
     parser.add_argument('--selfalign', action="store_true",  help='Aligns sequences to itself (mainly used for bugfixing). Default is not align\
                                                                     sequneces to themselves if the same file is given as references and queries.')
     # parser.add_argument('--compress', type=str,  default=None, help='Compress output')

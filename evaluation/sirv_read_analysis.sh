@@ -11,6 +11,7 @@ experiment_dir=$inbase"/evaluation/"
 
 mkdir -p $outbase
 
+# alias pypy_run="/Users/kxs624/Downloads/pypy3.7-v7.3.3-osx64/bin/./pypy3"
 
 IFS=$'\n'       # make newlines the only separator
 # set -f          # disable globbing
@@ -25,9 +26,9 @@ IFS=$'\n'       # make newlines the only separator
 
 
 # # results_file has format: method,read_acc,ref_id,ref_len,match_length,normalized_match_length,
-# echo -n  "method","read_id","ref_id","ref_length","match_length","normalized_match_length"$'\n' > $normalized_hit_length_file
-# echo -n  "method","read_id","ref_id","ref_length","nr_hits"$'\n' > $nr_hits_file
-# echo -n  "method","read_id","ref_id","ref_length","coverage"$'\n' > $coverage_file
+# echo -ne  "method\tread_id\tref_id\tref_length\tmatch_length\tnormalized_match_length"$'\n' > $normalized_hit_length_file
+# echo -ne  "method\tread_id\tref_id\tref_length\tnr_hits"$'\n' > $nr_hits_file
+# echo -ne  "method\tread_id\tref_id\tref_length\tcoverage"$'\n' > $coverage_file
 
 # # align original reads with minimap2 
 # # original_reads_mapped=$outbase/original_reads.sam
@@ -39,7 +40,8 @@ IFS=$'\n'       # make newlines the only separator
 # # python $experiment_dir/sample_reads.py $original_reads $inbase/data/sirv_transcripts.fasta $original_reads_mapped $outbase/fastq $nr_reads
 # ###############
 
-# mkdir -p $outbase/results/strobmers/
+# mkdir -p $outbase/results/randstrobes2/
+# mkdir -p $outbase/results/randstrobes3/
 # mkdir -p $outbase/refs/
 
 # FILES=$outbase/fastq/*
@@ -49,18 +51,21 @@ IFS=$'\n'       # make newlines the only separator
 #   echo "Processing $f_base file..."
 
 #   # run strobmers
-#   python strobe_match.py --queries $f --references $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/results/strobmers/ --prefix $f_base --k 15 --w 10
-#   python $experiment_dir/print_hit_statistics.py $outbase/results/strobmers/$f_base.tsv --refs $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/ --method strobemers  
+#   /Users/kxs624/Downloads/pypy3.7-v7.3.3-osx64/bin/./pypy3 strobe_match.py --queries $f --references $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/results/randstrobes2/ --prefix $f_base --k 15 --w 10 --n 2
+#   python $experiment_dir/print_hit_statistics.py $outbase/results/randstrobes2/$f_base.tsv --refs $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/ --method 'strobemers-(2,15,20,70)'
+
+#   /Users/kxs624/Downloads/pypy3.7-v7.3.3-osx64/bin/./pypy3 strobe_match.py --queries $f --references $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/results/randstrobes3/ --prefix $f_base --k 10 --w 10 --n 3
+#   python $experiment_dir/print_hit_statistics.py $outbase/results/randstrobes3/$f_base.tsv --refs $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/ --method 'strobemers-(3,10,20,70)'
 
 #   #run kmers
-#   python strobe_match.py --queries $f --references $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/results/kmers/ --prefix $f_base --k 30 --kmer_index --w 10
+#   /Users/kxs624/Downloads/pypy3.7-v7.3.3-osx64/bin/./pypy3 strobe_match.py --queries $f --references $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/results/kmers/ --prefix $f_base --k 30 --kmer_index --w 10
 #   python $experiment_dir/print_hit_statistics.py $outbase/results/kmers/$f_base.tsv --refs $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/ --method kmers 
 # done
 
 
-# # Plot1: Sort plot sirvs by length on x-axis! normalized_hit_length.csv
-# # Plot2: Plot total coverage of hits  covarage.csv
-# # Plot3 number of hits per read nr_hits.csv
+# # # Plot1: Sort plot sirvs by length on x-axis! normalized_hit_length.csv
+# # # Plot2: Plot total coverage of hits  covarage.csv
+# # # Plot3 number of hits per read nr_hits.csv
 
 # python $experiment_dir/plots.py $coverage_file $nr_hits_file $normalized_hit_length_file  $outbase
 
@@ -81,9 +86,9 @@ coverage_file=$outbase/"coverage_read_vs_read.csv"
 
 
 # results_file has format: method,read_acc,ref_id,ref_len,match_length,normalized_match_length,
-echo -n  "method","read_id","ref_id","ref_length","match_length","normalized_match_length"$'\n' > $normalized_hit_length_file
-echo -n  "method","read_id","ref_id","ref_length","nr_hits"$'\n' > $nr_hits_file
-echo -n  "method","read_id","ref_id","ref_length","coverage"$'\n' > $coverage_file
+echo -ne  "method\tread_id\tref_id\tref_length\tmatch_length\tnormalized_match_length"$'\n' > $normalized_hit_length_file
+echo -ne  "method\tread_id\tref_id\tref_length\tnr_hits"$'\n' > $nr_hits_file
+echo -ne  "method\tread_id\tref_id\tref_length\tcoverage"$'\n' > $coverage_file
 
 # align original reads with minimap2 
 # original_reads_mapped=$outbase/original_reads.sam
@@ -95,7 +100,8 @@ echo python $experiment_dir/sample_reads.py $original_reads $inbase/data/sirv_tr
 # python $experiment_dir/sample_reads.py $original_reads $inbase/data/sirv_transcripts.fasta $original_reads_mapped $outbase/fastq $nr_reads
 ###############
 
-mkdir -p $outbase/results/strobmers/
+mkdir -p $outbase/results/randstrobes2/
+mkdir -p $outbase/results/randstrobes3/
 mkdir -p $outbase/refs/
 
 FILES=$outbase/fastq/*
@@ -105,11 +111,15 @@ do
   echo "Processing $f_base file..."
 
   # run strobmers
-  python strobe_match.py --queries $f --references $f --outfolder $outbase/results/strobmers_r_vs_r/ --prefix $f_base --k 10 --w 1
-  python $experiment_dir/print_hit_statistics.py $outbase/results/strobmers_r_vs_r/$f_base.tsv --refs $f --outfolder $outbase/ --method strobemers  --setting r_vs_r
+  /Users/kxs624/Downloads/pypy3.7-v7.3.3-osx64/bin/./pypy3 strobe_match.py --queries $f --references $f --outfolder $outbase/results/randstrobes2_r_vs_r/ --prefix $f_base --k 15 --w 10
+  python $experiment_dir/print_hit_statistics.py $outbase/results/randstrobes2_r_vs_r/$f_base.tsv --refs $f --outfolder $outbase/ --method 'strobemers-(2,15,20,70)'  --setting r_vs_r
+
+  /Users/kxs624/Downloads/pypy3.7-v7.3.3-osx64/bin/./pypy3 strobe_match.py --queries $f --references $f --outfolder $outbase/results/randstrobes3_r_vs_r/ --prefix $f_base --k 10 --w 10
+  python $experiment_dir/print_hit_statistics.py $outbase/results/randstrobes3_r_vs_r/$f_base.tsv --refs $f --outfolder $outbase/ --method 'strobemers-(3,10,20,70)'  --setting r_vs_r
+
 
   #run kmers
-  python strobe_match.py --queries $f --references $f --outfolder $outbase/results/kmers_r_vs_r/ --prefix $f_base --k 20 --kmer_index --w 1
+  /Users/kxs624/Downloads/pypy3.7-v7.3.3-osx64/bin/./pypy3 strobe_match.py --queries $f --references $f --outfolder $outbase/results/kmers_r_vs_r/ --prefix $f_base --k 30 --kmer_index --w 10
   python $experiment_dir/print_hit_statistics.py $outbase/results/kmers_r_vs_r/$f_base.tsv --refs $f --outfolder $outbase/ --method kmers --setting r_vs_r
 done
 
