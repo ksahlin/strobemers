@@ -80,7 +80,7 @@ def spaced_kmers(seq, k_size, span_size, positions, w):
     assert len(positions) == k_size
 
     if w > 1:
-        hash_seq_list = [(i, hash( "".join([seq[i + j] for j in range(span_size) if j in positions ]))) for i in range(len(seq) - k_size +1)]
+        hash_seq_list = [(i, hash( "".join([seq[i + j] for j in range(span_size) if j in positions ]))) for i in range(len(seq) - span_size +1)]
         hash_seq_list_thinned = thinner([h for i,h in hash_seq_list], w) # produce a subset of positions, still with samme index as in full sequence
         spaced_kmers_pos = {i : h for i, h in hash_seq_list_thinned }
 
