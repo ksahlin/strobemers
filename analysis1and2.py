@@ -16,6 +16,35 @@ from matplotlib import pyplot
 
 from modules import indexing, indexing2, help_functions
 
+
+def get_match_coverage(seq_len, mers, matches, order, span):
+    """
+        Span is k if kmer, length between first and last position if spaced kmer,
+        and span between the start of the first strobe and the last nucleotide of the last strobe.
+    """
+    if not matches:
+        return 0
+
+    if order == 1:
+        match_list = sorted([ (p, p+span) for (p, h) in mers.items() if h in matches ])
+    elif order == 2:
+        match_list = sorted([ (p1,p2+span) for ((p1,p2), h) in mers.items() if h in matches ])
+    elif order == 3:
+        match_list = sorted([ (p1, p3+span) for ((p1,p2, p3), h) in mers.items() if h in matches ])
+
+    covered_bases = match_list[0][1] - match_list[0][0]
+    max_stop = match_list[0][1]
+    for start,stop in match_list:
+        if start <= max_stop and stop > max_stop:
+            covered_bases += stop - max_stop
+            max_stop = stop
+        elif start > max_stop:
+            covered_bases += stop - start
+            max_stop = stop
+
+    return round(100*covered_bases/seq_len, 1)
+
+
 def seq_covered_spaced_kmers(mers, matches, seq, positions):
     """
         Function specific to calculate the coverage of spaced k-mers
@@ -136,12 +165,14 @@ def analyze_strobemers(seq1, seq2, k_size, order, hash_fcn, w, w_low = 0, w_high
     m = len(matches)
     ivls, all_pos_vector = get_intervals(strobemers1, matches, order)
     nr_islands, island_lengths, c = statistics(ivls, seq1, k_size//order)
+    match_coverage = get_match_coverage(len(seq1), strobemers1, matches, order, k_size//order)
+
     # print("2-spaced minstrobes nr_matches:", len(matches2))  
     # print("Number of islands (gaps):", nr_islands)
     # print("Avg island size (gaps):", sum(island_lengths)/len(island_lengths))
     # print("Seq covered:", seq_covered)
     # print("2-spaced minstrobes intervals:", ivls)
-    return m, c, island_lengths, all_pos_vector
+    return m, c, island_lengths, all_pos_vector, match_coverage
 
 
 def analyze_kmers(seq1, seq2, k_size, w):
@@ -157,12 +188,13 @@ def analyze_kmers(seq1, seq2, k_size, w):
     m = len(matches)
     ivls, all_pos_vector = get_intervals(kmers_pos1, matches, 1)
     nr_islands, island_lengths, c = statistics(ivls, seq1, k_size)
+    match_coverage = get_match_coverage(len(seq1), kmers_pos1, matches, 1, k_size)
     # print("kmers nr_matches:", len(matches))    
     # print("Number of islands (gaps):", nr_islands)
     # print("Avg island size (gaps):", sum(island_lengths)/len(island_lengths))
     # print("Seq covered:", seq_covered)
     # print("kmer intervals:", ivls)
-    return m, c, island_lengths, all_pos_vector
+    return m, c, island_lengths, all_pos_vector, match_coverage
 
 
 def analyze_spaced_kmers(seq1, seq2, k_size, span_size, w):
@@ -177,13 +209,14 @@ def analyze_spaced_kmers(seq1, seq2, k_size, span_size, w):
     nr_islands, island_lengths, _ = statistics(ivls, seq1, span_size)
     # we compute coverage for spaced k-mers with specific function
     c = seq_covered_spaced_kmers(spaced_kmers_seq1, matches, seq1, positions)
+    match_coverage = get_match_coverage(len(seq1), spaced_kmers_seq1, matches, 1, span_size)
 
     # print("kmers nr_matches:", len(matches))    
     # print("Number of islands (gaps):", nr_islands)
     # print("Avg island size (gaps):", sum(island_lengths)/len(island_lengths))
     # print("Seq covered:", seq_covered)
     # print("kmer intervals:", ivls)
-    return m, c, island_lengths, all_pos_vector 
+    return m, c, island_lengths, all_pos_vector, match_coverage 
 
 
 def plot_island_distribution(results, mut_freq, outfolder):
@@ -370,58 +403,66 @@ def main(args):
 
             
             # kmers
-            m,c,islands,all_pos_vector = analyze_kmers(seq1, seq2, k_size, w)
+            m,c,islands,all_pos_vector, match_coverage = analyze_kmers(seq1, seq2, k_size, w)
             results["kmers"]["m"] += m 
             results["kmers"]["c"] += c 
             results["kmers"]["islands"].append(islands) 
+            print("kmers", match_coverage)
             # print_matches(all_pos_vector, "kmers")
 
             # Spaced kmers dense
-            m,c,islands,all_pos_vector = analyze_spaced_kmers(seq1, seq2, k_size, k_size+k_size//2, w)
+            m,c,islands,all_pos_vector, match_coverage = analyze_spaced_kmers(seq1, seq2, k_size, k_size+k_size//2, w)
             results["spaced_kmers_dense"]["m"] += m 
             results["spaced_kmers_dense"]["c"] += c 
             results["spaced_kmers_dense"]["islands"].append(islands) 
+            print("spaced_kmers_dense", match_coverage)
+
             # print_matches(all_pos_vector, "Spaced kmers")
 
             # Spaced kmers sparse
-            m,c,islands,all_pos_vector = analyze_spaced_kmers(seq1, seq2, k_size, 3*k_size, w)
+            m,c,islands,all_pos_vector, match_coverage = analyze_spaced_kmers(seq1, seq2, k_size, 3*k_size, w)
             results["spaced_kmers_sparse"]["m"] += m 
             results["spaced_kmers_sparse"]["c"] += c 
             results["spaced_kmers_sparse"]["islands"].append(islands) 
+            print("spaced_kmers_sparse", match_coverage)
             # print_matches(all_pos_vector, "Spaced kmers")
 
 
-            m,c,islands,all_pos_vector = analyze_strobemers(seq1, seq2, k_size, 2, "minstrobes", w , w_low = w_low, w_high = w_2high)
+            m,c,islands,all_pos_vector, match_coverage = analyze_strobemers(seq1, seq2, k_size, 2, "minstrobes", w , w_low = w_low, w_high = w_2high)
             results["minstrobes"][(2,15,w_low,w_2high)]["m"] += m 
             results["minstrobes"][(2,15,w_low,w_2high)]["c"] += c 
             results["minstrobes"][(2,15,w_low,w_2high)]["islands"].append(islands) 
             # print_matches(all_pos_vector, "minstrobes2")
+            print("minstrobes2", match_coverage)
             list_for_illustration[0].append(all_pos_vector)
             # print(islands)
 
-            m,c,islands,all_pos_vector = analyze_strobemers(seq1, seq2, k_size, 3, "minstrobes", w ,  w_low = w_low, w_high = w_3high )
+            m,c,islands,all_pos_vector, match_coverage = analyze_strobemers(seq1, seq2, k_size, 3, "minstrobes", w ,  w_low = w_low, w_high = w_3high )
             results["minstrobes"][(3,10,w_low,w_3high)]["m"] += m 
             results["minstrobes"][(3,10,w_low,w_3high)]["c"] += c 
             results["minstrobes"][(3,10,w_low,w_3high)]["islands"].append(islands) 
             # print_matches(all_pos_vector, "minstrobes3") 
+            print("minstrobes3", match_coverage)
             list_for_illustration[1].append(all_pos_vector)
             # print(islands)
 
-            m,c,islands,all_pos_vector = analyze_strobemers(seq1, seq2, k_size, 2, "randstrobes", w ,  w_low = w_low, w_high = w_2high)
+            m,c,islands,all_pos_vector, match_coverage = analyze_strobemers(seq1, seq2, k_size, 2, "randstrobes", w ,  w_low = w_low, w_high = w_2high)
             results["randstrobes"][(2,15,w_low,w_2high)]["m"] += m 
             results["randstrobes"][(2,15,w_low,w_2high)]["c"] += c 
             results["randstrobes"][(2,15,w_low,w_2high)]["islands"].append(islands) 
             # print_matches(all_pos_vector, "randstrobes2") 
+            print("randstrobes2", match_coverage)
             list_for_illustration[2].append(all_pos_vector)
             # print(islands)
 
             # Tried randstrobe n=3 with w1=17 and w2=40 and it further decreases E-size of gaps over results in paper
             # for higher mutation rates 0.05 and 0.1
-            m,c,islands,all_pos_vector = analyze_strobemers(seq1, seq2, k_size, 3, "randstrobes", w ,  w_low = w_low, w_high = w_3high )
+            m,c,islands,all_pos_vector, match_coverage = analyze_strobemers(seq1, seq2, k_size, 3, "randstrobes", w ,  w_low = w_low, w_high = w_3high )
             results["randstrobes"][(3,10,w_low,w_3high)]["m"] += m 
             results["randstrobes"][(3,10,w_low,w_3high)]["c"] += c 
             results["randstrobes"][(3,10,w_low,w_3high)]["islands"].append(islands) 
             # print_matches(all_pos_vector, "randstrobes3") 
+            print("randstrobes3", match_coverage)
             list_for_illustration[3].append(all_pos_vector)
             # print(islands)
             
