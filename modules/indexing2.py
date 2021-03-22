@@ -70,7 +70,7 @@ def minimizers(seq, k_size, w_size):
     return minimizers
 
 
-def spaced_kmers(seq, k_size, span_size, positions):
+def spaced_kmers(seq, k_size, span_size, positions, w):
     '''
         Parameters:
         Positions : A set of positions to consider for the spaced k-mer
@@ -78,9 +78,17 @@ def spaced_kmers(seq, k_size, span_size, positions):
         Returns: a dictionary with positions along the string as keys and the spaced kmer as value 
     '''
     assert len(positions) == k_size
+
+    if w > 1:
+        hash_seq_list = [(i, hash( "".join([seq[i + j] for j in range(span_size) if j in positions ]))) for i in range(len(seq) - k_size +1)]
+        hash_seq_list_thinned = thinner([h for i,h in hash_seq_list], w) # produce a subset of positions, still with samme index as in full sequence
+        spaced_kmers_pos = {i : h for i, h in hash_seq_list_thinned }
+
+    else:
+        spaced_kmers_pos = {i :  hash("".join([seq[i + j] for j in range(span_size) if j in positions ])) for i in range(len(seq) - span_size +1)}
     # print(positions, len(positions), span_size)
     # well, this is not the most time efficient way to sample spaced kmers but works for simulations...
-    return {i :  "".join([seq[i + j] for j in range(span_size) if j in positions ]) for i in range(len(seq) - span_size +1)}
+    return spaced_kmers_pos
 
 
 def spaced_kmers_iter(seq, k_size, span_size, positions):
@@ -98,8 +106,16 @@ def spaced_kmers_iter(seq, k_size, span_size, positions):
 
 
 
-def kmers(seq, k_size):
-    return set([seq[i:i+k_size] for i in range(len(seq) - k_size +1)])
+def kmers(seq, k_size, w):
+    if w > 1:
+        hash_seq_list = [(i, hash(seq[i:i+k_size])) for i in range(len(seq) - k_size +1)]
+        hash_seq_list_thinned = thinner([h for i,h in hash_seq_list], w) # produce a subset of positions, still with samme index as in full sequence
+        kmers_pos = {i : h for i, h in hash_seq_list_thinned }
+
+    else:
+        kmers_pos = {i : hash(seq[i:i+k_size]) for i in range(len(seq) - k_size +1)}
+    
+    return kmers_pos
 
 
 def randstrobe_order2(hash_seq_list, start, stop, hash_m1, k_size, prime):

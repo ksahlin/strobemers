@@ -21,7 +21,7 @@ def print_stats(acc, datastructure, all_mers):
 
 
 def main(args):
-    # cluster ONT sirv sequences?
+    # measure time to generate kmers, minstrobes, randstrobes.
     k_size = 12
     w_1 = 25
     w_2 = 25 

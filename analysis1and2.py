@@ -135,12 +135,16 @@ def analyze_strobemers(seq1, seq2, k_size, order, hash_fcn, w, w_low = 0, w_high
     return m, c, island_lengths, all_pos_vector
 
 
-def analyze_kmers(seq1, seq2, k_size):
+def analyze_kmers(seq1, seq2, k_size, w):
     #kmers
-    kmers_pos1 = {p : seq1[i:i+k_size] for p, i in enumerate(range(len(seq1) - k_size +1))}
-    kmers_seq1 = set([seq1[i:i+k_size] for i in range(len(seq1) - k_size +1)])
-    kmers_seq2 = set([seq2[i:i+k_size] for i in range(len(seq2) - k_size +1)])
-    matches  = kmers_seq1 & kmers_seq2
+    kmers_pos1 = indexing2.kmers(seq1, k_size, w)
+    kmers_pos2 = indexing2.kmers(seq2, k_size, w)
+
+    # kmers_pos1 = {p : seq1[i:i+k_size] for p, i in enumerate(range(len(seq1) - k_size +1))}
+    # kmers_seq1 = set([seq1[i:i+k_size] for i in range(len(seq1) - k_size +1)])
+    # kmers_seq2 = set([seq2[i:i+k_size] for i in range(len(seq2) - k_size +1)])
+    # matches  = kmers_seq1 & kmers_seq2
+    matches = set(kmers_pos1.values()) & set(kmers_pos2.values())
     m = len(matches)
     ivls, all_pos_vector = get_intervals(kmers_pos1, matches, 1)
     nr_islands, island_lengths, c = statistics(ivls, seq1, k_size)
@@ -151,12 +155,13 @@ def analyze_kmers(seq1, seq2, k_size):
     # print("kmer intervals:", ivls)
     return m, c, island_lengths, all_pos_vector
 
-def analyze_spaced_kmers(seq1, seq2, k_size, span_size):
+
+def analyze_spaced_kmers(seq1, seq2, k_size, span_size, w):
     positions = set(random.sample(range(1, span_size - 1 ), k_size-2)) 
     positions.add(0)
     positions.add(span_size - 1) # asserts first and last position is sampled so that we have a spaced kmer of length span size
-    spaced_kmers_seq1 = indexing2.spaced_kmers(seq1, k_size, span_size, positions)
-    spaced_kmers_seq2 = indexing2.spaced_kmers(seq2, k_size, span_size, positions) 
+    spaced_kmers_seq1 = indexing2.spaced_kmers(seq1, k_size, span_size, positions, w)
+    spaced_kmers_seq2 = indexing2.spaced_kmers(seq2, k_size, span_size, positions, w) 
     matches  = set(spaced_kmers_seq1.values()) & set(spaced_kmers_seq2.values())
     m = len(matches)
     ivls, all_pos_vector = get_intervals(spaced_kmers_seq1, matches, 1)
@@ -311,8 +316,8 @@ def get_e_size(all_islands, L, nr_exp):
 def main(args):
     L = 10000
     k_size = 30
-    nr_exp = 10
-    w = 1 # thinning, 1 = no thinning
+    nr_exp = 100
+    w = 1 # thinning, w = 1  means no thinning
     mut_freqs = [0.01, 0.05, 0.1] #[0.1] 
     w_low = 0
     w_2high = 50
@@ -356,21 +361,21 @@ def main(args):
 
             
             # kmers
-            m,c,islands,all_pos_vector = analyze_kmers(seq1, seq2, k_size)
+            m,c,islands,all_pos_vector = analyze_kmers(seq1, seq2, k_size, w)
             results["kmers"]["m"] += m 
             results["kmers"]["c"] += c 
             results["kmers"]["islands"].append(islands) 
             # print_matches(all_pos_vector, "kmers")
 
             # Spaced kmers dense
-            m,c,islands,all_pos_vector = analyze_spaced_kmers(seq1, seq2, k_size, k_size+k_size//2)
+            m,c,islands,all_pos_vector = analyze_spaced_kmers(seq1, seq2, k_size, k_size+k_size//2, w)
             results["spaced_kmers_dense"]["m"] += m 
             results["spaced_kmers_dense"]["c"] += c 
             results["spaced_kmers_dense"]["islands"].append(islands) 
             # print_matches(all_pos_vector, "Spaced kmers")
 
             # Spaced kmers sparse
-            m,c,islands,all_pos_vector = analyze_spaced_kmers(seq1, seq2, k_size, 3*k_size)
+            m,c,islands,all_pos_vector = analyze_spaced_kmers(seq1, seq2, k_size, 3*k_size, w)
             results["spaced_kmers_sparse"]["m"] += m 
             results["spaced_kmers_sparse"]["c"] += c 
             results["spaced_kmers_sparse"]["islands"].append(islands) 
