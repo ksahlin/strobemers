@@ -119,7 +119,7 @@ def kmers(seq, k_size, w):
 
 
 def randstrobe_order2(hash_seq_list, start, stop, hash_m1, prime):
-    min_index, min_value = argmin([ (hash_m1 - hash_seq_list[i][1]) % prime for i in range(start, stop)])
+    min_index, min_value = argmin([ (hash_m1 + hash_seq_list[i][1]) % prime for i in range(start, stop)])
     min_hash_val = hash_m1 - hash_seq_list[start + min_index][1]
     return min_index, min_hash_val
 
@@ -147,10 +147,10 @@ def seq_to_randstrobes2_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offs
 
 
 def randstrobe_order3(hash_seq_list, start1, stop1, start2, stop2, hash_m1, prime):
-    min_index1, min_value = argmin([ (hash_m1 - hash_seq_list[i][1]) % prime for i in range(start1, stop1)])
+    min_index1, min_value = argmin([ (hash_m1 + hash_seq_list[i][1]) % prime for i in range(start1, stop1)])
     min_hash_val = hash_m1 - hash_seq_list[start1 + min_index1][1]
 
-    min_index2, min_value = argmin([ (min_hash_val - hash_seq_list[i][1]) % prime for i in range(start2, stop2)])
+    min_index2, min_value = argmin([ (min_hash_val + hash_seq_list[i][1]) % prime for i in range(start2, stop2)])
     min_hash_val = min_hash_val + 2*hash_seq_list[start2 + min_index2][1]
 
     return min_index1, min_index2, min_hash_val

@@ -325,7 +325,7 @@ def get_e_size(all_islands, L, nr_exp):
 def main(args):
     L = 10000
     k_size = 30
-    nr_exp = 100
+    nr_exp = 10
     w = 1 # thinning, w = 1  means no thinning
     mut_freqs = [0.01, 0.05, 0.1] #[0.1] 
     w_low = 25
