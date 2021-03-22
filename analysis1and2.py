@@ -102,17 +102,26 @@ def analyze_strobemers(seq1, seq2, k_size, order, hash_fcn, w, w_low = 0, w_high
         if hash_fcn == "randstrobes":
             strobemers1 = indexing2.randstrobes(seq1, k_size, w_low, w_high, w, order = 2 )
             strobemers2 = indexing2.randstrobes(seq2, k_size, w_low, w_high, w, order = 2 )               
+            # print("randstrobes2",  len(strobemers1), len(strobemers2), len(set(strobemers1.values()) & set(strobemers2.values())))
+            # print(strobemers1)
+            # print(sorted(set(strobemers1.values()))[:20])
+            # print(sorted(set(strobemers2.values()))[:20])
         elif hash_fcn == "minstrobes":
             strobemers1 = indexing2.minstrobes(seq1, k_size, w_low, w_high, w, order = 2)
             strobemers2 = indexing2.minstrobes(seq2, k_size, w_low, w_high, w, order = 2)    
+            # print("minstrobes2",  len(strobemers2))
     elif order == 3:
         assert k_size % 3 == 0, "Not div by 3 kmer length, results will be different"
         if hash_fcn == "randstrobes":
             strobemers1 = indexing2.randstrobes(seq1, k_size, w_low, w_high, w, order = 3)
             strobemers2 = indexing2.randstrobes(seq2, k_size, w_low, w_high, w, order = 3)
+            # print("randstrobes3",  len(strobemers1), len(strobemers2), len(set(strobemers1.values()) & set(strobemers2.values())))
+            # print(strobemers1)
+
         elif hash_fcn == "minstrobes":
             strobemers1 = indexing2.minstrobes(seq1, k_size, w_low, w_high, w, order = 3)
             strobemers2 = indexing2.minstrobes(seq2, k_size, w_low, w_high, w, order = 3)
+            # print("minstrobes3",  len(strobemers2))
 
     # elif order == 4:
     #     assert k_size % 4 == 0, "Not div by 4 kmer length, results will be different"
@@ -139,7 +148,7 @@ def analyze_kmers(seq1, seq2, k_size, w):
     #kmers
     kmers_pos1 = indexing2.kmers(seq1, k_size, w)
     kmers_pos2 = indexing2.kmers(seq2, k_size, w)
-
+    # print("kmers:",  len(kmers_pos2))
     # kmers_pos1 = {p : seq1[i:i+k_size] for p, i in enumerate(range(len(seq1) - k_size +1))}
     # kmers_seq1 = set([seq1[i:i+k_size] for i in range(len(seq1) - k_size +1)])
     # kmers_seq2 = set([seq2[i:i+k_size] for i in range(len(seq2) - k_size +1)])
@@ -223,7 +232,7 @@ def plot_island_distribution2(results, mut_freq, outfolder):
                 for dp in flat:
                     data.write("{0}\t{1}\t{2}\n".format(tmp_label, dp, mut_freq))
     data.close()
-    hue_order = ["randstrobes-(3, 10, 0, 25)", "randstrobes-(2, 15, 0, 50)", "kmers", "minstrobes-(3, 10, 0, 25)", "minstrobes-(2, 15, 0, 50)", "spaced_kmers_dense", "spaced_kmers_sparse"]
+    hue_order = ["randstrobes-(3, 10, 25, 50)", "randstrobes-(2, 15, 25, 50)", "kmers", "minstrobes-(3, 10, 25, 50)", "minstrobes-(2, 15, 25, 50)", "spaced_kmers_dense", "spaced_kmers_sparse"]
     data = pd.read_csv(data.name, sep='\t')
     # plt.yscale('log', nonposy='clip')
     # bins = [0.1*i for i in range(300)]
@@ -319,9 +328,9 @@ def main(args):
     nr_exp = 100
     w = 1 # thinning, w = 1  means no thinning
     mut_freqs = [0.01, 0.05, 0.1] #[0.1] 
-    w_low = 0
+    w_low = 25
     w_2high = 50
-    w_3high = 25
+    w_3high = 50
 
     # w_3strobe = 25
     # w_4strobe = 25

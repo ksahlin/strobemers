@@ -118,7 +118,7 @@ def kmers(seq, k_size, w):
     return kmers_pos
 
 
-def randstrobe_order2(hash_seq_list, start, stop, hash_m1, k_size, prime):
+def randstrobe_order2(hash_seq_list, start, stop, hash_m1, prime):
     min_index, min_value = argmin([ (hash_m1 - hash_seq_list[i][1]) % prime for i in range(start, stop)])
     min_hash_val = hash_m1 - hash_seq_list[start + min_index][1]
     return min_index, min_hash_val
@@ -137,16 +137,16 @@ def seq_to_randstrobes2_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offs
         if p >= len(hash_seq_list) - k_size:
             break
         # hash_m1 = hash_seq_list[p]
-        window_p_start = p + k_size + strobe_w_min_offset if p + strobe_w_max_offset <= len(hash_seq_list) else max( (p + k_size + strobe_w_min_offset) -  (p+k_size+strobe_w_max_offset - len(hash_seq_list)), p+ k_size )
+        window_p_start = p + strobe_w_min_offset if p + strobe_w_max_offset <= len(hash_seq_list) else max( (p + strobe_w_min_offset) -  (p + strobe_w_max_offset - len(hash_seq_list)), p )
         window_p_end = min(p + strobe_w_max_offset, len(hash_seq_list))
         # print(window_p_start, window_p_end)
-        min_index, hash_value = randstrobe_order2(hash_seq_list, window_p_start, window_p_end, hash_m1, k_size, prime)
+        min_index, hash_value = randstrobe_order2(hash_seq_list, window_p_start, window_p_end, hash_m1, prime)
         p2 = window_p_start + min_index
         yield p, p2, hash_value
 
 
 
-def randstrobe_order3(hash_seq_list, start1, stop1, start2, stop2, hash_m1, k_size, prime):
+def randstrobe_order3(hash_seq_list, start1, stop1, start2, stop2, hash_m1, prime):
     min_index1, min_value = argmin([ (hash_m1 - hash_seq_list[i][1]) % prime for i in range(start1, stop1)])
     min_hash_val = hash_m1 - hash_seq_list[start1 + min_index1][1]
 
@@ -168,15 +168,15 @@ def seq_to_randstrobes3_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offs
         if p >= len(hash_seq_list) - 2*k_size:
             break
         # hash_m1 = hash_seq_list[p]
-        window_p2_start = p + k_size + strobe_w_max_offset + strobe_w_min_offset if p + 2*strobe_w_max_offset <= len(hash_seq_list) else max( (p + k_size + strobe_w_max_offset + strobe_w_min_offset) -  (p+k_size+2*strobe_w_max_offset - len(hash_seq_list)), p + 2*k_size )
+        window_p2_start = p + strobe_w_max_offset + strobe_w_min_offset if p + 2*strobe_w_max_offset <= len(hash_seq_list) else max( (p + strobe_w_max_offset + strobe_w_min_offset) -  (p+2*strobe_w_max_offset - len(hash_seq_list)), p )
         window_p2_end = min(p + 2*strobe_w_max_offset, len(hash_seq_list))
 
-        window_p1_start = p + k_size + strobe_w_min_offset if p + 2*strobe_w_max_offset <= len(hash_seq_list) else max(p+ k_size,  len(hash_seq_list)  + 2*(strobe_w_min_offset - strobe_w_max_offset))
-        window_p1_end = min(p + strobe_w_max_offset, len(hash_seq_list)- k_size)
+        window_p1_start = p + strobe_w_min_offset if p + 2*strobe_w_max_offset <= len(hash_seq_list) else max(p,  len(hash_seq_list)  + 2*(strobe_w_min_offset - strobe_w_max_offset))
+        window_p1_end = min(p + strobe_w_max_offset, len(hash_seq_list))
         # print(window_p1_start, window_p1_end,  window_p2_start, window_p2_end, len(seq))
         # assert window_p1_start < window_p1_end
         # print(window_p1_start, window_p1_end)
-        min_index_s1, min_index_s2, hash_value = randstrobe_order3(hash_seq_list, window_p1_start, window_p1_end, window_p2_start, window_p2_end, hash_m1, k_size, prime)
+        min_index_s1, min_index_s2, hash_value = randstrobe_order3(hash_seq_list, window_p1_start, window_p1_end, window_p2_start, window_p2_end, hash_m1, prime)
         p2 = window_p1_start + min_index_s1
         p3 = window_p2_start + min_index_s2
         yield p, p2, p3, hash_value
@@ -211,6 +211,7 @@ def seq_to_randstrobes3_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offs
 
 def randstrobes(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, w, order = 2):
     prime = 997
+    assert strobe_w_min_offset > 0, "Minimum strobemer offset has to be greater than 0 in this implementation"
     if order == 2:
         if k_size % 2 != 0:
             print("WARNING: kmer size is not evenly divisible with 2, will use {0} as kmer size: ".format(k_size - k_size % 2))
@@ -392,6 +393,7 @@ def seq_to_minstrobes3_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offse
 
 def minstrobes(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, w, order = 2):
     prime = 997
+    assert strobe_w_min_offset > 0, "Minimum strobemer offset has to be greater than 0 in this implementation"
     if order == 2:
         if k_size % 2 != 0:
             print("WARNING: kmer size is not evenly divisible with 2, will use {0} as kmer size: ".format(k_size - k_size % 2))
