@@ -107,15 +107,19 @@ def get_intervals(mers, matches, order):
             ivls.append((iv_start, iv_start+length))
             length = 0
             iv_start = p2
-    if p2 <= p1 + 1:
-        ivls.append((iv_start, iv_start+length))
+
+    if len(all_pos_vector) > 1:
+        if p2 <= p1 + 1:
+            ivls.append((iv_start, iv_start+length))
+    elif len(all_pos_vector) == 1:
+        ivls.append((iv_start, iv_start))
     # print(ivls)
     return ivls, all_pos_vector
 
 
 def statistics(ivls, seq, k):
     if not ivls:
-        return 0, [len(seq)], 0
+        return 1, [len(seq)], 0
     seq_covered = 0 # lower estimate for minstrobes and randstrobes
     nr_islands = 0
     island_lengths = []
@@ -384,8 +388,8 @@ def get_e_size(all_islands, L, nr_exp):
 def main(args):
     L = 10000
     k_size = 30
-    nr_exp = 10
-    w = 1 # thinning, w = 1  means no thinning
+    nr_exp = 1000
+    w = 20 # thinning, w = 1  means no thinning
     mut_freqs = [0.01, 0.05, 0.1] #[0.1] 
     w_low = 25
     w_2high = 50
