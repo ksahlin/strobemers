@@ -41,7 +41,7 @@ def get_match_coverage(seq_len, mers, matches, order, span):
         elif start >= max_stop:
             covered_bases += stop - start
             max_stop = stop
-    print(covered_bases)
+    # print(covered_bases)
     return covered_bases #round(100*covered_bases/seq_len, 1)
 
 
@@ -377,7 +377,7 @@ def plot_matches(all_data, method, L, k_size,outfolder):
 
 
 def get_e_size(all_islands, L, nr_exp):
-    print("all_islands",all_islands)
+    # print("all_islands",all_islands)
     sum_of_squares = sum([x**2 for x in all_islands])
     return sum_of_squares/(L*nr_exp) 
 
@@ -386,7 +386,7 @@ def main(args):
     k_size = 30
     nr_exp = 10
     w = 1 # thinning, w = 1  means no thinning
-    mut_freqs = [0.0] #[0.01, 0.05, 0.1] #[0.1] 
+    mut_freqs = [0.01, 0.05, 0.1] #[0.1] 
     w_low = 25
     w_2high = 50
     w_3high = 50
@@ -527,7 +527,7 @@ def main(args):
                 flat = [g for l in results[protocol]["islands"] for g in l]
                 if flat:
                     # avg_island_len = sum(flat)/len(flat)
-                    print(protocol)
+                    # print(protocol)
                     e_size = get_e_size(flat, L, nr_exp)
                 # else:
                 #     avg_island_len = 0
@@ -538,7 +538,7 @@ def main(args):
                     flat = [g for l in results[protocol][params]["islands"] for g in l]
                     if flat:
                         # avg_island_len = sum(flat)/len(flat)
-                        print(protocol, params)
+                        # print(protocol, params)
                         e_size = get_e_size(flat, L, nr_exp)
                     # else:
                         # avg_island_len = 0
