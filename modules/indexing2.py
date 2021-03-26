@@ -102,7 +102,7 @@ def spaced_kmers_iter(seq, k_size, span_size, positions):
     # print(positions, len(positions), span_size)
     # well, this is not the most time efficient way to sample spaced kmers but works for simulations...
     for i in range(len(seq) - span_size +1):
-        yield  "".join([seq[i + j] for j in range(span_size) if j in positions ])
+        yield  hash("".join([seq[i + j] for j in range(span_size) if j in positions ]))
 
 
 
@@ -245,47 +245,47 @@ def randstrobes(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, w, order 
         # return randstrobes
 
 
-def randstrobes_iter(seq, k_size, order = 2, **kwargs):
-    """
-        Low memory consumption due to not precalculating hash values, but more time consuming than randstrobes function.
-        TODO: Implement buffer window that precalculates hash values of a subsecuence window that we use to calculate randstrobes
-        from. This will be as fast as randstrobes without much memory overhead.
-    """
+# def randstrobes_iter(seq, k_size, order = 2, **kwargs):
+#     """
+#         Low memory consumption due to not precalculating hash values, but more time consuming than randstrobes function.
+#         TODO: Implement buffer window that precalculates hash values of a subsecuence window that we use to calculate randstrobes
+#         from. This will be as fast as randstrobes without much memory overhead.
+#     """
 
-    if order == 2:
-        w_1 = kwargs["w_1"]
-        if k_size % 2 != 0:
-            print("WARNING: kmer size is not evenly divisible with 2, will use {0} as kmer size: ".format(k_size - k_size % 2))
-            k_size = k_size - k_size % 2
-        m_size = k_size//2
-        for p in range(len(seq) - k_size +1):
-            yield randstrobe_order2(seq[p:min(p+m_size+w_1, len(seq))], m_size)
+#     if order == 2:
+#         w_1 = kwargs["w_1"]
+#         if k_size % 2 != 0:
+#             print("WARNING: kmer size is not evenly divisible with 2, will use {0} as kmer size: ".format(k_size - k_size % 2))
+#             k_size = k_size - k_size % 2
+#         m_size = k_size//2
+#         for p in range(len(seq) - k_size +1):
+#             yield randstrobe_order2(seq[p:min(p+m_size+w_1, len(seq))], m_size)
 
-    elif order == 3:
-        w_1 = kwargs["w_1"]
-        w_2 = kwargs["w_2"]  
-        if k_size % 3 != 0:
-            print("WARNING: kmer size is not evenly divisible with 3, will use {0} as kmer size: ".format(k_size - k_size % 3))
-            k_size = k_size - k_size % 3
-        m_size = k_size//3
-        for p in range(len(seq) - k_size +1):
-            yield randstrobe_order3(seq[p:min(p+m_size+w_1+w_2, len(seq))], m_size, 
-                                    w_1 if w_1 + w_2 < len(seq) - p - m_size else (w_1 - ( w_1 + w_2 - len(seq)-p - m_size)//2), 
-                                    w_2 if w_1 + w_2 < len(seq) - p - m_size else (w_2 - ( w_1 + w_2 - len(seq)-p - m_size)//2))
+#     elif order == 3:
+#         w_1 = kwargs["w_1"]
+#         w_2 = kwargs["w_2"]  
+#         if k_size % 3 != 0:
+#             print("WARNING: kmer size is not evenly divisible with 3, will use {0} as kmer size: ".format(k_size - k_size % 3))
+#             k_size = k_size - k_size % 3
+#         m_size = k_size//3
+#         for p in range(len(seq) - k_size +1):
+#             yield randstrobe_order3(seq[p:min(p+m_size+w_1+w_2, len(seq))], m_size, 
+#                                     w_1 if w_1 + w_2 < len(seq) - p - m_size else (w_1 - ( w_1 + w_2 - len(seq)-p - m_size)//2), 
+#                                     w_2 if w_1 + w_2 < len(seq) - p - m_size else (w_2 - ( w_1 + w_2 - len(seq)-p - m_size)//2))
 
-    elif order == 4:
-        w_1 = kwargs["w_1"]
-        w_2 = kwargs["w_2"]  
-        w_3 = kwargs["w_3"]  
-        if k_size % 4 != 0:
-            print("WARNING: kmer size is not evenly divisible with 4, will use {0} as kmer size: ".format(k_size - k_size % 4))
-            k_size = k_size - k_size % 4
-        m_size = k_size//4
-        for p in range(len(seq) - k_size +1):
-            yield randstrobe_order4(seq[p:min(p+m_size+w_1+w_2+w_3, len(seq))], m_size, 
-                                    w_1 if w_1 + w_2 + w_3 < len(seq) - p - m_size else (w_1 - ( w_1 + w_2 + w_3 - len(seq)-p - m_size)//3), 
-                                    w_2 if w_1 + w_2 + w_3 < len(seq) - p - m_size else (w_2 - ( w_1 + w_2 + w_3 - len(seq)-p - m_size)//3),
-                                    w_3 if w_1 + w_2 + w_3 < len(seq) - p - m_size else (w_3 - ( w_1 + w_2 + w_3 - len(seq)-p - m_size)//3))
+#     elif order == 4:
+#         w_1 = kwargs["w_1"]
+#         w_2 = kwargs["w_2"]  
+#         w_3 = kwargs["w_3"]  
+#         if k_size % 4 != 0:
+#             print("WARNING: kmer size is not evenly divisible with 4, will use {0} as kmer size: ".format(k_size - k_size % 4))
+#             k_size = k_size - k_size % 4
+#         m_size = k_size//4
+#         for p in range(len(seq) - k_size +1):
+#             yield randstrobe_order4(seq[p:min(p+m_size+w_1+w_2+w_3, len(seq))], m_size, 
+#                                     w_1 if w_1 + w_2 + w_3 < len(seq) - p - m_size else (w_1 - ( w_1 + w_2 + w_3 - len(seq)-p - m_size)//3), 
+#                                     w_2 if w_1 + w_2 + w_3 < len(seq) - p - m_size else (w_2 - ( w_1 + w_2 + w_3 - len(seq)-p - m_size)//3),
+#                                     w_3 if w_1 + w_2 + w_3 < len(seq) - p - m_size else (w_3 - ( w_1 + w_2 + w_3 - len(seq)-p - m_size)//3))
 
 
 
@@ -415,29 +415,46 @@ def minstrobes(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, w, order =
 
 
 
-def minstrobes_iter(seq, k_size, order = 2, **kwargs):
-    """
-        Low memory consumption due to not precalculating hash values, but more time consuming than randstrobes function.
-        TODO: Implement buffer window that precalculates hash values of a subsecuence window that we use to calculate randstrobes
-        from. This will be as fast as randstrobes without much memory overhead.
-    """
+def minstrobes_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, w, order = 2, buffer_size = 10000000):
+    
+    for i in range(0, len(seq), buffer_size):
+        substring = seq[i:i+buffer_size] 
+        # print(substring, len(substring))
+        for p, m in minstrobes(substring, k_size, strobe_w_min_offset, strobe_w_max_offset, w, order = order).items():
+            yield m
 
-    if order == 2:
-        w_1 = kwargs["w_1"]
-        if k_size % 2 != 0:
-            print("WARNING: kmer size is not evenly divisible with 2, will use {0} as kmer size: ".format(k_size - k_size % 2))
-            k_size = k_size - k_size % 2
-        m_size = k_size//2
-        for p in range(len(seq) - k_size +1):
-            yield minstrobe_order2(seq[p:min(p+w_1, len(seq))], m_size)
 
-    elif order == 3:
-        w_1 = kwargs["w_1"]
-        w_2 = kwargs["w_2"]  
-        if k_size % 3 != 0:
-            print("WARNING: kmer size is not evenly divisible with 3, will use {0} as kmer size: ".format(k_size - k_size % 3))
-            k_size = k_size - k_size % 3
-        m_size = k_size//3
-        for p in range(len(seq) - k_size +1):
-            yield minstrobe_order3(seq[p:min(p+m_size+w_1+w_2, len(seq))], m_size, min(w_1 + w_2, len(seq)-p - m_size)//2, min(w_1 + w_2, len(seq)-p - m_size)//2)
+def randstrobes_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, w, order = 2, buffer_size = 10000000):
+    
+    for i in range(0, len(seq), buffer_size):
+        substring = seq[i:i+buffer_size] 
+        for p, m in randstrobes(substring, k_size, strobe_w_min_offset, strobe_w_max_offset, w, order = order).items():
+            yield m
+
+
+# def minstrobes_iter(seq, k_size, order = 2, **kwargs):
+#     """
+#         Low memory consumption due to not precalculating hash values, but more time consuming than randstrobes function.
+#         TODO: Implement buffer window that precalculates hash values of a subsecuence window that we use to calculate randstrobes
+#         from. This will be as fast as randstrobes without much memory overhead.
+#     """
+
+#     if order == 2:
+#         w_1 = kwargs["w_1"]
+#         if k_size % 2 != 0:
+#             print("WARNING: kmer size is not evenly divisible with 2, will use {0} as kmer size: ".format(k_size - k_size % 2))
+#             k_size = k_size - k_size % 2
+#         m_size = k_size//2
+#         for p in range(len(seq) - k_size +1):
+#             yield minstrobe_order2(seq[p:min(p+w_1, len(seq))], m_size)
+
+#     elif order == 3:
+#         w_1 = kwargs["w_1"]
+#         w_2 = kwargs["w_2"]  
+#         if k_size % 3 != 0:
+#             print("WARNING: kmer size is not evenly divisible with 3, will use {0} as kmer size: ".format(k_size - k_size % 3))
+#             k_size = k_size - k_size % 3
+#         m_size = k_size//3
+#         for p in range(len(seq) - k_size +1):
+#             yield minstrobe_order3(seq[p:min(p+m_size+w_1+w_2, len(seq))], m_size, min(w_1 + w_2, len(seq)-p - m_size)//2, min(w_1 + w_2, len(seq)-p - m_size)//2)
 

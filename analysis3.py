@@ -4,7 +4,7 @@ import argparse
 import random
 from collections import defaultdict
 
-from modules import indexing, help_functions
+from modules import indexing2, help_functions
 
 def print_stats(acc, datastructure, all_mers, k_size, total_mers):
     abundances = list(all_mers.values())
@@ -21,8 +21,11 @@ def print_stats(acc, datastructure, all_mers, k_size, total_mers):
 
 
 def compute_uniqueness(args, acc, seq, k_size, total_mers):
-    w_1 = 25
-    w_2 = 25 
+    # w_1 = 25
+    # w_2 = 25 
+    w = 1
+    w_low = 25
+    w_high = 50
     all_mers = defaultdict(int)
     if args.kmers:
         datastructure = "kmers"
@@ -35,8 +38,8 @@ def compute_uniqueness(args, acc, seq, k_size, total_mers):
         positions = set(random.sample(range(1, span_size - 1 ), k_size-2)) 
         positions.add(0)
         positions.add(span_size - 1) # asserts first and last position is sampled so that we have a spaced kmer of length span size
-        for i,s in enumerate(indexing.spaced_kmers_iter(seq, k_size, span_size, positions)):
-            all_mers[hash(s)] += 1
+        for s in indexing2.spaced_kmers_iter(seq, k_size, span_size, positions):
+            all_mers[s] += 1
 
     if args.spaced_sparse:
         datastructure = "spaced_sparse"
@@ -44,29 +47,29 @@ def compute_uniqueness(args, acc, seq, k_size, total_mers):
         positions = set(random.sample(range(1, span_size - 1 ), k_size-2)) 
         positions.add(0)
         positions.add(span_size - 1) # asserts first and last position is sampled so that we have a spaced kmer of length span size
-        for i,s in enumerate(indexing.spaced_kmers_iter(seq, k_size, span_size, positions)):
-            all_mers[hash(s)] += 1
+        for s in indexing2.spaced_kmers_iter(seq, k_size, span_size, positions):
+            all_mers[s] += 1
 
     elif args.minstrobes2:
         datastructure = "minstrobes2"
-        for i,s in enumerate(indexing.minstrobes_iter(seq, k_size, order = 2, w_1 = 50 )):
-            all_mers[hash(s)] += 1
+        for s in indexing2.minstrobes_iter(seq, k_size, w_low, w_high, w, order = 2, buffer_size = 10000000):
+            all_mers[s] += 1
 
     elif args.minstrobes3:
         datastructure = "minstrobes3"
-        for i, s in enumerate(indexing.minstrobes_iter(seq, k_size, order = 3, w_1 = w_1, w_2 = w_2 )):
-            all_mers[hash(s)] += 1
+        for s in indexing2.minstrobes_iter(seq, k_size, w_low, w_high, w, order = 3, buffer_size = 10000000):
+            all_mers[s] += 1
 
     elif args.randstrobes2:
         datastructure = "randstrobes2"
-        for s in indexing.randstrobes_iter(seq, k_size, order = 2, w_1 = 50 ):
+        for s in indexing2.randstrobes_iter(seq, k_size, w_low, w_high, w, order = 2, buffer_size = 10000000): # (seq, k_size, order = 2, w_1 = 50 ):
             all_mers[s] += 1
 
     elif args.randstrobes3:
         datastructure = "randstrobes3"
-        for s in indexing.randstrobes_iter(seq, k_size, order = 3, w_1 = w_1, w_2 = w_2 ):
+        for s in indexing2.randstrobes_iter(seq, k_size, w_low, w_high, w, order = 3, buffer_size = 10000000):
             all_mers[s] += 1
-    
+
     print_stats(acc, datastructure, all_mers, k_size, total_mers)
 
 
@@ -80,17 +83,18 @@ def main(args):
         # print(acc)
         genome[acc] = seq.replace("N", "") # remove Ns
 
-    # print(len(genome), sum([len(v) for k,v in genome.items()]))
+    print(len(genome), sum([len(v) for k,v in genome.items()]))
 
     print("datastructure,k,acc,mean,median,lower_75,upper_75,\%-unique")
 
     total_mers = {}
 
     for acc, seq in genome.items():
+        # print(acc)
         for k_size in [18,24,30,36]: #[18,24,30]:
             total_mers[acc] = len(seq) - k_size + 1
-            if acc == "chr1" or acc == "chr2" or acc == "chr3" or acc == "chr4" or acc == "chr5":
-                compute_uniqueness(args, acc, seq, k_size, total_mers[acc])
+            # if acc == "chr1" or acc == "chr2" or acc == "chr3" or acc == "chr4" or acc == "chr5":
+            compute_uniqueness(args, acc, seq, k_size, total_mers[acc])
 
 
 
