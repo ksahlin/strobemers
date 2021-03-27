@@ -24,9 +24,14 @@ import operator
 
 MAX = sys.maxsize
 
-def argmin(values):
-    min_index, min_value = min(enumerate(values), key=operator.itemgetter(1))
-    return min_index, min_value
+# def argmin(values):
+#     min_index, min_value = min(enumerate(values), key=operator.itemgetter(1))
+#     return min_index, min_value
+
+def argmin(array):
+    min_index = array.index(min(array))
+    min_val =  array[min_index]
+    return min_index, min_val
 
 def rc(string):
     rev_nuc = {'A':'T', 'C':'G', 'G':'C', 'T':'A', 'a':'t', 'c':'g', 'g':'c', 't':'a', 'N':'N', 'X':'X', 'n':'n', 'Y':'R', 'R':'Y', 'K':'M', 'M':'K', 'S':'S', 'W':'W', 'B':'V', 'V':'B', 'H':'D', 'D':'H', 'y':'r', 'r':'y', 'k':'m', 'm':'k', 's':'s', 'w':'w', 'b':'v', 'v':'b', 'h':'d', 'd':'h'}

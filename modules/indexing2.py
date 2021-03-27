@@ -6,11 +6,14 @@ from collections import defaultdict, deque
 
 MAX = sys.maxsize
 
-def argmin(values):
-    min_index, min_value = min(enumerate(values), key=operator.itemgetter(1))
-    return min_index, min_value
+# def argmin(values):
+#     min_index, min_value = min(enumerate(values), key=operator.itemgetter(1))
+#     return min_index, min_value
 
-
+def argmin(array):
+    min_index = array.index(min(array))
+    min_val =  array[min_index]
+    return min_index, min_val
 
 def thinner(hash_list, w):
     """
