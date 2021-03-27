@@ -121,6 +121,18 @@ def kmers(seq, k_size, w):
     return kmers_pos
 
 
+def kmer_iter(seq, k_size, w):
+    if w > 1:
+        hash_seq_list = [(i, hash(seq[i:i+k_size])) for i in range(len(seq) - k_size +1)]
+        hash_seq_list_thinned = thinner([h for i,h in hash_seq_list], w) # produce a subset of positions, still with samme index as in full sequence
+        for p, h in hash_seq_list_thinned:
+            yield p, h
+    else:
+        hash_seq_list = [(i, hash(seq[i:i+k_size])) for i in range(len(seq) - k_size +1)]
+        for p, h in hash_seq_list:   
+            yield p, h
+
+
 def randstrobe_order2(hash_seq_list, start, stop, hash_m1, prime):
     min_index, min_value = argmin([ (hash_m1 + hash_seq_list[i][1]) % prime for i in range(start, stop)])
     min_hash_val = hash_m1 - hash_seq_list[start + min_index][1]

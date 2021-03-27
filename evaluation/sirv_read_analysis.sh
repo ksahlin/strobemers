@@ -51,21 +51,21 @@ do
   echo "Processing $f_base file..."
 
   # run randstrobes
-  /Users/kxs624/Downloads/pypy3.7-v7.3.3-osx64/bin/./pypy3 strobe_match.py --queries $f --references $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/results/randstrobes2/ --prefix $f_base --k 15 --n 2 --w 10 --n 2
+  /Users/kxs624/Downloads/pypy3.7-v7.3.3-osx64/bin/./pypy3 ./StrobeMatch --queries $f --references $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/results/randstrobes2/ --prefix $f_base --k 15 --n 2 --w 10 --n 2
   python $experiment_dir/print_hit_statistics.py $outbase/results/randstrobes2/$f_base.tsv --refs $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/ --method 'randstrobes-(2,15,20,70)'
 
-  /Users/kxs624/Downloads/pypy3.7-v7.3.3-osx64/bin/./pypy3 strobe_match.py --queries $f --references $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/results/randstrobes3/ --prefix $f_base --k 10 --n 3 --w 10 --n 3
+  /Users/kxs624/Downloads/pypy3.7-v7.3.3-osx64/bin/./pypy3 ./StrobeMatch --queries $f --references $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/results/randstrobes3/ --prefix $f_base --k 10 --n 3 --w 10 --n 3
   python $experiment_dir/print_hit_statistics.py $outbase/results/randstrobes3/$f_base.tsv --refs $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/ --method 'randstrobes-(3,10,20,70)'
 
   # run minstrobes
-  /Users/kxs624/Downloads/pypy3.7-v7.3.3-osx64/bin/./pypy3 strobe_match.py --queries $f --references $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/results/minstrobes2/ --prefix $f_base --k 15 --n 2 --w 10 --n 2 --minstrobe_index
+  /Users/kxs624/Downloads/pypy3.7-v7.3.3-osx64/bin/./pypy3 ./StrobeMatch --queries $f --references $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/results/minstrobes2/ --prefix $f_base --k 15 --n 2 --w 10 --n 2 --minstrobe_index
   python $experiment_dir/print_hit_statistics.py $outbase/results/minstrobes2/$f_base.tsv --refs $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/ --method 'minstrobes-(2,15,20,70)'
 
-  /Users/kxs624/Downloads/pypy3.7-v7.3.3-osx64/bin/./pypy3 strobe_match.py --queries $f --references $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/results/minstrobes3/ --prefix $f_base --k 10 --n 3 --w 10 --n 3 --minstrobe_index
+  /Users/kxs624/Downloads/pypy3.7-v7.3.3-osx64/bin/./pypy3 ./StrobeMatch --queries $f --references $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/results/minstrobes3/ --prefix $f_base --k 10 --n 3 --w 10 --n 3 --minstrobe_index
   python $experiment_dir/print_hit_statistics.py $outbase/results/minstrobes3/$f_base.tsv --refs $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/ --method 'minstrobes-(3,10,20,70)'
 
   #run kmers
-  /Users/kxs624/Downloads/pypy3.7-v7.3.3-osx64/bin/./pypy3 strobe_match.py --queries $f --references $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/results/kmers/ --prefix $f_base --k 30 --kmer_index --w 10
+  /Users/kxs624/Downloads/pypy3.7-v7.3.3-osx64/bin/./pypy3 ./StrobeMatch --queries $f --references $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/results/kmers/ --prefix $f_base --k 30 --kmer_index --w 10
   python $experiment_dir/print_hit_statistics.py $outbase/results/kmers/$f_base.tsv --refs $outbase/refs/$f_base"_ref.fastq" --outfolder $outbase/ --method kmers 
 done
 
@@ -118,22 +118,22 @@ python $experiment_dir/plots.py $coverage_file $nr_hits_file $normalized_hit_len
 #   echo "Processing $f_base file..."
 
 #   # run randstrobes
-#   /Users/kxs624/Downloads/pypy3.7-v7.3.3-osx64/bin/./pypy3 strobe_match.py --queries $f --references $f --outfolder $outbase/results/randstrobes2_r_vs_r/ --prefix $f_base --k 15 --n 2 --w 10
+#   /Users/kxs624/Downloads/pypy3.7-v7.3.3-osx64/bin/./pypy3 ./StrobeMatch --queries $f --references $f --outfolder $outbase/results/randstrobes2_r_vs_r/ --prefix $f_base --k 15 --n 2 --w 10
 #   python $experiment_dir/print_hit_statistics.py $outbase/results/randstrobes2_r_vs_r/$f_base.tsv --refs $f --outfolder $outbase/ --method 'randstrobes-(2,15,20,70)'  --setting r_vs_r
 
-#   /Users/kxs624/Downloads/pypy3.7-v7.3.3-osx64/bin/./pypy3 strobe_match.py --queries $f --references $f --outfolder $outbase/results/randstrobes3_r_vs_r/ --prefix $f_base --k 10 --n 3 --w 10
+#   /Users/kxs624/Downloads/pypy3.7-v7.3.3-osx64/bin/./pypy3 ./StrobeMatch --queries $f --references $f --outfolder $outbase/results/randstrobes3_r_vs_r/ --prefix $f_base --k 10 --n 3 --w 10
 #   python $experiment_dir/print_hit_statistics.py $outbase/results/randstrobes3_r_vs_r/$f_base.tsv --refs $f --outfolder $outbase/ --method 'randstrobes-(3,10,20,70)'  --setting r_vs_r
 
 #   # run minstrobes
-#   /Users/kxs624/Downloads/pypy3.7-v7.3.3-osx64/bin/./pypy3 strobe_match.py --queries $f --references $f --outfolder $outbase/results/minstrobes2_r_vs_r/ --prefix $f_base --k 15 --n 2 --w 10 --minstrobe_index
+#   /Users/kxs624/Downloads/pypy3.7-v7.3.3-osx64/bin/./pypy3 ./StrobeMatch --queries $f --references $f --outfolder $outbase/results/minstrobes2_r_vs_r/ --prefix $f_base --k 15 --n 2 --w 10 --minstrobe_index
 #   python $experiment_dir/print_hit_statistics.py $outbase/results/minstrobes2_r_vs_r/$f_base.tsv --refs $f --outfolder $outbase/ --method 'minstrobes-(2,15,20,70)'  --setting r_vs_r
 
-#   /Users/kxs624/Downloads/pypy3.7-v7.3.3-osx64/bin/./pypy3 strobe_match.py --queries $f --references $f --outfolder $outbase/results/minstrobes3_r_vs_r/ --prefix $f_base --k 10 --n 3 --w 10 --minstrobe_index
+#   /Users/kxs624/Downloads/pypy3.7-v7.3.3-osx64/bin/./pypy3 ./StrobeMatch --queries $f --references $f --outfolder $outbase/results/minstrobes3_r_vs_r/ --prefix $f_base --k 10 --n 3 --w 10 --minstrobe_index
 #   python $experiment_dir/print_hit_statistics.py $outbase/results/minstrobes3_r_vs_r/$f_base.tsv --refs $f --outfolder $outbase/ --method 'minstrobes-(3,10,20,70)'  --setting r_vs_r
 
 
 #   #run kmers
-#   /Users/kxs624/Downloads/pypy3.7-v7.3.3-osx64/bin/./pypy3 strobe_match.py --queries $f --references $f --outfolder $outbase/results/kmers_r_vs_r/ --prefix $f_base --k 30 --kmer_index --w 10
+#   /Users/kxs624/Downloads/pypy3.7-v7.3.3-osx64/bin/./pypy3 ./StrobeMatch --queries $f --references $f --outfolder $outbase/results/kmers_r_vs_r/ --prefix $f_base --k 30 --kmer_index --w 10
 #   python $experiment_dir/print_hit_statistics.py $outbase/results/kmers_r_vs_r/$f_base.tsv --refs $f --outfolder $outbase/ --method kmers --setting r_vs_r
 # done
 
