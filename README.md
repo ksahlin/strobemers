@@ -43,7 +43,7 @@ Here are some example uses:
 # Generate randstrobe matches (randstrobe parametrization (2,15,20,70)) 
 # between ONT SIRV reads and the true reference sequences
 
-python StrobeMatch --queries data/sirv_transcripts.fasta \
+./StrobeMatch --queries data/sirv_transcripts.fasta \
                        --references data/ONT_sirv_cDNA_seqs.fasta \
                        --outfolder strobemer_output/  --k 15 
                        --strobe_w_min_offset 20 --strobe_w_max_offset 70
@@ -52,13 +52,13 @@ python StrobeMatch --queries data/sirv_transcripts.fasta \
 # Generate kmer matches (k=30) 
 # between ONT SIRV reads and the true reference sequences
 
-python StrobeMatch --queries data/sirv_transcripts.fasta \
+./StrobeMatch --queries data/sirv_transcripts.fasta \
                        --references data/ONT_sirv_cDNA_seqs.fasta \
                        --outfolder kmer_output/  --k 30 --kmer_index
 
 # Reads vs reads matching
 
-python StrobeMatch --queries data/sirv_transcripts.fasta \
+./StrobeMatch --queries data/sirv_transcripts.fasta \
                        --references data/sirv_transcripts.fasta \
                        --outfolder strobemer_output/ --k 15 \
                        --strobe_w_min_offset 20 --strobe_w_max_offset 70
