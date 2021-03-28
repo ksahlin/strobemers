@@ -165,6 +165,10 @@ def analyze_strobemers(seq1, seq2, k_size, order, hash_fcn, w, w_low = 0, w_high
             strobemers1 = indexing2.minstrobes(seq1, k_size, w_low, w_high, w, order = 2)
             strobemers2 = indexing2.minstrobes(seq2, k_size, w_low, w_high, w, order = 2)    
             # print("minstrobes2",  len(strobemers2))
+        elif hash_fcn == "hybridstrobes":
+            strobemers1 = indexing2.hybridstrobes(seq1, k_size, w_low, w_high, w, order = 2)
+            strobemers2 = indexing2.hybridstrobes(seq2, k_size, w_low, w_high, w, order = 2)    
+            # print("minstrobes2",  len(strobemers2))
     elif order == 3:
         assert k_size % 3 == 0, "Not div by 3 kmer length, results will be different"
         if hash_fcn == "randstrobes":
@@ -390,8 +394,8 @@ def main(args):
     L = 10000
     k_size = 30
     nr_exp = 10
-    w = 1 # thinning, w = 1  means no thinning
-    mut_freqs = [0.1] #[0.01, 0.05, 0.1] #[0.1] 
+    w = 10 # thinning, w = 1  means no thinning
+    mut_freqs = [0.01, 0.05, 0.1] #[0.1] 
     w_2low = 25
     w_3low = 25
     w_2high = 50
@@ -400,7 +404,7 @@ def main(args):
     # w_3strobe = 25
     # w_4strobe = 25
     # experiment_type choose between 'only_subs', 'controlled' or 'all'
-    experiment_type = "controlled" # "all" #"only_subs" # "" # for spaced kmers
+    experiment_type = "all" #"controlled" # "all" #"only_subs" # "" # for spaced kmers
     # mut_freq = 0.5 #0.01 #, 0.05, 0.1]
     list_for_illustration = [[],[],[],[]]
 
@@ -412,7 +416,8 @@ def main(args):
                     "minstrobes" : { (2,15,w_2low,w_2high): {"m": 0, "mp": 0, "c": 0, "islands": [], "mc":0 }, 
                                      (3,10,w_3low,w_3high): {"m": 0, "mp": 0, "c": 0, "islands": [], "mc":0} },
                     "randstrobes" : { (2,15,w_2low,w_2high): {"m": 0, "mp": 0, "c": 0, "islands": [], "mc":0}, 
-                                      (3,10,w_3low,w_3high): {"m": 0, "mp": 0, "c": 0, "islands": [], "mc":0} }
+                                      (3,10,w_3low,w_3high): {"m": 0, "mp": 0, "c": 0, "islands": [], "mc":0} },
+                    "hybridstrobes" : { (2,15,25,100): {"m": 0, "mp": 0, "c": 0, "islands": [], "mc":0 }}
                    }
         for exp_id in range(nr_exp):
             seq1 = "".join([random.choice("ACGT") for i in range(L)])
@@ -422,8 +427,8 @@ def main(args):
                 muts = set(random.sample(range(len(seq1)),int(L*mut_freq)))
                 seq2 = "".join([seq1[i] if i not in muts else random.choice([help_functions.reverse_complement(seq1[i])]) for i in range(len(seq1))])
             elif experiment_type == 'controlled':
-                muts = set(range(15,L,15)) # every 15th nt for figure 2 only!
-                # muts = set(range(20,L,20)) 
+                # muts = set(range(15,L,15)) # every 15th nt for figure 2 only!
+                muts = set(range(20,L,20)) 
                 seq2 = "".join([seq1[i] if i not in muts else random.choice(['', help_functions.reverse_complement(seq1[i]), seq1[i] + random.choice("ACGT")]) for i in range(len(seq1))])
             elif experiment_type == 'all':
                 muts = set(random.sample(range(len(seq1)),int(L*mut_freq)))
@@ -512,6 +517,14 @@ def main(args):
             list_for_illustration[3].append(all_pos_vector)
             # print(islands)
             
+            m,mp,c,islands,all_pos_vector, match_coverage = analyze_strobemers(seq1, seq2, k_size, 2, "hybridstrobes", w , w_low = 25, w_high = 100)
+            results["hybridstrobes"][(2,15,25,100)]["m"] += m 
+            results["hybridstrobes"][(2,15,25,100)]["c"] += c 
+            results["hybridstrobes"][(2,15,25,100)]["islands"].append(islands) 
+            results["hybridstrobes"][(2,15,25,100)]["mc"] += match_coverage 
+            results["hybridstrobes"][(2,15,25,100)]["mp"] += mp 
+
+
             # m,c,islands,all_pos_vector = analyze_strobemers(seq1, seq2, 28, 4, "randstrobes", w_1 = 7, w_2 = 10, w_3 = 25 )
             # results["randstrobes"][(4,7,w_4strobe)]["m"] += m 
             # results["randstrobes"][(4,7,w_4strobe)]["c"] += c 

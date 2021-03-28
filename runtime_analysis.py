@@ -52,6 +52,10 @@ def time_datastructure(seq, k_size, w_size, data_structure):
         for p, p2, p3, hash_value  in indexing2.seq_to_randstrobes3_iter(seq, k_size, w_low, w_high, prime, w):
             all_mers[hash_value] += 1
 
+    elif data_structure == "hybridstrobes2":
+        if w_size > 4: # not defined below number of active queues which are 4 in this implementation
+            for p, p2, hash_value in indexing2.seq_to_hybridstrobes2_iter(seq, k_size, w_low, w_high):
+                all_mers[hash_value] += 1
 
 def main(args):
 
@@ -61,7 +65,8 @@ def main(args):
                 "minstrobes2": 0,
                 "minstrobes3": 0,
                 "randstrobes2": 0,
-                "randstrobes3": 0}
+                "randstrobes3": 0,
+                "hybridstrobes2": 0}
 
 
     for k_size in [18,36,54,60,72]: #[18,24,30]:
@@ -101,16 +106,24 @@ def main(args):
             elapsed = time() - start
             timings["randstrobes3"] = elapsed
             # print("randstrobes3", k_size, w_size,  elapsed)
-            # print(timings)
+
+            start = time()
+            for s in all_strings:
+                time_datastructure(s, k_size, w_size, "hybridstrobes2")
+            elapsed = time() - start
+            timings["hybridstrobes2"] = elapsed
+            # print("minstrobes2", k_size, w_size,  elapsed)
+
             ms2 = round(timings["minstrobes2"]  / timings["kmer"], 1)
             ms3 = round(timings["minstrobes3"]  / timings["kmer"], 1)
             km = round(timings["kmer"]  / timings["kmer"], 1)
             rs2 = round(timings["randstrobes2"]  / timings["kmer"], 1)
             rs3 = round(timings["randstrobes3"]  / timings["kmer"], 1)
+            hs2 = round(timings["hybridstrobes2"]  / timings["kmer"], 1)
 
             # for ds, v in timings.items():
             #     # print(k,v, timings["kmer"])
-            print("{0} & {1} & {2} & {3} & {4} & {5} & {6}".format(k_size, w_size,  km, ms2, ms3, rs2, rs3) )
+            print("{0} & {1} & {2} & {3} & {4} & {5} & {6} & {7}".format(k_size, w_size,  km, ms2, ms3, rs2, rs3, hs2) )
 
 
 if __name__ == '__main__':
