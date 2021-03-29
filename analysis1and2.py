@@ -304,7 +304,8 @@ def plot_island_distribution2(results, mut_freq, outfolder):
                 for dp in flat:
                     data.write("{0}\t{1}\t{2}\n".format(tmp_label, dp, mut_freq))
     data.close()
-    hue_order = ["randstrobes-(3, 10, 25, 50)", "randstrobes-(2, 15, 25, 50)", "kmers", "minstrobes-(3, 10, 25, 50)", "minstrobes-(2, 15, 25, 50)", "spaced_kmers_dense", "spaced_kmers_sparse"]
+    # hue_order = ["randstrobes-(3, 10, 25, 50)", "randstrobes-(2, 15, 25, 50)", "kmers", "minstrobes-(3, 10, 25, 50)", "minstrobes-(2, 15, 25, 50)", "spaced_kmers_dense", "spaced_kmers_sparse"]
+    hue_order = ["randstrobes-(3, 10, 25, 50)", "hybridstrobes-(3, 10, 25, 50)", "kmers", "minstrobes-(2, 15, 25, 50)", "spaced_kmers_dense"]
     data = pd.read_csv(data.name, sep='\t')
     # plt.yscale('log', nonposy='clip')
     # bins = [0.1*i for i in range(300)]
@@ -398,7 +399,7 @@ def get_e_size(all_islands, L, nr_exp):
 def main(args):
     L = 10000
     k_size = 30
-    nr_exp = 100
+    nr_exp = 1000
     w = 1 # thinning, w = 1  means no thinning
     mut_freqs = [0.01, 0.05, 0.1] #[0.1] 
     w_2low = 25

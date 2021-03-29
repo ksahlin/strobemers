@@ -447,6 +447,15 @@ def randstrobes_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, w, o
             yield m
 
 
+def hybridstrobes_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, w, order = 2, buffer_size = 10000000):
+    
+    for i in range(0, len(seq), buffer_size):
+        substring = seq[i:i+buffer_size] 
+        # print(substring, len(substring))
+        for p, m in hybridstrobes(substring, k_size, strobe_w_min_offset, strobe_w_max_offset, w, order = order).items():
+            yield m
+
+
 def update_queue(q, curr_min, min_index, new_hash, i, start_offset, end_offset):
     old_h = q.popleft()
     q.append(new_hash)

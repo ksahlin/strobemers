@@ -70,6 +70,18 @@ def compute_uniqueness(args, acc, seq, k_size, total_mers):
         for s in indexing2.randstrobes_iter(seq, k_size, w_low, w_high, w, order = 3, buffer_size = 10000000):
             all_mers[s] += 1
 
+
+    elif args.hybridstrobes2:
+        datastructure = "hybridstrobes2"
+        for s in indexing2.hybridstrobes_iter(seq, k_size, w_low, w_high, w, order = 2, buffer_size = 10000000): # (seq, k_size, order = 2, w_1 = 50 ):
+            all_mers[s] += 1
+
+    elif args.hybridstrobes3:
+        datastructure = "hybridstrobes3"
+        for s in indexing2.hybridstrobes_iter(seq, k_size, w_low, w_high, w, order = 3, buffer_size = 10000000):
+            all_mers[s] += 1
+
+
     print_stats(acc, datastructure, all_mers, k_size, total_mers)
 
 
@@ -110,6 +122,8 @@ if __name__ == '__main__':
     parser.add_argument('--minstrobes3',  action="store_true", help='Kmer size')
     parser.add_argument('--randstrobes2',  action="store_true", help='Kmer size')
     parser.add_argument('--randstrobes3',  action="store_true", help='Kmer size')
+    parser.add_argument('--hybridstrobes2',  action="store_true", help='Kmer size')
+    parser.add_argument('--hybridstrobes3',  action="store_true", help='Kmer size')
     parser.add_argument('--spaced_dense',  action="store_true", help='Kmer size')
     parser.add_argument('--spaced_sparse',  action="store_true", help='Kmer size')
     # parser.add_argument('--k', type=int, default=13, help='Kmer size')
