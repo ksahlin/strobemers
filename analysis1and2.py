@@ -181,6 +181,11 @@ def analyze_strobemers(seq1, seq2, k_size, order, hash_fcn, w, w_low = 0, w_high
             strobemers1 = indexing2.minstrobes(seq1, k_size, w_low, w_high, w, order = 3)
             strobemers2 = indexing2.minstrobes(seq2, k_size, w_low, w_high, w, order = 3)
             # print("minstrobes3",  len(strobemers2))
+        
+        elif hash_fcn == "hybridstrobes":
+            strobemers1 = indexing2.hybridstrobes(seq1, k_size, w_low, w_high, w, order = 3)
+            strobemers2 = indexing2.hybridstrobes(seq2, k_size, w_low, w_high, w, order = 3)    
+            # print("minstrobes2",  len(strobemers2))
 
     # elif order == 4:
     #     assert k_size % 4 == 0, "Not div by 4 kmer length, results will be different"
@@ -393,8 +398,8 @@ def get_e_size(all_islands, L, nr_exp):
 def main(args):
     L = 10000
     k_size = 30
-    nr_exp = 10
-    w = 10 # thinning, w = 1  means no thinning
+    nr_exp = 100
+    w = 1 # thinning, w = 1  means no thinning
     mut_freqs = [0.01, 0.05, 0.1] #[0.1] 
     w_2low = 25
     w_3low = 25
@@ -417,7 +422,8 @@ def main(args):
                                      (3,10,w_3low,w_3high): {"m": 0, "mp": 0, "c": 0, "islands": [], "mc":0} },
                     "randstrobes" : { (2,15,w_2low,w_2high): {"m": 0, "mp": 0, "c": 0, "islands": [], "mc":0}, 
                                       (3,10,w_3low,w_3high): {"m": 0, "mp": 0, "c": 0, "islands": [], "mc":0} },
-                    "hybridstrobes" : { (2,15,25,100): {"m": 0, "mp": 0, "c": 0, "islands": [], "mc":0 }}
+                    "hybridstrobes" : { (2,15,w_2low,w_2high): {"m": 0, "mp": 0, "c": 0, "islands": [], "mc":0 },
+                                        (3,10,w_3low,w_3high): {"m": 0, "mp": 0, "c": 0, "islands": [], "mc":0 }}                    
                    }
         for exp_id in range(nr_exp):
             seq1 = "".join([random.choice("ACGT") for i in range(L)])
@@ -517,13 +523,19 @@ def main(args):
             list_for_illustration[3].append(all_pos_vector)
             # print(islands)
             
-            m,mp,c,islands,all_pos_vector, match_coverage = analyze_strobemers(seq1, seq2, k_size, 2, "hybridstrobes", w , w_low = 25, w_high = 100)
-            results["hybridstrobes"][(2,15,25,100)]["m"] += m 
-            results["hybridstrobes"][(2,15,25,100)]["c"] += c 
-            results["hybridstrobes"][(2,15,25,100)]["islands"].append(islands) 
-            results["hybridstrobes"][(2,15,25,100)]["mc"] += match_coverage 
-            results["hybridstrobes"][(2,15,25,100)]["mp"] += mp 
+            m,mp,c,islands,all_pos_vector, match_coverage = analyze_strobemers(seq1, seq2, k_size, 2, "hybridstrobes", w , w_low = w_2low, w_high = w_2high)
+            results["hybridstrobes"][(2,15,w_2low,w_2high)]["m"] += m 
+            results["hybridstrobes"][(2,15,w_2low,w_2high)]["c"] += c 
+            results["hybridstrobes"][(2,15,w_2low,w_2high)]["islands"].append(islands) 
+            results["hybridstrobes"][(2,15,w_2low,w_2high)]["mc"] += match_coverage 
+            results["hybridstrobes"][(2,15,w_2low,w_2high)]["mp"] += mp 
 
+            m,mp,c,islands,all_pos_vector, match_coverage = analyze_strobemers(seq1, seq2, k_size, 3, "hybridstrobes", w , w_low = w_3low, w_high = w_3high)
+            results["hybridstrobes"][(3,10,w_3low,w_3high)]["m"] += m 
+            results["hybridstrobes"][(3,10,w_3low,w_3high)]["c"] += c 
+            results["hybridstrobes"][(3,10,w_3low,w_3high)]["islands"].append(islands) 
+            results["hybridstrobes"][(3,10,w_3low,w_3high)]["mc"] += match_coverage 
+            results["hybridstrobes"][(3,10,w_3low,w_3high)]["mp"] += mp 
 
             # m,c,islands,all_pos_vector = analyze_strobemers(seq1, seq2, 28, 4, "randstrobes", w_1 = 7, w_2 = 10, w_3 = 25 )
             # results["randstrobes"][(4,7,w_4strobe)]["m"] += m 

@@ -425,7 +425,7 @@ def minstrobes(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, w, order =
         minstrobes = {(p1,p2,p3): h for p1,p2,p3,h in seq_to_minstrobes3_iter(seq, m_size, strobe_w_min_offset, strobe_w_max_offset, prime, w)}
         return minstrobes
 
-    elif order == 4:
+    else:
         raise NotImplementedError
 
 
@@ -467,7 +467,8 @@ def update_queue(q, curr_min, min_index, new_hash, i, start_offset, end_offset):
 
 def seq_to_hybridstrobes2_iter(seq, k_size, w_min, w_max, w):
     hash_list = [ hash(seq[i:i+k_size]) for i in range(len(seq) - k_size +1)]
-    w_p = (w_max - w_min ) // 4
+    n_partition = 2
+    w_p = (w_max - w_min ) // n_partition
 
     win1 = deque(hash_list[w_min : w_min + w_p])
     min_index1, min_w1 = argmin(win1)
@@ -477,15 +478,15 @@ def seq_to_hybridstrobes2_iter(seq, k_size, w_min, w_max, w):
     min_index2, min_w2 = argmin(win2)
     min_index2 = min_index2 + w_min + w_p 
 
-    win3 = deque(hash_list[w_min+2*w_p : w_min + 3*w_p])
-    min_index3, min_w3 = argmin(win3)
-    min_index3 = min_index3 + w_min+2*w_p
+    # win3 = deque(hash_list[w_min+2*w_p : w_min + 3*w_p])
+    # min_index3, min_w3 = argmin(win3)
+    # min_index3 = min_index3 + w_min+2*w_p
 
-    win4 = deque(hash_list[w_min+3*w_p : w_min + 4*w_p])
-    min_index4, min_w4 = argmin(win4)
-    min_index4 = min_index4 + w_min+2*w_p
+    # win4 = deque(hash_list[w_min+3*w_p : w_min + 4*w_p])
+    # min_index4, min_w4 = argmin(win4)
+    # min_index4 = min_index4 + w_min+2*w_p
 
-    for i in range(len(hash_list) - w_min - 4*w_p): # temporary iteration
+    for i in range(len(hash_list) - w_min - n_partition*w_p): # temporary iteration
         m1 = hash_list[i]
 
         # updating windows
@@ -495,26 +496,87 @@ def seq_to_hybridstrobes2_iter(seq, k_size, w_min, w_max, w):
         new_w2 = hash_list[i + w_min + 2*w_p]
         min_index2, min_w2 = update_queue(win2, min_w2, min_index2, new_w2, i, w_min + w_p,  w_min + 2*w_p)
 
-        new_w3 = hash_list[i+ w_min + 3*w_p]
-        min_index3, min_w3 = update_queue(win3, min_w3, min_index3, new_w3, i, w_min + 2*w_p,  w_min + 3*w_p)
+        # new_w3 = hash_list[i+ w_min + 3*w_p]
+        # min_index3, min_w3 = update_queue(win3, min_w3, min_index3, new_w3, i, w_min + 2*w_p,  w_min + 3*w_p)
 
-        new_w4 = hash_list[i+ w_min + 4*w_p]
-        min_index4, min_w4 = update_queue(win4, min_w4, min_index4, new_w4, i, w_min + 3*w_p,  w_min + 4*w_p)
+        # new_w4 = hash_list[i+ w_min + 4*w_p]
+        # min_index4, min_w4 = update_queue(win4, min_w4, min_index4, new_w4, i, w_min + 3*w_p,  w_min + 4*w_p)
 
         # print(i, min_index1, min_w1, min_w2, min_w3)
-        r =  m1 % 4
+        r =  m1 % n_partition
         if r == 0:
             # print(i, 1,m1 - min_w1)
             yield i, min_index1, m1 - min_w1
         elif r == 1:
             # print(i, 2,m1 - min_w2)
             yield i, min_index2, m1 - min_w2
-        elif r == 2:
+        # elif r == 2:
+        #     # print(i, 3, m1 - min_w3)
+        #     yield i, min_index3, m1 - min_w3
+        # else:
+        #     # print(i, 3, m1 - min_w3)
+        #     yield i, min_index4, m1 - min_w4
+
+
+def seq_to_hybridstrobes3_iter(seq, k_size, w_min, w_max, w):
+    hash_list = [ hash(seq[i:i+k_size]) for i in range(len(seq) - k_size +1)]
+    n_partition = 2
+    w_p = (w_max - w_min ) // n_partition
+
+    s1_win1 = deque(hash_list[w_min : w_min + w_p])
+    min_index1, min_w1 = argmin(s1_win1)
+    min_index1 = min_index1 + w_min
+
+    s1_win2 = deque(hash_list[w_min+w_p : w_max])
+    min_index2, min_w2 = argmin(s1_win2)
+    min_index2 = min_index2 + w_min + w_p 
+
+    s2_win1 = deque(hash_list[w_min + w_max : w_min + w_max + w_p])
+    min_index3, min_w3 = argmin(s2_win1)
+    min_index3 = min_index3 + w_min + w_max
+
+    s2_win4 = deque(hash_list[w_min + w_max + w_p: 2*w_max])
+    min_index4, min_w4 = argmin(s2_win4)
+    min_index4 = min_index4 + w_min + w_max + w_p
+
+    for i in range(len(hash_list) - n_partition*w_max): # temporary iteration
+        m1 = hash_list[i]
+
+        # updating windows
+        new_w1 = hash_list[i + w_min + w_p]
+        min_index1, min_w1 = update_queue(s1_win1, min_w1, min_index1, new_w1, i, w_min, w_min + w_p)
+        # print(len(win1), win1)
+        new_w2 = hash_list[i + w_max]
+        min_index2, min_w2 = update_queue(s1_win2, min_w2, min_index2, new_w2, i, w_min + w_p,  w_max)
+
+        new_w3 = hash_list[i+ w_min + w_max + w_p]
+        min_index3, min_w3 = update_queue(s2_win1, min_w3, min_index3, new_w3, i, w_min + w_max, w_min + w_max + w_p )
+
+        new_w4 = hash_list[i+ 2*w_max]
+        min_index4, min_w4 = update_queue(s2_win4, min_w4, min_index4, new_w4, i, w_min + w_max + w_p, 2*w_max)
+
+        # print(i, min_index1, min_w1, min_w2, min_w3)
+        r =  m1 % n_partition
+        if r == 0:
+            # print(i, 1,m1 - min_w1)
+            i2 = min_index1
+            m2 = min_w1
+            # yield i, min_index1, m1 - min_w1
+        elif r == 1:
+            # print(i, 2,m1 - min_w2)
+            i2 = min_index2
+            m2 = min_w2
+            # yield i, min_index2, m1 - min_w2
+        
+        r2 =  (m1 - m2) % n_partition
+        if r2 == 0:
             # print(i, 3, m1 - min_w3)
-            yield i, min_index3, m1 - min_w3
-        else:
-            # print(i, 3, m1 - min_w3)
-            yield i, min_index4, m1 - min_w4
+            # print(i, m1, m2, min_w3, m1 - m2 + 2*min_w3)
+            yield i, i2, min_index3, m1 - m2 + 2*min_w3
+        elif r2 == 1:
+            # print(i, m1, m2, min_w4, m1 - m2 + 2*min_w4)
+            yield i, i2, min_index4, m1 - m2 + 2*min_w4
+
 
 def hybridstrobes(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, w, order = 2):
     assert strobe_w_min_offset > 0, "Minimum strobemer offset has to be greater than 0 in this implementation"
@@ -525,29 +587,36 @@ def hybridstrobes(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, w, orde
         m_size = k_size//2
         if w == 1:
             hybridstrobes = {(p1,p2): h for p1,p2,h in seq_to_hybridstrobes2_iter(seq, m_size, strobe_w_min_offset, strobe_w_max_offset, w)}
+            # print(len(hybridstrobes))
+
         else: # thin out hybridstrobes
             hybridstrobes_tmp = [ (p1, p2, h) for p1,p2,h in seq_to_hybridstrobes2_iter(seq, m_size, strobe_w_min_offset, strobe_w_max_offset, w)]
             thinned_hybridstrobes = thinner([h for (p1, p2,h) in hybridstrobes_tmp], w)
             hybridstrobes = {}
-            # print(len(hybridstrobes_tmp))
-            # print(len(thinned_hybridstrobes))
             for p1, h in thinned_hybridstrobes:
-                # print(p1, len(hybridstrobes_tmp))
                 if p1 < len(hybridstrobes_tmp):
                     (p1, p2, h) = hybridstrobes_tmp[p1]
                     hybridstrobes[(p1,p2)] = h
-
         return hybridstrobes
 
     elif order == 3:
-        raise NotImplementedError
-        # if k_size % 3 != 0:
-        #     print("WARNING: kmer size is not evenly divisible with 3, will use {0} as kmer size: ".format(k_size - k_size % 3))
-        #     k_size = k_size - k_size % 3
-        # m_size = k_size//3
-        # minstrobes = {(p1,p2,p3): h for p1,p2,p3,h in seq_to_hybridstrobes3_iter(seq, m_size, strobe_w_min_offset, strobe_w_max_offset, prime, w)}
-        # return minstrobes
+        if k_size % 3 != 0:
+            print("WARNING: kmer size is not evenly divisible with 3, will use {0} as kmer size: ".format(k_size - k_size % 3))
+            k_size = k_size - k_size % 3
+        m_size = k_size//3
+        if w == 1:
+            hybridstrobes = {(p1,p2, p3): h for p1,p2,p3,h in seq_to_hybridstrobes3_iter(seq, m_size, strobe_w_min_offset, strobe_w_max_offset, w)}
+            # print(len(hybridstrobes))
+        else: # thin out hybridstrobes
+            hybridstrobes_tmp = [ (p1, p2, p3, h) for p1,p2,p3,h in seq_to_hybridstrobes3_iter(seq, m_size, strobe_w_min_offset, strobe_w_max_offset, w)]
+            thinned_hybridstrobes = thinner([h for (p1, p2, p3, h) in hybridstrobes_tmp], w)
+            hybridstrobes = {}
+            for p1, h in thinned_hybridstrobes:
+                if p1 < len(hybridstrobes_tmp):
+                    (p1, p2, p3, h) = hybridstrobes_tmp[p1]
+                    hybridstrobes[(p1,p2, p3)] = h
+        return hybridstrobes
 
-    elif order == 4:
+    else:
         raise NotImplementedError
 
