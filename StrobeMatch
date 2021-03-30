@@ -71,6 +71,160 @@ def thinner(hash_list, w):
     return thinned_hash_list
 
 
+
+
+def update_queue(q, curr_min, min_index, new_hash, i, start_offset, end_offset):
+    old_h = q.popleft()
+    q.append(new_hash)
+    
+    # we have discarded previous windows minimizer, look for new minimizer brute force
+    if curr_min == old_h: 
+        min_index, curr_min = argmin(q)
+        min_index = i + start_offset + min_index
+
+    # Previous minimizer still in window, we only need to compare with the recently added kmer 
+    elif new_hash < curr_min:
+        curr_min = new_hash
+        min_index = i + end_offset
+
+    return min_index, curr_min 
+
+
+
+def seq_to_hybridstrobes2_iter(seq, k_size, w_min, w_max, prime, w):
+    hash_list = [ hash(seq[i:i+k_size]) for i in range(len(seq) - k_size +1)]
+    n_partition = 3
+    w_p = (w_max - w_min ) // n_partition
+
+    win1 = deque(hash_list[w_min : w_min + w_p])
+    min_index1, min_w1 = argmin(win1)
+    min_index1 = min_index1 + w_min
+
+    win2 = deque(hash_list[w_min+w_p : w_min + 2*w_p])
+    min_index2, min_w2 = argmin(win2)
+    min_index2 = min_index2 + w_min + w_p 
+
+    win3 = deque(hash_list[w_min+2*w_p : w_min + 3*w_p])
+    min_index3, min_w3 = argmin(win3)
+    min_index3 = min_index3 + w_min+2*w_p
+
+    # win4 = deque(hash_list[w_min+3*w_p : w_min + 4*w_p])
+    # min_index4, min_w4 = argmin(win4)
+    # min_index4 = min_index4 + w_min+2*w_p
+
+    for i in range(len(hash_list) - w_min - n_partition*w_p): # temporary iteration
+        m1 = hash_list[i]
+
+        # updating windows
+        new_w1 = hash_list[i + w_min + w_p]
+        min_index1, min_w1 = update_queue(win1, min_w1, min_index1, new_w1, i, w_min, w_min + w_p)
+        # print(len(win1), win1)
+        new_w2 = hash_list[i + w_min + 2*w_p]
+        min_index2, min_w2 = update_queue(win2, min_w2, min_index2, new_w2, i, w_min + w_p,  w_min + 2*w_p)
+
+        new_w3 = hash_list[i+ w_min + 3*w_p]
+        min_index3, min_w3 = update_queue(win3, min_w3, min_index3, new_w3, i, w_min + 2*w_p,  w_min + 3*w_p)
+
+        # new_w4 = hash_list[i+ w_min + 4*w_p]
+        # min_index4, min_w4 = update_queue(win4, min_w4, min_index4, new_w4, i, w_min + 3*w_p,  w_min + 4*w_p)
+
+        # print(i, min_index1, min_w1, min_w2, min_w3)
+        r =  m1 % n_partition
+        if r == 0:
+            # print(i, 1,m1 - min_w1)
+            yield i, min_index1, m1 - min_w1
+        elif r == 1:
+            # print(i, 2,m1 - min_w2)
+            yield i, min_index2, m1 - min_w2
+        elif r == 2:
+            # print(i, 3, m1 - min_w3)
+            yield i, min_index3, m1 - min_w3
+        # else:
+        #     # print(i, 3, m1 - min_w3)
+        #     yield i, min_index4, m1 - min_w4
+
+
+def seq_to_hybridstrobes3_iter(seq, k_size, w_min, w_max, prime, w):
+    hash_list = [ hash(seq[i:i+k_size]) for i in range(len(seq) - k_size +1)]
+    n_partition = 3
+    w_p = (w_max - w_min ) // n_partition
+
+    s1_win1 = deque(hash_list[w_min : w_min + w_p])
+    min_index1, min_w1 = argmin(s1_win1)
+    min_index1 = min_index1 + w_min
+
+    s1_win2 = deque(hash_list[w_min+w_p : w_min+2*w_p])
+    min_index2, min_w2 = argmin(s1_win2)
+    min_index2 = min_index2 + w_min + w_p 
+
+    s1_win3 = deque(hash_list[w_min+2*w_p : w_max])
+    min_index3, min_w3 = argmin(s1_win3)
+    min_index3 = min_index3 + w_min+2*w_p
+
+    s2_win1 = deque(hash_list[w_min + w_max : w_min + w_max + w_p])
+    min_index4, min_w4 = argmin(s2_win1)
+    min_index4 = min_index4 + w_min + w_max
+
+    s2_win2 = deque(hash_list[w_min + w_max + w_p: w_min + w_max + 2*w_p])
+    min_index5, min_w5 = argmin(s2_win2)
+    min_index5 = min_index5 + w_min + w_max + w_p
+
+    s2_win3 = deque(hash_list[w_min + w_max + 2*w_p: 2*w_max])
+    min_index6, min_w6 = argmin(s2_win3)
+    min_index6 = min_index6 + w_min + w_max + 2*w_p
+
+    for i in range(len(hash_list) - n_partition*w_max): # temporary iteration
+        m1 = hash_list[i]
+
+        # updating windows
+        new_w1 = hash_list[i + w_min + w_p]
+        min_index1, min_w1 = update_queue(s1_win1, min_w1, min_index1, new_w1, i, w_min, w_min + w_p)
+        # print(len(win1), win1)
+        new_w2 = hash_list[i + w_min + 2*w_p]
+        min_index2, min_w2 = update_queue(s1_win2, min_w2, min_index2, new_w2, i, w_min + w_p,  w_min + 2*w_p)
+
+        new_w3 = hash_list[i + w_max]
+        min_index3, min_w3 = update_queue(s1_win3, min_w3, min_index3, new_w3, i, w_min + 2*w_p,  w_max)
+
+        new_w4 = hash_list[i+ w_min + w_max + w_p]
+        min_index4, min_w4 = update_queue(s2_win1, min_w4, min_index4, new_w4, i, w_min + w_max, w_min + w_max + w_p )
+
+        new_w5 = hash_list[i+ w_min + w_max + 2*w_p]
+        min_index5, min_w5 = update_queue(s2_win2, min_w5, min_index5, new_w5, i, w_min + w_max + w_p, w_min + w_max + 2*w_p )
+
+        new_w6 = hash_list[i+ 2*w_max]
+        min_index6, min_w6 = update_queue(s2_win3, min_w6, min_index6, new_w6, i, w_min + w_max + 2*w_p, 2*w_max)
+
+        # print(i, min_index1, min_w1, min_w2, min_w3)
+        r =  m1 % n_partition
+        if r == 0:
+            # print(i, 1,m1 - min_w1)
+            i2 = min_index1
+            m2 = min_w1
+            # yield i, min_index1, m1 - min_w1
+        elif r == 1:
+            # print(i, 2,m1 - min_w2)
+            i2 = min_index2
+            m2 = min_w2
+            # yield i, min_index2, m1 - min_w2
+        elif r == 2:
+            # print(i, 2,m1 - min_w2)
+            i2 = min_index3
+            m2 = min_w3
+            # yield i, min_index2, m1 - min_w2
+        
+        r2 = (m1 - m2) % n_partition
+        if r2 == 0:
+            # print(i, 3, m1 - min_w3)
+            # print(i, m1, m2, min_w3, m1 - m2 + 2*min_w3)
+            yield i, i2, min_index4, m1 - m2 + 2*min_w4
+        elif r2 == 1:
+            yield i, i2, min_index5, m1 - m2 + 2*min_w5
+        elif r2 == 2:
+            # print(i, m1, m2, min_w4, m1 - m2 + 2*min_w4)
+            yield i, i2, min_index6, m1 - m2 + 2*min_w6
+
+
 def randstrobe_order3(hash_seq_list, start1, stop1, start2, stop2, hash_m1, k_size, prime):
     min_index1, min_value = argmin([ (hash_m1 - hash_seq_list[i][1]) % prime for i in range(start1, stop1)])
     min_hash_val = hash_m1 - hash_seq_list[start1 + min_index1][1]
@@ -174,6 +328,142 @@ def build_randstrobe2_index(refs, k_size, strobe_w_min_offset, strobe_w_max_offs
                 print("{0} randstrobes created from references".format(cntr))
         # print(hash_val, r_id, pos)
     return idx, ref_id_to_accession, cntr
+
+
+def build_hybridstrobe3_index(refs, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
+    idx = defaultdict(lambda :array("L"))
+    ref_id_to_accession = {}
+    cntr = 0
+
+    if w == 1:
+        for r_id, (ref_acc, (seq, _)) in enumerate(help_functions.readfq(refs)):
+            ref_id_to_accession[r_id] = ref_acc
+            for p1, p2, p3, hash_val in seq_to_hybridstrobes3_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
+                idx[hash_val].append(r_id)
+                idx[hash_val].append(p1)
+                idx[hash_val].append(p2)
+                idx[hash_val].append(p3)
+                cntr += 1
+                if cntr % 1000000 == 0:
+                    print("{0} hybridstrobes created from references".format(cntr))
+            # print(hash_val, r_id, pos)
+    else:
+        for r_id, (ref_acc, (seq, _)) in enumerate(help_functions.readfq(refs)):
+            thinner_window = deque([hash(seq[i:i+k_size]) for i in range(w)])
+            min_index, curr_min_hash = argmin(thinner_window)
+            sampled_positions = set([min_index])
+            ref_id_to_accession[r_id] = ref_acc
+            info_buffer = deque([])
+            for p1, p2, p3, hash_val in seq_to_hybridstrobes3_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
+                if p1 in sampled_positions:
+                    idx[hash_val].append(r_id)
+                    idx[hash_val].append(p1)
+                    idx[hash_val].append(p2)
+                    idx[hash_val].append(p3)
+                    sampled_positions.remove(p1)
+                    assert len(sampled_positions) == 0
+                    cntr += 1
+                
+                if p1 < w:
+                    info_buffer.append( (p1, p2, p3, hash_val) )
+                    continue # already in queue
+                else:
+                    # updating window
+                    discarded_hash = thinner_window.popleft()
+                    thinner_window.append(hash_val)
+                    info_buffer.popleft()
+                    info_buffer.append( (p1, p2, p3, hash_val) )
+
+                    # we have discarded previous windows minimizer, look for new minimizer brute force
+                    if curr_min_hash == discarded_hash: 
+                        min_index, curr_min_hash = argmin(thinner_window)
+                        (p1_, p2_, p3_, hash_val_) = info_buffer[min_index]
+                        idx[hash_val].append(r_id)
+                        idx[hash_val].append(p1_ )
+                        idx[hash_val].append(p2_ )
+                        idx[hash_val].append(p3_ )
+                        cntr += 1
+
+                    # Previous minimizer still in window, we only need to compare with the recently added kmer 
+                    elif hash_val < curr_min_hash:
+                        curr_min_hash = hash_val
+                        idx[hash_val].append(r_id)
+                        idx[hash_val].append(p1)
+                        idx[hash_val].append(p2)
+                        idx[hash_val].append(p3)
+                        cntr += 1
+
+                if cntr % 1000000 == 0:
+                    print("{0} hybridstrobes created from references, currently at position: {1}".format(cntr, p1))
+
+    return idx, ref_id_to_accession, cntr
+
+
+
+def build_hybridstrobe2_index(refs, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
+    idx = defaultdict(lambda :array("L"))
+    ref_id_to_accession = {}
+    cntr = 0
+
+    if w == 1:
+        for r_id, (ref_acc, (seq, _)) in enumerate(help_functions.readfq(refs)):
+            ref_id_to_accession[r_id] = ref_acc
+            for p1, p2, hash_val in seq_to_hybridstrobes2_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
+                idx[hash_val].append(r_id)
+                idx[hash_val].append(p1)
+                idx[hash_val].append(p2)
+                cntr += 1
+                if cntr % 1000000 == 0:
+                    print("{0} hybridstrobes created from references".format(cntr))
+            # print(hash_val, r_id, pos)
+    else:
+        for r_id, (ref_acc, (seq, _)) in enumerate(help_functions.readfq(refs)):
+            thinner_window = deque([hash(seq[i:i+k_size]) for i in range(w)])
+            min_index, curr_min_hash = argmin(thinner_window)
+            sampled_positions = set([min_index])
+            ref_id_to_accession[r_id] = ref_acc
+            info_buffer = deque([])
+            for p1, p2, hash_val in seq_to_hybridstrobes2_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
+                if p1 in sampled_positions:
+                    idx[hash_val].append(r_id)
+                    idx[hash_val].append(p1)
+                    idx[hash_val].append(p2)
+                    sampled_positions.remove(p1)
+                    assert len(sampled_positions) == 0
+                    cntr += 1
+                
+                if p1 < w:
+                    info_buffer.append( (p1, p2, hash_val) )
+                    continue # already in queue
+                else:
+                    # updating window
+                    discarded_hash = thinner_window.popleft()
+                    thinner_window.append(hash_val)
+                    info_buffer.popleft()
+                    info_buffer.append( (p1, p2, hash_val) )
+
+                    # we have discarded previous windows minimizer, look for new minimizer brute force
+                    if curr_min_hash == discarded_hash: 
+                        min_index, curr_min_hash = argmin(thinner_window)
+                        (p1_, p2_, hash_val_) = info_buffer[min_index]
+                        idx[hash_val].append(r_id)
+                        idx[hash_val].append(p1_ )
+                        idx[hash_val].append(p2_ )
+                        cntr += 1
+
+                    # Previous minimizer still in window, we only need to compare with the recently added kmer 
+                    elif hash_val < curr_min_hash:
+                        curr_min_hash = hash_val
+                        idx[hash_val].append(r_id)
+                        idx[hash_val].append(p1)
+                        idx[hash_val].append(p2)
+                        cntr += 1
+
+                if cntr % 1000000 == 0:
+                    print("{0} hybridstrobes created from references, currently at position: {1}".format(cntr, p1))
+
+    return idx, ref_id_to_accession, cntr
+
 
 
 
@@ -624,6 +914,40 @@ def build_kmer_index(refs, k_size, w):
     return idx, ref_id_to_accession, cntr
 
 
+# def minstrobes_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, w, order = 2, buffer_size = 10000000):
+    
+#     for i in range(0, len(seq), buffer_size):
+#         substring = seq[i:i+buffer_size] 
+#         # print(substring, len(substring))
+#         for p, m in minstrobes(substring, k_size, strobe_w_min_offset, strobe_w_max_offset, w, order = order).items():
+#             yield m
+
+
+# def randstrobes_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, w, order = 2, buffer_size = 10000000):
+    
+#     for i in range(0, len(seq), buffer_size):
+#         substring = seq[i:i+buffer_size] 
+#         for p, m in randstrobes(substring, k_size, strobe_w_min_offset, strobe_w_max_offset, w, order = order).items():
+#             yield m
+
+
+# def hybridstrobes_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, w, order = 2, buffer_size = 10000000):
+    
+#     for i in range(0, len(seq), buffer_size):
+#         substring = seq[i:i+buffer_size] 
+#         # print(substring, len(substring))
+#         for p, m in hybridstrobes(substring, k_size, strobe_w_min_offset, strobe_w_max_offset, w, order = order).items():
+#             yield m
+
+# def kmer_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, w, order = 2, buffer_size = 10000000):
+    
+#     for i in range(0, len(seq), buffer_size):
+#         substring = seq[i:i+buffer_size] 
+#         # print(substring, len(substring))
+#         for p, m in kmers(substring, k_size, strobe_w_min_offset, strobe_w_max_offset, w, order = order).items():
+#             yield m
+
+
 def print_matches_to_file(query_matches, ref_id_to_accession, outfile, reverse):
     for q_acc, read_matches in query_matches:
         if reverse:
@@ -649,14 +973,20 @@ def main(args):
         elif args.n == 3:
             idx, ref_id_to_accession, cntr = build_minstrobe3_index(open(args.references,'r'),args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)
             print("{0} minstrobes created from references".format(cntr))            
-    else:
+    elif args.randstrobe_index:
         if args.n == 2:
             idx, ref_id_to_accession, cntr = build_randstrobe2_index(open(args.references,'r'),args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)
             print("{0} randstrobes created from references".format(cntr))
         elif args.n == 3:
             idx, ref_id_to_accession, cntr = build_randstrobe3_index(open(args.references,'r'),args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)
             print("{0} randstrobes created from references".format(cntr))            
-
+    else:
+        if args.n == 2:
+            idx, ref_id_to_accession, cntr = build_hybridstrobe2_index(open(args.references,'r'),args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)
+            print("{0} hybridstrobes created from references".format(cntr))
+        elif args.n == 3:
+            idx, ref_id_to_accession, cntr = build_hybridstrobe3_index(open(args.references,'r'),args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)
+            print("{0} hybridstrobes created from references".format(cntr))         
 
     outfile = open(os.path.join(args.outfolder, args.prefix + ".tsv"), 'w')
     query_matches = []
@@ -678,9 +1008,10 @@ def main(args):
             elif args.n == 3: 
                 strobes = [(p1, p2, p3, h) for p1, p2, p3, h in seq_to_minstrobes3_iter(seq, args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)]
                 read_matches = get_matches3(strobes, idx, args.k, args.dont_merge_matches, ref_id_to_accession, acc, args.selfalign)
+            else:
+                raise NotImplementedError
 
-
-        else:
+        elif args.randstrobe_index:
             if args.n == 2: 
                 strobes = [(p1, p2, h) for p1, p2, h in seq_to_randstrobes2_iter(seq, args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)]
                 read_matches = get_matches(strobes, idx, args.k, args.dont_merge_matches, ref_id_to_accession, acc, args.selfalign)
@@ -688,9 +1019,20 @@ def main(args):
             elif args.n == 3: 
                 strobes = [(p1, p2, p3, h) for p1, p2, p3, h in seq_to_randstrobes3_iter(seq, args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)]
                 read_matches = get_matches3(strobes, idx, args.k, args.dont_merge_matches, ref_id_to_accession, acc, args.selfalign)
+            else:
+                raise NotImplementedError
+        else:
+            if args.n == 2: 
+                strobes = [(p1, p2, h) for p1, p2, h in seq_to_hybridstrobes2_iter(seq, args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)]
+                read_matches = get_matches(strobes, idx, args.k, args.dont_merge_matches, ref_id_to_accession, acc, args.selfalign)
+
+            elif args.n == 3: 
+                strobes = [(p1, p2, p3, h) for p1, p2, p3, h in seq_to_hybridstrobes3_iter(seq, args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)]
+                read_matches = get_matches3(strobes, idx, args.k, args.dont_merge_matches, ref_id_to_accession, acc, args.selfalign)
 
             else:
                 raise NotImplementedError
+
 
         # print(strobes)
         query_matches.append( (acc, read_matches) )
@@ -716,14 +1058,26 @@ def main(args):
 
                 else:
                     raise NotImplementedError
-
-            else:
+            
+            elif args.randstrobe_index:
                 if args.n == 2: 
                     strobes_rc = [(p1, p2, h) for p1, p2, h in seq_to_randstrobes2_iter(rc(seq), args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)]
                     read_matches_rc = get_matches(strobes_rc, idx, args.k, args.dont_merge_matches,ref_id_to_accession, acc, args.selfalign)
 
                 elif args.n == 3: 
                     strobes_rc = [(p1, p2, p3, h) for p1, p2, p3, h in seq_to_randstrobes3_iter(rc(seq), args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)]
+                    read_matches_rc = get_matches3(strobes_rc, idx, args.k, args.dont_merge_matches,ref_id_to_accession, acc, args.selfalign)
+
+                else:
+                    raise NotImplementedError
+
+            else:
+                if args.n == 2: 
+                    strobes_rc = [(p1, p2, h) for p1, p2, h in seq_to_hybridstrobes2_iter(rc(seq), args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)]
+                    read_matches_rc = get_matches(strobes_rc, idx, args.k, args.dont_merge_matches,ref_id_to_accession, acc, args.selfalign)
+
+                elif args.n == 3: 
+                    strobes_rc = [(p1, p2, p3, h) for p1, p2, p3, h in seq_to_hybridstrobes3_iter(rc(seq), args.k, args.strobe_w_min_offset, args.strobe_w_max_offset, PRIME, w)]
                     read_matches_rc = get_matches3(strobes_rc, idx, args.k, args.dont_merge_matches,ref_id_to_accession, acc, args.selfalign)
 
                 else:
@@ -752,7 +1106,7 @@ if __name__ == '__main__':
                                                                             window will start at i+k+strobe_w_min_offset. Default: 20nt donwstream from end of first kmer.')
     parser.add_argument('--strobe_w_max_offset', type=int, default=70, help='Strobemer window end. If kmer start at pos i, first\
                                                                             window will stop at i+k+strobe_w_max_offset. Default: 70nt donwstream from end of first kmer.')
-    parser.add_argument('--w', type=int, default=1, help='Thinning window size (default = 1, i.e., no thinning)')
+    parser.add_argument('--w', type=int, default=1, help='Thinning window size applied to reference sequences (default = 1, i.e., no thinning)')
     parser.add_argument('--n', type=int, default=2, help='Order on strobes')
     parser.add_argument('--dont_merge_matches', action="store_true",  help='Do not merge matches with this option. It is seriously advised to\
                                                                      merge matches as the files can become huge otherwise and fill up all diskspace.\
@@ -763,8 +1117,9 @@ if __name__ == '__main__':
                                                                      disk space frendilier, although these files can get large too.')
     parser.add_argument('--outfolder', type=str,  default=None, help='Folder to output TSV match file.')
     parser.add_argument('--prefix', type=str,  default="matches", help='Filename prefix (default "matches").')
-    parser.add_argument('--kmer_index', action="store_true",  help='Kmers can be used instead of randstrobes (default), used for performance comparison')
-    parser.add_argument('--minstrobe_index', action="store_true",  help='Kmers can be used instead of randstrobes (default), used for performance comparison')
+    parser.add_argument('--kmer_index', action="store_true",  help='K-mers can be used instead of randstrobes (default), used for performance comparison')
+    parser.add_argument('--minstrobe_index', action="store_true",  help='Minstrobes can be used instead of hybridstrobes (default), used for performance comparison')
+    parser.add_argument('--randstrobe_index', action="store_true",  help='Randstrobes can be used instead of hybridstrobes (default), used for performance comparison')
     parser.add_argument('--selfalign', action="store_true",  help='Aligns sequences to itself (mainly used for bugfixing). Default is not align\
                                                                     sequneces to themselves if the same file is given as references and queries.')
     # parser.add_argument('--compress', type=str,  default=None, help='Compress output')
