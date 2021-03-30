@@ -341,7 +341,7 @@ def plot_matches(all_data, method, L, k_size,outfolder):
         for run in all_runs:
             binary_vector = []
             s = set(run)
-            for i in range(L - k_size +1):
+            for i in range(83):
                 if i in s:
                     # print("X",end='')
                     binary_vector.append(1)
@@ -353,25 +353,33 @@ def plot_matches(all_data, method, L, k_size,outfolder):
     # print(binary_matrix)
 
     # np_matrix = np.array(binary_matrix)  
-    fig, ax = plt.subplots(4,sharex=True, sharey=True)
+    fig, ax = plt.subplots(3,2,sharex=True, sharey=True)
     fig.suptitle('Match distribution')
     plt.yticks([])
     id_labels = ["1", "2", "3", "4", "5"]
-    ax[0].set_title('minstrobes (2,9,10,20)')
-    mat = ax[0].imshow(binary_matrices[0], cmap='GnBu', interpolation='nearest')
+    ax[0, 0].set_title('minstrobes (2,9,10,20)')
+    mat = ax[0, 0].imshow(binary_matrices[0], cmap='GnBu', interpolation='nearest')
     # ax[0].set_yticks(range(binary_matrices[0].shape[0]), id_labels)
 
-    ax[1].set_title('minstrobes (3,6,10,20)')
-    mat = ax[1].imshow(binary_matrices[1], cmap='GnBu', interpolation='nearest')
+    ax[1, 0].set_title('minstrobes (3,6,10,20)')
+    mat = ax[1, 0].imshow(binary_matrices[1], cmap='GnBu', interpolation='nearest')
     # ax[1].set_yticks(range(binary_matrices[1].shape[0]), id_labels)
 
     # ax[2].set_yticks(range(binary_matrices[2].shape[0]), id_labels)
-    ax[2].set_title('randstrobes (2,9,10,20)')
-    mat = ax[2].imshow(binary_matrices[2], cmap='GnBu', interpolation='nearest')
+    ax[2, 0].set_title('randstrobes (2,9,10,20)')
+    mat = ax[2,0].imshow(binary_matrices[2], cmap='GnBu', interpolation='nearest')
 
     # ax[3].set_yticks(range(binary_matrices[3].shape[0]), id_labels)
-    ax[3].set_title('randstrobes (3,6,10,20)')
-    mat = ax[3].imshow(binary_matrices[3], cmap='GnBu', interpolation='nearest')
+    ax[0,1].set_title('randstrobes (3,6,10,20)')
+    mat = ax[0,1].imshow(binary_matrices[3], cmap='GnBu', interpolation='nearest')
+
+    # ax[2].set_yticks(range(binary_matrices[2].shape[0]), id_labels)
+    ax[1, 1].set_title('hybridstrobes (2,9,10,20)')
+    mat = ax[1,1].imshow(binary_matrices[4], cmap='GnBu', interpolation='nearest')
+
+    # ax[3].set_yticks(range(binary_matrices[3].shape[0]), id_labels)
+    ax[2,1].set_title('hybridstrobes (3,6,10,20)')
+    mat = ax[2,1].imshow(binary_matrices[5], cmap='GnBu', interpolation='nearest')
 
 
     # plt.xticks(range(id_matrix.shape[1]), concert_dates)
@@ -399,9 +407,9 @@ def get_e_size(all_islands, L, nr_exp):
 def main(args):
     L = 10000
     k_size = 30
-    nr_exp = 1000
+    nr_exp = 10
     w = 1 # thinning, w = 1  means no thinning
-    mut_freqs = [0.01, 0.05, 0.1] #[0.1] 
+    mut_freqs = [0.1] #[0.01, 0.05, 0.1] #[0.1] 
     w_2low = 25
     w_3low = 25
     w_2high = 50
@@ -412,7 +420,7 @@ def main(args):
     # experiment_type choose between 'only_subs', 'controlled' or 'all'
     experiment_type = "all" #"controlled" # "all" #"only_subs" # "" # for spaced kmers
     # mut_freq = 0.5 #0.01 #, 0.05, 0.1]
-    list_for_illustration = [[],[],[],[]]
+    list_for_illustration = [[],[],[],[],[],[]]
 
     for mut_freq in mut_freqs:
         print("MUTATION RATE:", mut_freq)
@@ -530,6 +538,7 @@ def main(args):
             results["hybridstrobes"][(2,15,w_2low,w_2high)]["islands"].append(islands) 
             results["hybridstrobes"][(2,15,w_2low,w_2high)]["mc"] += match_coverage 
             results["hybridstrobes"][(2,15,w_2low,w_2high)]["mp"] += mp 
+            list_for_illustration[4].append(all_pos_vector)
 
             m,mp,c,islands,all_pos_vector, match_coverage = analyze_strobemers(seq1, seq2, k_size, 3, "hybridstrobes", w , w_low = w_3low, w_high = w_3high)
             results["hybridstrobes"][(3,10,w_3low,w_3high)]["m"] += m 
@@ -537,6 +546,7 @@ def main(args):
             results["hybridstrobes"][(3,10,w_3low,w_3high)]["islands"].append(islands) 
             results["hybridstrobes"][(3,10,w_3low,w_3high)]["mc"] += match_coverage 
             results["hybridstrobes"][(3,10,w_3low,w_3high)]["mp"] += mp 
+            list_for_illustration[5].append(all_pos_vector)
 
             # m,c,islands,all_pos_vector = analyze_strobemers(seq1, seq2, 28, 4, "randstrobes", w_1 = 7, w_2 = 10, w_3 = 25 )
             # results["randstrobes"][(4,7,w_4strobe)]["m"] += m 

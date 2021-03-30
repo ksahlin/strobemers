@@ -18,10 +18,20 @@ from matplotlib import pyplot
 def plot(input_csv, outfolder, acc):
 
     indata = pd.read_csv(input_csv)
+
+    dashes = { "kmers" : "", 
+                "spaced_sparse": (5,5),
+                "spaced_dense": (5,5),
+                 "minstrobes2" : (1,1),
+                 "minstrobes3" : (1,1),
+                 "randstrobes2" : (1,1),
+                 "randstrobes3" : (1,1),
+                 "hybridstrobes2" : (1,1),
+                 "hybridstrobes3" : (1,1)}
     print(indata)
     g = sns.relplot(
         data=indata, x="k", y="unique",
-        col="chr", hue="datastructure", kind="line", 
+        col="chr", hue="datastructure", style="datastructure", kind="line",  dashes = dashes,
         col_wrap=3, col_order=["chr1", "chr2", "chr3"])
     # ax = sns.lineplot(data=indata, x="k", y="unique", hue="datastructure", style="chr", palette = sns.color_palette()[:7])
     axes = g.axes
