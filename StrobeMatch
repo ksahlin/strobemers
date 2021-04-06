@@ -92,6 +92,8 @@ def update_queue(q, curr_min, min_index, new_hash, i, start_offset, end_offset):
 
 
 def seq_to_hybridstrobes2_iter(seq, k_size, w_min, w_max, prime, w):
+    if len(seq) < 2*w_max:
+        return -1, -1, None
     hash_list = [ hash(seq[i:i+k_size]) for i in range(len(seq) - k_size +1)]
     n_partition = 3
     w_p = (w_max - w_min ) // n_partition
@@ -145,6 +147,8 @@ def seq_to_hybridstrobes2_iter(seq, k_size, w_min, w_max, prime, w):
 
 
 def seq_to_hybridstrobes3_iter(seq, k_size, w_min, w_max, prime, w):
+    if len(seq) < 2*w_max:
+        return -1 , -1, -1, None
     hash_list = [ hash(seq[i:i+k_size]) for i in range(len(seq) - k_size +1)]
     n_partition = 3
     w_p = (w_max - w_min ) // n_partition
