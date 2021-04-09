@@ -4,7 +4,7 @@ import argparse
 import random
 from collections import defaultdict
 
-from modules import indexing2, help_functions
+from modules import indexing, help_functions
 
 from time import time
 
@@ -32,34 +32,34 @@ def time_datastructure(seq, k_size, w_size, data_structure):
 
     if data_structure == "kmer":
         datastructure = "kmers"
-        for p, hash_value in indexing2.kmer_iter(seq, k_size, w):
+        for p, hash_value in indexing.kmer_iter(seq, k_size, w):
             all_mers[hash_value] += 1
 
 
     elif data_structure == "minstrobes2":
-        for p, p2, hash_value in indexing2.seq_to_minstrobes2_iter(seq, k_size, w_low, w_high, prime, w):
+        for p, p2, hash_value in indexing.seq_to_minstrobes2_iter(seq, k_size, w_low, w_high, prime, w):
             all_mers[hash_value] += 1
 
     elif  data_structure == "minstrobes3":
-        for p, p2, p3, hash_value in indexing2.seq_to_minstrobes3_iter(seq, k_size, w_low, w_high, prime, w):
+        for p, p2, p3, hash_value in indexing.seq_to_minstrobes3_iter(seq, k_size, w_low, w_high, prime, w):
             all_mers[hash_value] += 1
 
     elif data_structure == "randstrobes2":
-        for p, p2, hash_value in indexing2.seq_to_randstrobes2_iter(seq, k_size, w_low, w_high, prime, w):
+        for p, p2, hash_value in indexing.seq_to_randstrobes2_iter(seq, k_size, w_low, w_high, prime, w):
             all_mers[hash_value] += 1
 
     elif data_structure == "randstrobes3":
-        for p, p2, p3, hash_value  in indexing2.seq_to_randstrobes3_iter(seq, k_size, w_low, w_high, prime, w):
+        for p, p2, p3, hash_value  in indexing.seq_to_randstrobes3_iter(seq, k_size, w_low, w_high, prime, w):
             all_mers[hash_value] += 1
 
     elif data_structure == "hybridstrobes2":
         if w_size > 4: # not defined below number of active queues which are 4 in this implementation
-            for p, p2, hash_value in indexing2.seq_to_hybridstrobes2_iter(seq, k_size, w_low, w_high, w):
+            for p, p2, hash_value in indexing.seq_to_hybridstrobes2_iter(seq, k_size, w_low, w_high, w):
                 all_mers[hash_value] += 1
 
     elif data_structure == "hybridstrobes3":
         if w_size > 4: # not defined below number of active queues which are 4 in this implementation
-            for p, p2, p3, hash_value in indexing2.seq_to_hybridstrobes3_iter(seq, k_size, w_low, w_high, w):
+            for p, p2, p3, hash_value in indexing.seq_to_hybridstrobes3_iter(seq, k_size, w_low, w_high, w):
                 all_mers[hash_value] += 1
 
 def main(args):

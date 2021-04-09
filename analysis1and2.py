@@ -14,7 +14,7 @@ import seaborn as sns
 import pandas as pd
 from matplotlib import pyplot
 
-from modules import indexing, indexing2, help_functions
+from modules import indexing, help_functions
 
 
 def get_match_coverage(seq_len, mers, matches, order, span):
@@ -155,46 +155,46 @@ def analyze_strobemers(seq1, seq2, k_size, order, hash_fcn, w, w_low = 0, w_high
     if order == 2:
         assert k_size % 2 == 0, "Not even kmer length, results will be different"
         if hash_fcn == "randstrobes":
-            strobemers1 = indexing2.randstrobes(seq1, k_size, w_low, w_high, w, order = 2 )
-            strobemers2 = indexing2.randstrobes(seq2, k_size, w_low, w_high, w, order = 2 )               
+            strobemers1 = indexing.randstrobes(seq1, k_size, w_low, w_high, w, order = 2 )
+            strobemers2 = indexing.randstrobes(seq2, k_size, w_low, w_high, w, order = 2 )               
             # print("randstrobes2",  len(strobemers1), len(strobemers2), len(set(strobemers1.values()) & set(strobemers2.values())))
             # print(strobemers1)
             # print(sorted(set(strobemers1.values()))[:20])
             # print(sorted(set(strobemers2.values()))[:20])
         elif hash_fcn == "minstrobes":
-            strobemers1 = indexing2.minstrobes(seq1, k_size, w_low, w_high, w, order = 2)
-            strobemers2 = indexing2.minstrobes(seq2, k_size, w_low, w_high, w, order = 2)    
+            strobemers1 = indexing.minstrobes(seq1, k_size, w_low, w_high, w, order = 2)
+            strobemers2 = indexing.minstrobes(seq2, k_size, w_low, w_high, w, order = 2)    
             # print("minstrobes2",  len(strobemers2))
         elif hash_fcn == "hybridstrobes":
-            strobemers1 = indexing2.hybridstrobes(seq1, k_size, w_low, w_high, w, order = 2)
-            strobemers2 = indexing2.hybridstrobes(seq2, k_size, w_low, w_high, w, order = 2)    
+            strobemers1 = indexing.hybridstrobes(seq1, k_size, w_low, w_high, w, order = 2)
+            strobemers2 = indexing.hybridstrobes(seq2, k_size, w_low, w_high, w, order = 2)    
             # print("minstrobes2",  len(strobemers2))
     elif order == 3:
         assert k_size % 3 == 0, "Not div by 3 kmer length, results will be different"
         if hash_fcn == "randstrobes":
-            strobemers1 = indexing2.randstrobes(seq1, k_size, w_low, w_high, w, order = 3)
-            strobemers2 = indexing2.randstrobes(seq2, k_size, w_low, w_high, w, order = 3)
+            strobemers1 = indexing.randstrobes(seq1, k_size, w_low, w_high, w, order = 3)
+            strobemers2 = indexing.randstrobes(seq2, k_size, w_low, w_high, w, order = 3)
             # print("randstrobes3",  len(strobemers1), len(strobemers2), len(set(strobemers1.values()) & set(strobemers2.values())))
             # print(strobemers1)
 
         elif hash_fcn == "minstrobes":
-            strobemers1 = indexing2.minstrobes(seq1, k_size, w_low, w_high, w, order = 3)
-            strobemers2 = indexing2.minstrobes(seq2, k_size, w_low, w_high, w, order = 3)
+            strobemers1 = indexing.minstrobes(seq1, k_size, w_low, w_high, w, order = 3)
+            strobemers2 = indexing.minstrobes(seq2, k_size, w_low, w_high, w, order = 3)
             # print("minstrobes3",  len(strobemers2))
         
         elif hash_fcn == "hybridstrobes":
-            strobemers1 = indexing2.hybridstrobes(seq1, k_size, w_low, w_high, w, order = 3)
-            strobemers2 = indexing2.hybridstrobes(seq2, k_size, w_low, w_high, w, order = 3)    
+            strobemers1 = indexing.hybridstrobes(seq1, k_size, w_low, w_high, w, order = 3)
+            strobemers2 = indexing.hybridstrobes(seq2, k_size, w_low, w_high, w, order = 3)    
             # print("minstrobes2",  len(strobemers2))
 
     # elif order == 4:
     #     assert k_size % 4 == 0, "Not div by 4 kmer length, results will be different"
     #     if hash_fcn == "randstrobes":
-    #         strobemers1 = indexing2.randstrobes(seq1, k_size, order = 4, w_1 = w_1, w_2 = w_2, w_3 = w_3)
-    #         strobemers2 = indexing2.randstrobes(seq2, k_size, order = 4, w_1 = w_1, w_2 = w_2, w_3 = w_3)
+    #         strobemers1 = indexing.randstrobes(seq1, k_size, order = 4, w_1 = w_1, w_2 = w_2, w_3 = w_3)
+    #         strobemers2 = indexing.randstrobes(seq2, k_size, order = 4, w_1 = w_1, w_2 = w_2, w_3 = w_3)
     #     # elif hash_fcn == "minstrobes":
-    #     #     strobemers1 = indexing2.minstrobes(seq1, k_size, order = 3, w_1 = w_1, w_2 = w_2)
-    #     #     strobemers2 = indexing2.minstrobes(seq2, k_size, order = 3, w_1 = w_1, w_2 = w_2 )
+    #     #     strobemers1 = indexing.minstrobes(seq1, k_size, order = 3, w_1 = w_1, w_2 = w_2)
+    #     #     strobemers2 = indexing.minstrobes(seq2, k_size, order = 3, w_1 = w_1, w_2 = w_2 )
     # print(hash_fcn, order, len(strobemers2))
     matches = set(strobemers1.values()) & set(strobemers2.values())
     m = len(matches)
@@ -213,8 +213,8 @@ def analyze_strobemers(seq1, seq2, k_size, order, hash_fcn, w, w_low = 0, w_high
 
 def analyze_kmers(seq1, seq2, k_size, w):
     #kmers
-    kmers_pos1 = indexing2.kmers(seq1, k_size, w)
-    kmers_pos2 = indexing2.kmers(seq2, k_size, w)
+    kmers_pos1 = indexing.kmers(seq1, k_size, w)
+    kmers_pos2 = indexing.kmers(seq2, k_size, w)
     # print("kmers", 1, len(kmers_pos1))
     # print("kmers:",  len(kmers_pos2))
     # kmers_pos1 = {p : seq1[i:i+k_size] for p, i in enumerate(range(len(seq1) - k_size +1))}
@@ -239,8 +239,8 @@ def analyze_spaced_kmers(seq1, seq2, k_size, span_size, w):
     positions = set(random.sample(range(1, span_size - 1 ), k_size-2)) 
     positions.add(0)
     positions.add(span_size - 1) # asserts first and last position is sampled so that we have a spaced kmer of length span size
-    spaced_kmers_seq1 = indexing2.spaced_kmers(seq1, k_size, span_size, positions, w)
-    spaced_kmers_seq2 = indexing2.spaced_kmers(seq2, k_size, span_size, positions, w) 
+    spaced_kmers_seq1 = indexing.spaced_kmers(seq1, k_size, span_size, positions, w)
+    spaced_kmers_seq2 = indexing.spaced_kmers(seq2, k_size, span_size, positions, w) 
     matches  = set(spaced_kmers_seq1.values()) & set(spaced_kmers_seq2.values())
     m = len(matches)
     mp = len(spaced_kmers_seq1.values())

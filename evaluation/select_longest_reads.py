@@ -43,7 +43,7 @@ def readfq(fp): # this is a generator function
 def select_aligned_reads(sam_file, reads_fastq):
     SAM_file = pysam.AlignmentFile(sam_file, "r", check_sq=False)
     references = SAM_file.references
-    
+    error_rates = {}
     aligned = {}
     for read in SAM_file.fetch(until_eof=True):
         if read.flag == 0 or read.flag == 16:
@@ -52,6 +52,16 @@ def select_aligned_reads(sam_file, reads_fastq):
             if float(read.query_alignment_length) / read_len > 0.95:
                 aligned[read_acc] = reads_fastq[read_acc]
 
+                ins = sum([length for type_, length in read.cigartuples if type_ == 1])
+                del_ = sum([length for type_, length in read.cigartuples if type_ == 2])
+                subs = sum([length for type_, length in read.cigartuples if type_ == 8])
+                # matches = sum([length for type_, length in read.cigartuples if type_ == 7])
+                # tot_align = ins + del_ + subs + matches
+                # identity = matches/float(tot_align)
+                # print(float(ins + del_ + subs), read.query_alignment_length)
+                error_rates[read_acc] = float(ins + del_ + subs)/ read.query_alignment_length
+
+    print(sum(error_rates.values())/len(error_rates), min(error_rates.values()), max(error_rates.values()) )
     return aligned
 
 def main(args):
@@ -60,12 +70,15 @@ def main(args):
 
     outfile = open(args.outfile, "w")
     i = 0
+    tot_len = 0
     for acc, (seq, qual) in sorted(aligned.items(), key = lambda x: len(x[1][0]), reverse = True):
         outfile.write("@{0}\n{1}\n+\n{2}\n".format(acc, seq, qual))
+        tot_len += len(seq)
         if i > args.sample_size:
             break
         i += 1
     outfile.close()
+    print("tot len:", tot_len)
 
 if __name__ == '__main__':
 
