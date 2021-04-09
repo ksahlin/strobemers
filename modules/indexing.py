@@ -436,7 +436,7 @@ def minstrobes_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, w, or
         substring = seq[i:i+buffer_size] 
         # print(substring, len(substring))
         for p, m in minstrobes(substring, k_size, strobe_w_min_offset, strobe_w_max_offset, w, order = order).items():
-            yield m
+            yield positions, m
 
 
 def randstrobes_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, w, order = 2, buffer_size = 10000000):
@@ -444,7 +444,7 @@ def randstrobes_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, w, o
     for i in range(0, len(seq), buffer_size):
         substring = seq[i:i+buffer_size] 
         for p, m in randstrobes(substring, k_size, strobe_w_min_offset, strobe_w_max_offset, w, order = order).items():
-            yield m
+            yield positions, m
 
 
 def hybridstrobes_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, w, order = 2, buffer_size = 10000000):
@@ -453,7 +453,7 @@ def hybridstrobes_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, w,
         substring = seq[i:i+buffer_size] 
         # print(substring, len(substring))
         for p, m in hybridstrobes(substring, k_size, strobe_w_min_offset, strobe_w_max_offset, w, order = order).items():
-            yield m
+            yield positions, m
 
 
 def update_queue(q, curr_min, min_index, new_hash, i, start_offset, end_offset):

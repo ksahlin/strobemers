@@ -52,33 +52,33 @@ def compute_uniqueness(args, acc, seq, k_size, total_mers):
 
     elif args.minstrobes2:
         datastructure = "minstrobes2"
-        for s in indexing.minstrobes_iter(seq, k_size, w_low, w_high, w, order = 2, buffer_size = 10000000):
+        for _, s in indexing.minstrobes_iter(seq, k_size, w_low, w_high, w, order = 2, buffer_size = 10000000):
             all_mers[s] += 1
 
     elif args.minstrobes3:
         datastructure = "minstrobes3"
-        for s in indexing.minstrobes_iter(seq, k_size, w_low, w_high, w, order = 3, buffer_size = 10000000):
+        for _, s in indexing.minstrobes_iter(seq, k_size, w_low, w_high, w, order = 3, buffer_size = 10000000):
             all_mers[s] += 1
 
     elif args.randstrobes2:
         datastructure = "randstrobes2"
-        for s in indexing.randstrobes_iter(seq, k_size, w_low, w_high, w, order = 2, buffer_size = 10000000): # (seq, k_size, order = 2, w_1 = 50 ):
+        for _, s in indexing.randstrobes_iter(seq, k_size, w_low, w_high, w, order = 2, buffer_size = 10000000): # (seq, k_size, order = 2, w_1 = 50 ):
             all_mers[s] += 1
 
     elif args.randstrobes3:
         datastructure = "randstrobes3"
-        for s in indexing.randstrobes_iter(seq, k_size, w_low, w_high, w, order = 3, buffer_size = 10000000):
+        for _, s in indexing.randstrobes_iter(seq, k_size, w_low, w_high, w, order = 3, buffer_size = 10000000):
             all_mers[s] += 1
 
 
     elif args.hybridstrobes2:
         datastructure = "hybridstrobes2"
-        for s in indexing.hybridstrobes_iter(seq, k_size, w_low, w_high, w, order = 2, buffer_size = 10000000): # (seq, k_size, order = 2, w_1 = 50 ):
+        for _, s in indexing.hybridstrobes_iter(seq, k_size, w_low, w_high, w, order = 2, buffer_size = 10000000): # (seq, k_size, order = 2, w_1 = 50 ):
             all_mers[s] += 1
 
     elif args.hybridstrobes3:
         datastructure = "hybridstrobes3"
-        for s in indexing.hybridstrobes_iter(seq, k_size, w_low, w_high, w, order = 3, buffer_size = 10000000):
+        for _, s in indexing.hybridstrobes_iter(seq, k_size, w_low, w_high, w, order = 3, buffer_size = 10000000):
             all_mers[s] += 1
 
 
