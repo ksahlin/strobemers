@@ -33,7 +33,7 @@ def plot_coverage(input_csv, outfolder):
     ax.set_xticklabels(ax.get_xmajorticklabels(), fontsize = 8)
     plt.ylim(0, 1)
     plt.tight_layout()
-    # plt.legend(loc='lower right')
+    plt.legend(loc='lower left', prop={'size': 6})
     # ax.set_ylabel("Fraction correct")
     # ax.set_xlabel("Exon size")
     plt.savefig(os.path.join(outfolder, "plot_coverage.eps"))
