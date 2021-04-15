@@ -4,7 +4,7 @@ Strobemers
 A repository for generating strobemers and evaluation.  
 
 
-First off, this is a prototype implementation created for the analysis in the [paper](https://doi.org/10.1101/2021.01.28.428549) describing strobemers. As Python is inefficient (and memory requiring) with string manipulation, any real implementation and usage of strobemers should probably happen in a low level language. However, the Python code is sufficient as proof of concept. 
+First off, this is a prototype implementation created for the analysis in the [preprint](https://doi.org/10.1101/2021.01.28.428549) describing strobemers. As Python is inefficient with string manipulation, any real implementation and usage of strobemers should probably happen in a low level language. However, the Python code is sufficient as proof of concept. 
 
 ## Strobemers in compiled languages
 
@@ -14,7 +14,7 @@ Strobemers are currently being implemented in compiled languages
 
 ## This repository
 
-The repository consists of a library and a tool `StrobeMap`. The library `indexing.py` contains functions and generators for creating the datastructures used in the evaluation of the [paper](https://doi.org/10.1101/2021.01.28.428549). The tool `StrobeMap` is a program which roughly has the same interface as `MUMmer`. `StrobeMap` takes a reference and queries file in fasta or fastq format. It produces NAMs (Non-overlapping Approximate Matches) between the queries and references and outputs them in a format simular to nucmer/MUMmer. See [paper](https://doi.org/10.1101/2021.01.28.428549) for definition of NAMs.
+The repository consists of a library and a tool `StrobeMap`. The library `indexing.py` contains functions and generators for creating the datastructures used in the evaluation of the [preprint](https://doi.org/10.1101/2021.01.28.428549). The tool `StrobeMap` is a program which roughly has the same interface as `MUMmer`. `StrobeMap` takes a reference and queries file in fasta or fastq format. It produces NAMs (Non-overlapping Approximate Matches) between the queries and references and outputs them in a format simular to nucmer/MUMmer. See [preprint](https://doi.org/10.1101/2021.01.28.428549) for definition of NAMs.
 
 
 # Using the library
@@ -178,4 +178,4 @@ CREDITS
 
 Kristoffer Sahlin, Strobemers: an alternative to k-mers for sequence comparison, bioRxiv 2021.01.28.428549; doi: https://doi.org/10.1101/2021.01.28.428549
 
-Paper found [here](https://doi.org/10.1101/2021.01.28.428549)
+Preprint found [here](https://doi.org/10.1101/2021.01.28.428549)
