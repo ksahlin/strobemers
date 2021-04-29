@@ -14,7 +14,7 @@ typedef robin_hood::unordered_map< unsigned int , std::string > sequences;
 typedef robin_hood::unordered_map< unsigned int, std::string > idx_to_acc;
 
 
-static void read_file(sequences &seqs, idx_to_acc &acc_map, std::string fn)
+static void read_fasta(sequences &seqs, idx_to_acc &acc_map, std::string fn)
 {
     std::ifstream file(fn);
     std::string line, seq;
@@ -33,7 +33,6 @@ static void read_file(sequences &seqs, idx_to_acc &acc_map, std::string fn)
         }
         else {
             seq += line;
-            
         }
     }
     if (seq.length() > 0){
@@ -65,12 +64,12 @@ int main (int argc, char *argv[])
     file_p = &filename;
     sequences ref_seqs;
     idx_to_acc acc_map;
-    read_file(ref_seqs, acc_map, filename);
+    read_fasta(ref_seqs, acc_map, filename);
 
     // Traversing an unordered map
     for (auto x : ref_seqs)
-      std::cout << x.first << " " << x.second << std::endl;
-    
+        std::cout << x.first << " " << x.second << std::endl;
+
     // CREATE INDEX OF REF SEQUENCES
     seq_index h;
     if (choice == "kmer_index" ){
@@ -88,8 +87,8 @@ int main (int argc, char *argv[])
     else {
         std::cout << choice << "not implemented : " << std::endl;
     }
-    
-    
+
+
 
 
     for (auto &it : h)
@@ -102,11 +101,10 @@ int main (int argc, char *argv[])
         std::cout << "Size of key : " << sizeof(it.first)  << " byte" << "Size of vector : " << sizeof(it.second)  << " byte" << std::endl;
 
     }
-    
+
     // Traversing an unordered map
     for (auto x : acc_map)
-      std::cout << x.first << " " << x.second << std::endl;
+        std::cout << x.first << " " << x.second << std::endl;
 
 }
-
 

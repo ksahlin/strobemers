@@ -47,28 +47,28 @@ static inline uint64_t hash64(uint64_t key, uint64_t mask)
 
 
 static unsigned char seq_nt4_table[256] = {
-    0, 1, 2, 3,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
-    4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
-    4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
-    4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
-    4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4,
-    4, 4, 4, 4,  3, 3, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
-    4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4,
-    4, 4, 4, 4,  3, 3, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
-    4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
-    4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
-    4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
-    4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
-    4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
-    4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
-    4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
-    4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4
+        0, 1, 2, 3,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+        4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+        4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+        4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+        4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4,
+        4, 4, 4, 4,  3, 3, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+        4, 0, 4, 1,  4, 4, 4, 2,  4, 4, 4, 4,  4, 4, 4, 4,
+        4, 4, 4, 4,  3, 3, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+        4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+        4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+        4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+        4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+        4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+        4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+        4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,
+        4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4
 }; //seq_nt4_table
 
 static inline uint64_t kmer_to_uint64(std::string kmer, uint64_t kmask)
 {
     uint64_t bkmer = 0;
-    
+
     for (std::string::size_type i=0; i< kmer.length(); i++) {
         int c = seq_nt4_table[(uint8_t)kmer[i]];
         bkmer = (bkmer << 2 | c) & kmask;
@@ -89,7 +89,7 @@ void generate_kmer_index(seq_index &h, int k, std::string &seq, unsigned int ref
 //        std::cout << i  << " " << i + k  << " "  << seq <<  std::endl;
         auto kmer = seq.substr(i, k);
 //        std::cout << "Size of kmer : " << sizeof(kmer)  << " byte" << std::endl;
-        
+
 //          lossless
 //        char kmer2[kmer.length()+1];
 //        strcpy(kmer2, kmer.c_str());
@@ -107,10 +107,31 @@ void generate_kmer_index(seq_index &h, int k, std::string &seq, unsigned int ref
             h[kmer3].push_back(ref_index); // push values into vector.
             h[kmer3].push_back(i);
         }
-        
+
 //        if (kmer.find('N') < kmer.length()) continue;
 //        h[kmer3]++;
 //        std::cout << i << " " << h[kmer3] << " " << kmer << " "  << kmer3 << std::endl;
+    }
+}
+
+
+// initialize queue and current minimum and position
+inline void initialize_window(std::string &seq, std::deque <uint64_t> &q, uint64_t &q_min_val, int &q_min_pos, int w_min, int w_max, int k, uint64_t &kmask){
+    for (int i = w_min; i < w_max; i++) {
+        auto strobe = seq.substr(i, k);
+        uint64_t bstrobe = kmer_to_uint64(strobe, kmask);
+        uint64_t strobe_hashval = hash64(bstrobe, kmask);
+//        uint64_t strobe_hashval;
+//        strobe_hashval = hash(strobe);
+
+//        std::cout << seq << std::endl;
+//        std::cout << std::string(i, ' ') << strobe << " " << strobe_hashval << " " << i << std::endl;
+//        std::cout << "INIT " << i << " " << strobe << " " << strobe_hashval  << std::endl;
+        q.push_back(strobe_hashval);
+        if (strobe_hashval < q_min_val) {
+            q_min_val = strobe_hashval;
+            q_min_pos = i;
+        }
     }
 }
 
@@ -144,35 +165,19 @@ inline void update_window(std::deque <uint64_t> &q, uint64_t &q_min_val, int &q_
 
 void generate_minstrobe2_index(seq_index &h, int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index)
 {
-    std::transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
-    std::deque <uint64_t> q;
-    uint64_t kmask=(1ULL<<2*k) - 1;
-    
     if (seq.length() < w_max) {
         return;
     }
+
+    std::transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
+
     // initialize the deque
+    std::deque <uint64_t> q;
+    uint64_t kmask=(1ULL<<2*k) - 1;
     uint64_t q_min_val = UINT64_MAX;
-    std::cout << q_min_val << std::endl;
     int q_min_pos = -1;
-    for (int i = w_min; i < w_max; i++) {
-        auto strobe = seq.substr(i, k);
-        uint64_t bstrobe = kmer_to_uint64(strobe, kmask);
-        uint64_t strobe_hashval = hash64(bstrobe, kmask);
-//        uint64_t strobe_hashval;
-//        strobe_hashval = hash(strobe);
-    
-//        std::cout << seq << std::endl;
-//        std::cout << std::string(i, ' ') << strobe << " " << strobe_hashval << " " << i << std::endl;
-//        std::cout << "INIT " << i << " " << strobe << " " << strobe_hashval  << std::endl;
-        q.push_back(strobe_hashval);
-        if (strobe_hashval < q_min_val) {
-            q_min_val = strobe_hashval;
-            q_min_pos = i;
-        }
-    }
-    
-//    std::cout << q_min_pos << " " << q_min_val << " " << seq << std::endl;
+    initialize_window(seq, q, q_min_val, q_min_pos, w_min, w_max, k, kmask);
+
     std::cout << seq << std::endl;
 
     // create the minstrobes
@@ -182,7 +187,7 @@ void generate_minstrobe2_index(seq_index &h, int n, int k, int w_min, int w_max,
 //        strobe_hashval = hash(strobe1);
         uint64_t bstrobe = kmer_to_uint64(strobe1, kmask);
         uint64_t strobe_hashval = hash64(bstrobe, kmask);
-        
+
         uint64_t minstrobe_h = strobe_hashval/2 + q_min_val/3;
 //        std::cout << i << " " << i + w_min << " " << i + w_max << " " << q_min_pos << " " << q_min_val << " " << minstrobe_h << std::endl;
 //        std::cout << i << " " << k  << " " << q_min_pos << std::endl;
@@ -199,7 +204,7 @@ void generate_minstrobe2_index(seq_index &h, int n, int k, int w_min, int w_max,
             h[minstrobe_h].push_back(i);
             h[minstrobe_h].push_back(q_min_pos);
         }
-        
+
         // update queue and current minimum and position
 //        std::cout << i + w_min << " " << seq.length() - k << " " << i + w_max << std::endl;
         if (i + w_max <= seq.length() - k){
@@ -207,7 +212,7 @@ void generate_minstrobe2_index(seq_index &h, int n, int k, int w_min, int w_max,
 //            uint64_t new_strobe_hashval = hash(new_strobe);
             uint64_t new_bstrobe = kmer_to_uint64(new_strobe, kmask);
             uint64_t new_strobe_hashval = hash64(new_bstrobe, kmask);
-            
+
             update_window(q, q_min_val, q_min_pos, new_strobe_hashval, w_min, w_max, i );
         }
         else if ((i + w_min + 1 < seq.length() - k) && (seq.length() - k < i + w_max) ){
@@ -218,9 +223,8 @@ void generate_minstrobe2_index(seq_index &h, int n, int k, int w_min, int w_max,
         else{
             return;
         }
-        
+
         std::cout << std::string(i, ' ') << strobe1 << std::string(q_min_pos - (i+k), ' ') << std::string(k, 'X') << std::endl;
 
     }
 }
-
