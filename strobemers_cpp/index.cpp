@@ -7,7 +7,7 @@
 
 #include "index.hpp"
 #include <iostream>
-#include <limits.h>
+#include <math.h>       /* pow */
 
 /**********************************************************
  *
@@ -65,7 +65,7 @@ static unsigned char seq_nt4_table[256] = {
         4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4
 }; //seq_nt4_table
 
-static inline uint64_t kmer_to_uint64(std::string kmer, uint64_t kmask)
+static inline uint64_t kmer_to_uint64(std::string &kmer, uint64_t kmask)
 {
     uint64_t bkmer = 0;
 
@@ -82,30 +82,28 @@ static inline uint64_t kmer_to_uint64(std::string kmer, uint64_t kmask)
 // std::vector<kmer>() seq_to_kmers(int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index)
 
 
-void generate_kmer_index(seq_index &h, int k, std::string &seq, unsigned int ref_index)
+void generate_kmer_index(seq_index1 &h, int k, std::string &seq, unsigned int ref_index)
 {
     std::transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
     for (int i = 0; i <= seq.length() - k; i++) {
 //        std::cout << i  << " " << i + k  << " "  << seq <<  std::endl;
         auto kmer = seq.substr(i, k);
-//        std::cout << "Size of kmer : " << sizeof(kmer)  << " byte" << std::endl;
-
-//          lossless
-//        char kmer2[kmer.length()+1];
-//        strcpy(kmer2, kmer.c_str());
-//        std::cout << "Size of kmer2 : " << sizeof(kmer2)  << " byte" << std::endl;
         uint64_t kmer3;
         kmer3 = hash(kmer);
         if (h.find(kmer3) == h.end()){ // Not  in  index
-            h[kmer3] = std::vector<unsigned int>(); // Initialize key with null vector
-//            h[kmer3] = 1;
-            h[kmer3].push_back(ref_index);
-            h[kmer3].push_back(i);
+            h[kmer3] = std::vector< std::tuple<unsigned int, unsigned int> >();  //std::vector<unsigned int>(); // Initialize key with null vector
+            std::tuple<unsigned int, unsigned int> s (ref_index, i);
+            h[kmer3].push_back(s);
+
+//            h[kmer3] = std::vector<unsigned int>(); // Initialize key with null vector
+//            h[kmer3].push_back(ref_index);
+//            h[kmer3].push_back(i);
         }
         else{
-//            h[kmer3]++;
-            h[kmer3].push_back(ref_index); // push values into vector.
-            h[kmer3].push_back(i);
+            std::tuple<unsigned int, unsigned int> s (ref_index, i);
+            h[kmer3].push_back(s);
+//            h[kmer3].push_back(ref_index); // push values into vector.
+//            h[kmer3].push_back(i);
         }
 
 //        if (kmer.find('N') < kmer.length()) continue;
@@ -163,7 +161,8 @@ inline void update_window(std::deque <uint64_t> &q, uint64_t &q_min_val, int &q_
     }
 }
 
-void generate_minstrobe2_index(seq_index &h, int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index)
+
+void generate_minstrobe2_index(seq_index2 &h, int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index)
 {
     if (seq.length() < w_max) {
         return;
@@ -188,21 +187,24 @@ void generate_minstrobe2_index(seq_index &h, int n, int k, int w_min, int w_max,
         uint64_t bstrobe = kmer_to_uint64(strobe1, kmask);
         uint64_t strobe_hashval = hash64(bstrobe, kmask);
 
-        uint64_t minstrobe_h = strobe_hashval/2 + q_min_val/3;
-//        std::cout << i << " " << i + w_min << " " << i + w_max << " " << q_min_pos << " " << q_min_val << " " << minstrobe_h << std::endl;
-//        std::cout << i << " " << k  << " " << q_min_pos << std::endl;
+//        uint64_t minstrobe_h = strobe_hashval/2 + q_min_val/3;
+        uint64_t minstrobe_h = (strobe_hashval << k) ^ q_min_val;
 
 
-        if (h.find(strobe_hashval) == h.end()){ // Not  in  index
-            h[minstrobe_h] = std::vector<unsigned int>(); // Initialize key with null vector
-            h[minstrobe_h].push_back(ref_index);
-            h[minstrobe_h].push_back(i);
-            h[minstrobe_h].push_back(q_min_pos);
+        if (h.find(minstrobe_h) == h.end()){ // Not  in  index
+            h[minstrobe_h] = std::vector< std::tuple<unsigned int, unsigned int, unsigned int> >();  //std::vector<unsigned int>(); // Initialize key with null vector
+            std::tuple<unsigned int, unsigned int, unsigned int> s (ref_index, i, q_min_pos);
+            h[minstrobe_h].push_back(s);
+//            h[minstrobe_h].push_back(ref_index);
+//            h[minstrobe_h].push_back(i);
+//            h[minstrobe_h].push_back(q_min_pos);
         }
         else{
-            h[minstrobe_h].push_back(ref_index);
-            h[minstrobe_h].push_back(i);
-            h[minstrobe_h].push_back(q_min_pos);
+            std::tuple<unsigned int, unsigned int, unsigned int> s (ref_index, i, q_min_pos);
+            h[minstrobe_h].push_back(s);
+//            h[minstrobe_h].push_back(ref_index);
+//            h[minstrobe_h].push_back(i);
+//            h[minstrobe_h].push_back(q_min_pos);
         }
 
         // update queue and current minimum and position
@@ -225,6 +227,97 @@ void generate_minstrobe2_index(seq_index &h, int n, int k, int w_min, int w_max,
         }
 
         std::cout << std::string(i, ' ') << strobe1 << std::string(q_min_pos - (i+k), ' ') << std::string(k, 'X') << std::endl;
+
+    }
+}
+
+
+static inline void get_next_strobe(std::vector<uint64_t> string_hashes, uint64_t strobe_hashval, unsigned int &strobe_pos_next, uint64_t &strobe_hashval_next,  unsigned int w_start, unsigned int w_end, uint64_t q){
+    uint64_t min_val = UINT64_MAX;
+    unsigned int min_pos;
+    min_pos = -1;
+    for (auto i = w_start; i <= w_end; i++) {
+        uint64_t res = (strobe_hashval + string_hashes[i]) & q ;
+        if (res < min_val){
+            min_val = res;
+            strobe_pos_next = i;
+            strobe_hashval_next = string_hashes[i];
+        }
+    }
+}
+
+static inline void make_string_to_hashvalues(std::string &seq, std::vector<uint64_t> &string_hashes, int k, uint64_t kmask){
+    for (int i = 0; i <= seq.length() - k; i++) {
+        auto strobe1 = seq.substr(i, k);
+        uint64_t bstrobe = kmer_to_uint64(strobe1, kmask);
+        uint64_t strobe_hashval = hash64(bstrobe, kmask);
+        string_hashes.push_back(strobe_hashval);
+    }
+
+}
+
+
+void generate_randstrobe2_index(seq_index2 &h, int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index)
+{
+    if (seq.length() < w_max) {
+        return;
+    }
+
+    std::transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
+    uint64_t kmask=(1ULL<<2*k) - 1;
+    uint64_t q = pow (2, 10) - 1;
+    // make string of strobes into hashvalues all at once to avoid repetitive k-mer to hash value computations
+    std::vector<uint64_t> string_hashes;
+    make_string_to_hashvalues(seq, string_hashes, k, kmask);
+
+    std::cout << seq << std::endl;
+
+    // create the randstrobes
+    for (int i = 0; i <= string_hashes.size(); i++) {
+
+        unsigned int strobe_pos_next;
+        uint64_t strobe_hashval_next;
+
+        if (i + w_max <= string_hashes.size()){
+//            auto window = seq.substr(i+w_min, w_max-w_min);
+            unsigned int w_start = i+w_min;
+            unsigned int w_end = i+w_max;
+            uint64_t strobe_hash;
+            strobe_hash = string_hashes[i];
+            get_next_strobe(string_hashes, strobe_hash, strobe_pos_next, strobe_hashval_next, w_start, w_end, q);
+        }
+        else if ((i + w_min + 1 < string_hashes.size()) && (string_hashes.size() < i + w_max) ){
+            unsigned int w_start = i+w_min;
+            unsigned int w_end = string_hashes.size() -1;
+            uint64_t strobe_hash;
+            strobe_hash = string_hashes[i];
+            get_next_strobe(string_hashes, strobe_hash, strobe_pos_next, strobe_hashval_next, w_start, w_end, q);
+        }
+        else{
+            return;
+        }
+//        strobe_hashval = string_hashes[i]
+
+//        uint64_t randstrobe_h = string_hashes[i]/2 + strobe_hashval_next/3;
+        uint64_t randstrobe_h = (string_hashes[i] << k) ^ strobe_hashval_next;
+
+//        std::cout << i << " " << i + w_min << " " << i + w_max << " " << q_min_pos << " " << q_min_val << " " << minstrobe_h << std::endl;
+//        std::cout << i << " " << k  << " " << q_min_pos << std::endl;
+
+
+        if (h.find(randstrobe_h) == h.end()){ // Not  in  index
+            h[randstrobe_h] = std::vector< std::tuple<unsigned int, unsigned int, unsigned int> >();  //std::vector<unsigned int>(); // Initialize key with null vector
+            std::tuple<unsigned int, unsigned int, unsigned int> s (ref_index, i, strobe_pos_next);
+            h[randstrobe_h].push_back(s);
+
+        }
+        else{
+            std::tuple<unsigned int, unsigned int, unsigned int> s (ref_index, i, strobe_pos_next);
+            h[randstrobe_h].push_back(s);
+        }
+
+        auto strobe1 = seq.substr(i, k);
+        std::cout << std::string(i, ' ') << strobe1 << std::string(strobe_pos_next - (i+k), ' ') << std::string(k, 'X') << std::endl;
 
     }
 }
