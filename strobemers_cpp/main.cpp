@@ -7,10 +7,12 @@
 #include <chrono>  // for high_resolution_clock
 
 #include "index.hpp"
-
+//#include "khashl.h" // hash table
 
 typedef robin_hood::unordered_map< unsigned int , std::string > sequences;
 typedef robin_hood::unordered_map< unsigned int, std::string > idx_to_acc;
+
+//KHASHL_MAP_INIT(, kc_c1_t, index1, uint64_t, std::vector< std::tuple<unsigned int, unsigned int>> > , kh_hash_uint64, kh_eq_generic)
 
 
 static void read_fasta(sequences &seqs, idx_to_acc &acc_map, std::string fn)
@@ -97,7 +99,7 @@ int main (int argc, char *argv[])
 {
 //    std::string filename  = "example2.txt";
     std::string filename  = "ecoli.fa";
-
+//    std::string filename  = "hg18.fa";
 //    std::string choice = "kmer_index";
 //    std::string choice = "minstrobe_index";
 //   std::string choice = "hybridstrobe_index";
