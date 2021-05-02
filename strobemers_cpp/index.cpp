@@ -89,21 +89,21 @@ void generate_kmer_index(seq_index1 &h, int k, std::string &seq, unsigned int re
     std::transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
     for (int i = 0; i <= seq.length() - k; i++) {
         auto kmer = seq.substr(i, k);
-//        uint64_t bkmer = kmer_to_uint64(kmer, kmask);
+        uint64_t bkmer = kmer_to_uint64(kmer, kmask);
 //        uint64_t kmer_hashval = hash64(bkmer, kmask);
-        uint64_t kmer_hashval;
-        kmer_hashval = robin_hash(kmer);
+//        uint64_t kmer_hashval;
+//        kmer_hashval = robin_hash(kmer);
 //        uint64_t kmer3;
 //        kmer3 = hash(kmer);
-        if (h.find(kmer_hashval) == h.end()){ // Not  in  index
-            h[kmer_hashval] = std::vector< std::tuple<unsigned int, unsigned int> >();  //std::vector<unsigned int>(); // Initialize key with null vector
+        if (h.find(bkmer) == h.end()){ // Not  in  index
+            h[bkmer] = std::vector< std::tuple<unsigned int, unsigned int> >();  //std::vector<unsigned int>(); // Initialize key with null vector
             std::tuple<unsigned int, unsigned int> s (ref_index, i);
-            h[kmer_hashval].push_back(s);
+            h[bkmer].push_back(s);
 
         }
         else{
             std::tuple<unsigned int, unsigned int> s (ref_index, i);
-            h[kmer_hashval].push_back(s);
+            h[bkmer].push_back(s);
         }
 
     }
@@ -115,9 +115,9 @@ static inline void initialize_window(std::string &seq, std::deque <uint64_t> &q,
     robin_hood::hash<std::string> robin_hash;
     for (int i = w_min; i < w_max; i++) {
         auto strobe = seq.substr(i, k);
-        uint64_t strobe_hashval;
-        strobe_hashval = robin_hash(strobe);
-//        uint64_t bstrobe = kmer_to_uint64(strobe, kmask);
+//        uint64_t strobe_hashval;
+//        strobe_hashval = robin_hash(strobe);
+        uint64_t bstrobe = kmer_to_uint64(strobe, kmask);
 //        uint64_t strobe_hashval = hash64(bstrobe, kmask);
 //        uint64_t strobe_hashval;
 //        strobe_hashval = hash(strobe);
@@ -125,9 +125,9 @@ static inline void initialize_window(std::string &seq, std::deque <uint64_t> &q,
 //        std::cout << seq << std::endl;
 //        std::cout << std::string(i, ' ') << strobe << " " << strobe_hashval << " " << i << std::endl;
 //        std::cout << "INIT " << i << " " << strobe << " " << strobe_hashval  << std::endl;
-        q.push_back(strobe_hashval);
-        if (strobe_hashval < q_min_val) {
-            q_min_val = strobe_hashval;
+        q.push_back(bstrobe);
+        if (bstrobe < q_min_val) {
+            q_min_val = bstrobe;
             q_min_pos = i;
         }
     }
@@ -169,7 +169,7 @@ void generate_minstrobe2_index(seq_index2 &h, int n, int k, int w_min, int w_max
     }
 
     std::transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
-    robin_hood::hash<std::string> robin_hash;
+//    robin_hood::hash<std::string> robin_hash;
     unsigned int seq_length = seq.length();
     // initialize the deque
     std::deque <uint64_t> q;
@@ -183,12 +183,12 @@ void generate_minstrobe2_index(seq_index2 &h, int n, int k, int w_min, int w_max
     // create the minstrobes
     for (unsigned int i = 0; i <= seq_length - k; i++) {
         auto strobe1 = seq.substr(i, k);
-//        uint64_t bstrobe = kmer_to_uint64(strobe1, kmask);
+        uint64_t bstrobe = kmer_to_uint64(strobe1, kmask);
 //        uint64_t strobe_hashval = hash64(bstrobe, kmask);
-        uint64_t strobe_hashval;
-        strobe_hashval = robin_hash(strobe1);
+//        uint64_t strobe_hashval;
+//        strobe_hashval = robin_hash(strobe1);
 
-        uint64_t minstrobe_h = (strobe_hashval << k) ^ q_min_val;
+        uint64_t minstrobe_h = (bstrobe << k) ^ q_min_val;
 
 
         if (h.find(minstrobe_h) == h.end()){ // Not  in  index
@@ -241,12 +241,12 @@ static inline void make_string_to_hashvalues(std::string &seq, std::vector<uint6
     robin_hood::hash<std::string> robin_hash;
     for (int i = 0; i <= seq.length() - k; i++) {
         auto strobe1 = seq.substr(i, k);
-//        uint64_t bstrobe = kmer_to_uint64(strobe1, kmask);
+        uint64_t bstrobe = kmer_to_uint64(strobe1, kmask);
 //        uint64_t strobe_hashval = hash64(bstrobe, kmask);
-        uint64_t strobe_hashval;
-        strobe_hashval = robin_hash(strobe1);
+//        uint64_t strobe_hashval;
+//        strobe_hashval = robin_hash(strobe1);
 
-        string_hashes.push_back(strobe_hashval);
+        string_hashes.push_back(bstrobe);
     }
 
 }
@@ -265,8 +265,8 @@ void generate_randstrobe2_index(seq_index2 &h, int n, int k, int w_min, int w_ma
     std::vector<uint64_t> string_hashes;
     make_string_to_hashvalues(seq, string_hashes, k, kmask);
     unsigned int seq_length = string_hashes.size();
-    uint64_t strobe_hash = 1223;
-    uint64_t randstrobe_h = 12203;
+//    uint64_t strobe_hash = 1223;
+//    uint64_t randstrobe_h = 12203;
 //    std::cout << seq << std::endl;
 
     // create the randstrobes
