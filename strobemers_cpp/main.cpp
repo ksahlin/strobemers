@@ -4,7 +4,7 @@
 #include "robin_hood.h"
 #include <vector>
 #include <string>
-
+#include <chrono>  // for high_resolution_clock
 
 #include "index.hpp"
 
@@ -43,72 +43,83 @@ static void read_fasta(sequences &seqs, idx_to_acc &acc_map, std::string fn)
 }
 
 static void print_diagnostics(seq_index1 &h, idx_to_acc &acc_map) {
-
+    uint64_t tot_index_size = 0;
     for (auto &it : h)
     {
-        std::cout << "\nKey: " << it.first << ",  values: ";
+//        std::cout << "\nKey: " << it.first << ",  values: ";
+        tot_index_size += sizeof(it.first);
         for (auto &t : it.second) // it.second is the vector, i is a tuple
         {
-            std::cout << "tuple: " << std::get<0>(t) << " " << std::get<1>(t)  << std::endl;
+//            std::cout << "tuple: " << std::get<0>(t) << " " << std::get<1>(t)  << std::endl;
+            tot_index_size += sizeof(t);
         }
-        std::cout << "Size of key : " << sizeof(it.first)  << " byte" << "Size of vector : " << sizeof(it.second)  << " byte" << std::endl;
+//        std::cout << "Size of key : " << sizeof(it.first)  << " byte" << "Size of vector : " << sizeof(it.second)  << " byte" << std::endl;
+        tot_index_size += sizeof(it.second);
 
     }
 
-    // Traversing an unordered map
-    for (auto x : acc_map)
-        std::cout << x.first << " " << x.second << std::endl;
+//    // Traversing an unordered map
+//    for (auto x : acc_map)
+//        std::cout << x.first << " " << x.second << std::endl;
+
+    std::cout << "Total size of index : " << tot_index_size/1000000  << " Mb." << std::endl;
 
 }
 
 static void print_diagnostics2(seq_index2 &h, idx_to_acc &acc_map) {
+    uint64_t tot_index_size = 0;
 
     for (auto &it : h)
     {
-        std::cout << "\nKey: " << it.first << ",  values: ";
+//        std::cout << "\nKey: " << it.first << ",  values: ";
+        tot_index_size += sizeof(it.first);
         for (auto &t : it.second) // it.second is the vector, i is a tuple
         {
-            std::cout << "(" << std::get<0>(t) << " " << std::get<1>(t)  << " " << std::get<2>(t) << ") ";
+//            std::cout << "(" << std::get<0>(t) << " " << std::get<1>(t)  << " " << std::get<2>(t) << ") ";
+            tot_index_size += sizeof(t);
         }
-        std::cout << ". Size of key : " << sizeof(it.first)  << " byte" << "Size of vector : " << sizeof(it.second)  << " byte" << std::endl;
+//        std::cout << ". Size of key : " << sizeof(it.first)  << " byte" << "Size of vector : " << sizeof(it.second)  << " byte" << std::endl;
+        tot_index_size += sizeof(it.second);
 
     }
 
-    // Traversing an unordered map
-    for (auto x : acc_map)
-        std::cout << x.first << " " << x.second << std::endl;
+//    // Traversing an unordered map
+//    for (auto x : acc_map) {
+//        std::cout << x.first << " " << x.second << std::endl;
+//    }
+
+    std::cout << "Total size of index : " << tot_index_size/1000000  << " Mb." << std::endl;
 
 }
 
-//void generate_index(seq_index &h, sequences &ref_seqs, int k)
-//{
-//    // Traversing an unordered map
-//
-//}
 
 int main (int argc, char *argv[])
 {
-    std::string filename  = "example.txt";
+//    std::string filename  = "example2.txt";
+    std::string filename  = "ecoli.fa";
+
 //    std::string choice = "kmer_index";
-    std::string choice = "minstrobe_index";
+//    std::string choice = "minstrobe_index";
 //   std::string choice = "hybridstrobe_index";
-//   std::string choice = "randstrobe_index";
+   std::string choice = "randstrobe_index";
     int n = 2;
-    int k = 10;
+    int k = 15;
     int w_min = 20;
-    int w_max = 40;
+    int w_max = 100;
     assert(k <= w_min && "k have to be smaller than w_min");
     std::string* file_p;
     file_p = &filename;
     sequences ref_seqs;
     idx_to_acc acc_map;
     read_fasta(ref_seqs, acc_map, filename);
-//   TODO: create mapping of reference accession to uint index
 
-    // Traversing an unordered map
-    for (auto x : ref_seqs) {
-        std::cout << x.first << " " << x.second << std::endl;
-    }
+//    // Traversing an unordered map
+//    for (auto x : ref_seqs) {
+//        std::cout << x.first << " " << x.second << std::endl;
+//    }
+
+    // Record index creation start time
+    auto start = std::chrono::high_resolution_clock::now();
 
     // CREATE INDEX OF REF SEQUENCES
     if (choice == "kmer_index" ){
@@ -119,8 +130,13 @@ int main (int argc, char *argv[])
         print_diagnostics(h, acc_map);
     }
     else if (choice == "hybridstrobe_index" ){
-        ;
-//        if (n == 2 ){ for (auto x : ref_seqs){generate_hybridstrobe2_index(h, k, x.second, x.first);}}
+        seq_index2 h;
+        if (n == 2 ){
+            for (auto x : ref_seqs){
+                generate_hybridstrobe2_index(h, n, k, w_min, w_max, x.second, x.first);
+            }
+            print_diagnostics2(h, acc_map);
+        }
 //        else if (n == 3){ for (auto x : ref_seqs){generate_hybridstrobe3_index(h, k, x.second, x.first);}}
     }
     else if (choice == "minstrobe_index" ){
@@ -146,6 +162,11 @@ int main (int argc, char *argv[])
     else {
         std::cout << choice << "not implemented : " << std::endl;
     }
+
+    // Record index creation end time
+    auto finish = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = finish - start;
+    std::cout << "Total time generating index: " << elapsed.count() << " s\n" <<  std::endl;
 
 
 
