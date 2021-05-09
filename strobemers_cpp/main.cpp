@@ -44,6 +44,43 @@ static void read_fasta(sequences &seqs, idx_to_acc &acc_map, std::string fn)
     file.close();
 }
 
+static void print_diagnostics_new(std::vector< std::tuple<uint64_t, unsigned int, unsigned int>>  kmers, idx_to_acc &acc_map) {
+    uint64_t tot_index_size = 0;
+    for (int i = 0; i < kmers.size(); ++i)
+    {
+        // access using []
+        auto t = kmers[i];
+//        std::cout << "(" << std::get<0>(t) << ", " << std::get<1>(t) << ", " << std::get<2>(t) << ")";
+        tot_index_size += sizeof(t);
+//        std::cout << sizeof(t) << std::endl;
+    }
+    std::cout << "Total size of index vector : " << tot_index_size/1000000  << " Mb." << std::endl;
+
+}
+
+static void print_diagnostics_new2(std::vector< std::tuple<uint64_t, unsigned int, unsigned int>> &mers_vector, robin_hood::unordered_map< uint64_t, std::tuple<uint64_t, unsigned int >> mers_index ) {
+    uint64_t tot_flat_vector_size = 0;
+    for (int i = 0; i < mers_vector.size(); ++i)
+    {
+        // access using []
+        auto t = mers_vector[i];
+        std::cout << "(" << std::get<0>(t) << ", " << std::get<1>(t) << ", " << std::get<2>(t) << "), ";
+        tot_flat_vector_size += sizeof(t);
+//        std::cout << sizeof(t) << std::endl;
+    }
+    std::cout << "Total size of flat kmer vector : " << tot_flat_vector_size/1000000  << " Mb." << std::endl;
+
+    uint64_t tot_hashtable_index_size = 0;
+    for (auto &it : mers_index)
+    {
+        std::cout << it.first << ": (" << std::get<0>(it.second) << ", " << std::get<1>(it.second) << "), " ;
+//        std::cout << std::get<0>(t) << ": " << std::get<1>(t)  << ", ";
+        tot_hashtable_index_size += sizeof(it.first);
+        tot_hashtable_index_size += sizeof(it.second);
+    }
+    std::cout << "Total size of hash table index : " << tot_hashtable_index_size/1000000  << " Mb." << std::endl;
+}
+
 static void print_diagnostics(seq_index1 &h, idx_to_acc &acc_map) {
     uint64_t tot_index_size = 0;
     for (auto &it : h)
@@ -97,16 +134,16 @@ static void print_diagnostics2(seq_index2 &h, idx_to_acc &acc_map) {
 
 int main (int argc, char *argv[])
 {
-//    std::string filename  = "example2.txt";
-    std::string filename  = "ecoli.fa";
+    std::string filename  = "example.txt";
+//    std::string filename  = "ecoli.fa";
 //    std::string filename  = "hg18.fa";
-//    std::string choice = "kmer_index";
+    std::string choice = "kmer_index";
 //    std::string choice = "minstrobe_index";
 //   std::string choice = "hybridstrobe_index";
-   std::string choice = "randstrobe_index";
+//   std::string choice = "randstrobe_index";
     int n = 2;
-    int k = 15;
-    int w_min = 20;
+    int k = 3;
+    int w_min = 61;
     int w_max = 100;
     assert(k <= w_min && "k have to be smaller than w_min");
     std::string* file_p;
@@ -115,22 +152,34 @@ int main (int argc, char *argv[])
     idx_to_acc acc_map;
     read_fasta(ref_seqs, acc_map, filename);
 
-//    // Traversing an unordered map
-//    for (auto x : ref_seqs) {
-//        std::cout << x.first << " " << x.second << std::endl;
-//    }
+    uint64_t m = 0; // total ref size
 
     // Record index creation start time
     auto start = std::chrono::high_resolution_clock::now();
 
     // CREATE INDEX OF REF SEQUENCES
     if (choice == "kmer_index" ){
+        temp_index1 tmp_index; // hash table holding all reference k-mers
         seq_index1 h;
         for (auto x : ref_seqs){
-            generate_kmer_index(h, k, x.second, x.first);
+//            generate_kmer_index(h, k, x.second, x.first);
+
+            std::vector<std::tuple<uint64_t, unsigned int, unsigned int>> kmers; // pos, chr_id, kmer hash value
+            kmers = generate_kmers(k, x.second, x.first);
+            tmp_index[x.first] = kmers;
+            m += kmers.size();
+            print_diagnostics_new(kmers, acc_map);
         }
-        print_diagnostics(h, acc_map);
+
+        std::vector< std::tuple<uint64_t, unsigned int, unsigned int>> mers_vector;
+        mers_vector = construct_flat_vector(tmp_index, m); // construct flat array or all kmers
+        tmp_index.clear();
+        robin_hood::unordered_map< uint64_t, std::tuple<uint64_t, unsigned int >> mers_index; // k-mer -> (offset in flat_vector, occurence count )
+        mers_index = index_vector(mers_vector); // construct index over flat array
+        print_diagnostics_new2(mers_vector, mers_index);
+//        print_diagnostics(h, acc_map);
     }
+
     else if (choice == "hybridstrobe_index" ){
         seq_index2 h;
         if (n == 2 ){

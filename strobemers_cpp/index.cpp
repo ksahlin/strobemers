@@ -110,6 +110,96 @@ void generate_kmer_index(seq_index1 &h, int k, std::string &seq, unsigned int re
 }
 
 
+
+std::vector< std::tuple<uint64_t, unsigned int, unsigned int>>  generate_kmers(int k, std::string &seq, unsigned int ref_index)
+{
+    std::vector<std::tuple<uint64_t, unsigned int, unsigned int> > kmers;
+
+//    robin_hood::hash<std::string> robin_hash;
+    int l;
+    int i;
+    uint64_t mask=(1ULL<<2*k) - 1;
+    uint64_t x = 0;
+    std::transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
+
+    for (int i = l = 0; i <= seq.length() - k; i++) {
+        int c = seq_nt4_table[(uint8_t)seq[i]];
+        if (c < 4) { // not an "N" base
+            x = (x << 2 | c) & mask;                  // forward strand
+            if (++l >= k) { // we find a k-mer
+                uint64_t hash_k = x;
+                std::tuple<uint64_t, unsigned int, unsigned int> s (hash_k, ref_index, i);
+                kmers.push_back(s);
+            }
+        }
+        else {
+            l = 0, x = 0; // if there is an "N", restart
+        }
+        }
+    return  kmers;
+}
+
+
+
+std::vector< std::tuple<uint64_t, unsigned int, unsigned int>> construct_flat_vector(temp_index1 &tmp_index, uint64_t m){
+    std::vector< std::tuple<uint64_t, unsigned int, unsigned int>> flat_vector;
+    for (auto &it : tmp_index)  {
+        for (auto &t : it.second) // it.second is the vector of k-mers, t is a tuple
+        {
+            flat_vector.push_back(t);
+        }
+    }
+    //    flat_array sort
+    std::stable_sort(flat_vector.begin(), flat_vector.end());
+    return flat_vector;
+
+}
+
+robin_hood::unordered_map< uint64_t, std::tuple<uint64_t, unsigned int >> index_vector(std::vector< std::tuple<uint64_t, unsigned int, unsigned int>>  &flat_vector){
+    robin_hood::unordered_map< uint64_t, std::tuple<uint64_t, unsigned int >> mers_index;
+    uint64_t offset = 0;
+    uint64_t prev_offset = 0;
+    unsigned int count = 0;
+
+    uint64_t prev_k;
+    std::tuple<uint64_t, unsigned int, unsigned int > t = flat_vector[0];
+    prev_k = std::get<0>(t);
+    uint64_t curr_k;
+
+    for ( auto &t : flat_vector ) {
+//        std::cout << t << std::endl;
+        curr_k = std::get<0>(t);
+        if (curr_k == prev_k){
+            count ++;
+        }
+        else {
+            std::tuple<uint64_t, unsigned int> s(prev_offset, count);
+            mers_index[prev_k] = s;
+            count = 1;
+            prev_k = curr_k;
+            prev_offset = offset;
+        }
+        offset ++;
+    }
+
+    // last k-mer
+    std::tuple<uint64_t, unsigned int> s(prev_offset, count);
+    mers_index[curr_k] = s;
+
+    return mers_index;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 // initialize queue and current minimum and position
 static inline void initialize_window(std::string &seq, std::deque <uint64_t> &q, uint64_t &q_min_val, int &q_min_pos, int w_min, int w_max, int k, uint64_t &kmask){
     robin_hood::hash<std::string> robin_hash;
