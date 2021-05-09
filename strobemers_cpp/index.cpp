@@ -77,9 +77,7 @@ static inline uint64_t kmer_to_uint64(std::string &kmer, uint64_t kmask)
     return bkmer;
 }
 
-// std::vector<strobemer2>() seq_to_hybridstrobes2(int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index)
-// std::vector<strobemer3>() seq_to_hybridstrobes3(int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index)
-// std::vector<kmer>() seq_to_kmers(int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index)
+
 
 
 void generate_kmer_index(seq_index1 &h, int k, std::string &seq, unsigned int ref_index)
@@ -111,11 +109,9 @@ void generate_kmer_index(seq_index1 &h, int k, std::string &seq, unsigned int re
 
 
 
-std::vector< std::tuple<uint64_t, unsigned int, unsigned int>>  generate_kmers(int k, std::string &seq, unsigned int ref_index)
+std::vector< std::tuple<uint64_t, unsigned int, unsigned int>>  seq_to_kmers(int k, std::string &seq, unsigned int ref_index)
 {
     std::vector<std::tuple<uint64_t, unsigned int, unsigned int> > kmers;
-
-//    robin_hood::hash<std::string> robin_hash;
     int l;
     int i;
     uint64_t mask=(1ULL<<2*k) - 1;
@@ -328,19 +324,32 @@ static inline void get_next_strobe(std::vector<uint64_t> &string_hashes, uint64_
 }
 
 static inline void make_string_to_hashvalues(std::string &seq, std::vector<uint64_t> &string_hashes, int k, uint64_t kmask){
-    robin_hood::hash<std::string> robin_hash;
     for (int i = 0; i <= seq.length() - k; i++) {
         auto strobe1 = seq.substr(i, k);
         uint64_t bstrobe = kmer_to_uint64(strobe1, kmask);
-//        uint64_t strobe_hashval = hash64(bstrobe, kmask);
-//        uint64_t strobe_hashval;
-//        strobe_hashval = robin_hash(strobe1);
-
         string_hashes.push_back(bstrobe);
     }
 
 }
 
+static inline void make_string_to_hashvalues2(std::string &seq, std::vector<uint64_t> &string_hashes, int k, uint64_t kmask) {
+    std::vector<std::tuple<uint64_t, unsigned int, unsigned int> > kmers;
+    int l;
+    int i;
+    uint64_t x = 0;
+    for (int i = l = 0; i <= seq.length() - k; i++) {
+        int c = seq_nt4_table[(uint8_t) seq[i]];
+        if (c < 4) { // not an "N" base
+            x = (x << 2 | c) & kmask;                  // forward strand
+            if (++l >= k) { // we find a k-mer
+                uint64_t hash_k = x;
+                string_hashes.push_back(hash_k);
+            }
+        } else {
+            l = 0, x = 0; // if there is an "N", restart
+        }
+    }
+}
 
 void generate_randstrobe2_index(seq_index2 &h, int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index)
 {
@@ -353,7 +362,7 @@ void generate_randstrobe2_index(seq_index2 &h, int n, int k, int w_min, int w_ma
     uint64_t q = pow (2, 10) - 1;
     // make string of strobes into hashvalues all at once to avoid repetitive k-mer to hash value computations
     std::vector<uint64_t> string_hashes;
-    make_string_to_hashvalues(seq, string_hashes, k, kmask);
+    make_string_to_hashvalues2(seq, string_hashes, k, kmask);
     unsigned int seq_length = string_hashes.size();
 //    uint64_t strobe_hash = 1223;
 //    uint64_t randstrobe_h = 12203;
