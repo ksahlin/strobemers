@@ -158,12 +158,12 @@ int main (int argc, char *argv[])
 //    std::string filename  = "hg18.fa";
 //    std::string choice = "kmer_index";
 //    std::string choice = "minstrobe_index";
-   std::string choice = "hybridstrobe_index";
-//   std::string choice = "randstrobe_index";
+//   std::string choice = "hybridstrobe_index";
+   std::string choice = "randstrobe_index";
     int n = 2;
     int k = 15;
-    int w_min = 20;
-    int w_max = 50;
+    int w_min = 16;
+    int w_max = 60;
     assert(k <= w_min && "k have to be smaller than w_min");
     std::string* file_p;
     file_p = &filename;
