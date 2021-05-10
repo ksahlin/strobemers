@@ -100,6 +100,27 @@ static void print_diagnostics_new3(std::vector< std::tuple<uint64_t, unsigned in
     std::cout << "Total size of hash table index : " << tot_hashtable_index_size/1000000  << " Mb." << std::endl;
 }
 
+static void print_diagnostics_new4(std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int>> &mers_vector, robin_hood::unordered_map< uint64_t, std::tuple<uint64_t, unsigned int >> mers_index ) {
+    uint64_t tot_flat_vector_size = 0;
+    for (int i = 0; i < mers_vector.size(); ++i)
+    {
+        // access using []
+        auto t = mers_vector[i];
+//        std::cout << "(" << std::get<0>(t) << ", " << std::get<1>(t) << ", " << std::get<2>(t) << ", " << std::get<3>(t) << ", " << std::get<4>(t) << "), ";
+        tot_flat_vector_size += sizeof(t);
+    }
+    std::cout << "Total size of flat kmer vector : " << tot_flat_vector_size/1000000  << " Mb." << std::endl;
+
+    uint64_t tot_hashtable_index_size = 0;
+    for (auto &it : mers_index)
+    {
+//        std::cout << it.first << ": (" << std::get<0>(it.second) << ", " << std::get<1>(it.second) << "), " ;
+        tot_hashtable_index_size += sizeof(it.first);
+        tot_hashtable_index_size += sizeof(it.second);
+    }
+    std::cout << "Total size of hash table index : " << tot_hashtable_index_size/1000000  << " Mb." << std::endl;
+}
+
 static void print_diagnostics(seq_index1 &h, idx_to_acc &acc_map) {
     uint64_t tot_index_size = 0;
     for (auto &it : h)
@@ -153,17 +174,17 @@ static void print_diagnostics2(seq_index2 &h, idx_to_acc &acc_map) {
 
 int main (int argc, char *argv[])
 {
-    std::string filename  = "example.txt";
+//    std::string filename  = "example.txt";
 //    std::string filename  = "ecoli.fa";
-//    std::string filename  = "hg18.fa";
-//    std::string choice = "kmer_index";
+    std::string filename  = "chr21.fa";
+    std::string choice = "kmer_index";
 //    std::string choice = "minstrobe_index";
 //   std::string choice = "hybridstrobe_index";
-   std::string choice = "randstrobe_index";
-    int n = 2;
-    int k = 15;
-    int w_min = 16;
-    int w_max = 60;
+//   std::string choice = "randstrobe_index";
+    int n = 3;
+    int k = 20;
+    int w_min = 21;
+    int w_max = 100;
     assert(k <= w_min && "k have to be smaller than w_min");
     std::string* file_p;
     file_p = &filename;
@@ -254,7 +275,23 @@ int main (int argc, char *argv[])
             print_diagnostics_new3(mers_vector, mers_index);
 //            print_diagnostics2(h, acc_map);
         }
-//        else if (n == 3){ for (auto x : ref_seqs){generate_randstrobe3_index(h, k, x.second, x.first);}}
+        else if (n == 3){
+            three_pos_index tmp_index; // hash table holding all reference randstrobes
+//            seq_index2 h;
+            for (auto x : ref_seqs){
+//                generate_randstrobe2_index(h, n, k, w_min, w_max, x.second, x.first);
+                std::vector<std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int>> randstrobes3; // pos, chr_id, kmer hash value
+                randstrobes3 = seq_to_randstrobes3(n, k, w_min, w_max, x.second, x.first);
+                tmp_index[x.first] = randstrobes3;
+            }
+            std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int>> mers_vector;
+            mers_vector = construct_flat_vector_three_pos(tmp_index); // construct flat array or all strobemers
+            tmp_index.clear();
+            robin_hood::unordered_map< uint64_t, std::tuple<uint64_t, unsigned int >> mers_index; // k-mer -> (offset in flat_vector, occurence count )
+            mers_index = index_vector_three_pos(mers_vector); // construct index over flat array
+            print_diagnostics_new4(mers_vector, mers_index);
+//            print_diagnostics2(h, acc_map);
+        }
     }
     else {
         std::cout << choice << "not implemented : " << std::endl;

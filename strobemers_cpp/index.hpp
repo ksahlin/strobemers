@@ -47,6 +47,12 @@ std::vector<std::tuple<uint64_t, unsigned int, unsigned int, unsigned int>> seq_
 std::vector<std::tuple<uint64_t, unsigned int, unsigned int, unsigned int>> seq_to_minstrobes2(int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index);
 std::vector<std::tuple<uint64_t, unsigned int, unsigned int, unsigned int>> seq_to_hybridstrobes2(int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index);
 
+typedef robin_hood::unordered_map< unsigned int, std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int>>> three_pos_index;
+std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int>> construct_flat_vector_three_pos(three_pos_index &tmp_index);
+robin_hood::unordered_map< uint64_t, std::tuple<uint64_t, unsigned int >> index_vector_three_pos(std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int>>  &mers_vector);
+
+std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int>> seq_to_randstrobes3(int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index);
+
 struct strobemer2 {
     uint64_t hashval;
     unsigned short int p1;

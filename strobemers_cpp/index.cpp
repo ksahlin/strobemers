@@ -176,6 +176,56 @@ robin_hood::unordered_map< uint64_t, std::tuple<uint64_t, unsigned int >> index_
 }
 
 
+
+std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int>> construct_flat_vector_three_pos(three_pos_index &tmp_index){
+    std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int>> flat_vector;
+    for (auto &it : tmp_index)  {
+        for (auto &t : it.second) // it.second is the vector of k-mers, t is a tuple
+        {
+            flat_vector.push_back(t);
+        }
+    }
+    //    flat_array sort
+    std::stable_sort(flat_vector.begin(), flat_vector.end());
+    return flat_vector;
+}
+
+
+robin_hood::unordered_map< uint64_t, std::tuple<uint64_t, unsigned int >> index_vector_three_pos(std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int>>  &flat_vector){
+    robin_hood::unordered_map< uint64_t, std::tuple<uint64_t, unsigned int >> mers_index;
+    uint64_t offset = 0;
+    uint64_t prev_offset = 0;
+    unsigned int count = 0;
+
+    uint64_t prev_k;
+    std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int> t = flat_vector[0];
+    prev_k = std::get<0>(t);
+    uint64_t curr_k;
+
+    for ( auto &t : flat_vector ) {
+//        std::cout << t << std::endl;
+        curr_k = std::get<0>(t);
+        if (curr_k == prev_k){
+            count ++;
+        }
+        else {
+            std::tuple<uint64_t, unsigned int> s(prev_offset, count);
+            mers_index[prev_k] = s;
+            count = 1;
+            prev_k = curr_k;
+            prev_offset = offset;
+        }
+        offset ++;
+    }
+
+    // last k-mer
+    std::tuple<uint64_t, unsigned int> s(prev_offset, count);
+    mers_index[curr_k] = s;
+
+    return mers_index;
+}
+
+
 //
 //void generate_kmer_index(seq_index1 &h, int k, std::string &seq, unsigned int ref_index)
 //{
@@ -260,7 +310,7 @@ std::vector< std::tuple<uint64_t, unsigned int, unsigned int>> seq_to_kmers(int 
     uint64_t mask=(1ULL<<2*k) - 1;
     uint64_t x = 0;
     std::transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
-
+    int cnt = 0;
     for (int i = l = 0; i <= seq.length() - k; i++) {
         int c = seq_nt4_table[(uint8_t)seq[i]];
         if (c < 4) { // not an "N" base
@@ -269,18 +319,23 @@ std::vector< std::tuple<uint64_t, unsigned int, unsigned int>> seq_to_kmers(int 
                 uint64_t hash_k = x;
                 std::tuple<uint64_t, unsigned int, unsigned int> s (hash_k, ref_index, i);
                 kmers.push_back(s);
+                cnt ++;
+                if ((cnt % 1000000) == 0 ){
+                    std::cout << cnt << " kmers created." << std::endl;
+                }
             }
         }
         else {
             l = 0, x = 0; // if there is an "N", restart
         }
+
         }
     return  kmers;
 }
 
 
 static inline void make_string_to_hashvalues2(std::string &seq, std::vector<uint64_t> &string_hashes, int k, uint64_t kmask) {
-    robin_hood::hash<uint64_t> robin_hash;
+//    robin_hood::hash<uint64_t> robin_hash;
 //    std::vector<std::tuple<uint64_t, unsigned int, unsigned int> > kmers;
     int l;
     int i;
@@ -291,7 +346,8 @@ static inline void make_string_to_hashvalues2(std::string &seq, std::vector<uint
             x = (x << 2 | c) & kmask;                  // forward strand
             if (++l >= k) { // we find a k-mer
 //                uint64_t hash_k = x;
-                uint64_t hash_k = robin_hash(x);
+//                uint64_t hash_k = robin_hash(x);
+                uint64_t hash_k = hash64(x, kmask);
                 string_hashes.push_back(hash_k);
             }
         } else {
@@ -334,7 +390,7 @@ std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int>> seq
     make_string_to_hashvalues2(seq, string_hashes, k, kmask);
     unsigned int seq_length = string_hashes.size();
 
-    std::cout << seq << std::endl;
+//    std::cout << seq << std::endl;
 
     // create the randstrobes
     for (unsigned int i = 0; i <= seq_length; i++) {
@@ -365,15 +421,102 @@ std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int>> seq
 
         uint64_t hash_randstrobe2 = (string_hashes[i] << k) ^ strobe_hashval_next;
 
-        std::tuple<uint64_t, unsigned int, unsigned int,unsigned int> s (hash_randstrobe2, ref_index, i, strobe_pos_next);
+        std::tuple<uint64_t, unsigned int, unsigned int, unsigned int> s (hash_randstrobe2, ref_index, i, strobe_pos_next);
         randstrobes2.push_back(s);
 
 
-        auto strobe1 = seq.substr(i, k);
-        std::cout << std::string(i, ' ') << strobe1 << std::string(strobe_pos_next - (i+k), ' ') << std::string(k, 'X') << std::endl;
+//        auto strobe1 = seq.substr(i, k);
+//        std::cout << std::string(i, ' ') << strobe1 << std::string(strobe_pos_next - (i+k), ' ') << std::string(k, 'X') << std::endl;
 
     }
     return randstrobes2;
+}
+
+
+std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int>> seq_to_randstrobes3(int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index)
+{
+    std::vector<std::tuple<uint64_t, unsigned int, unsigned int,unsigned int, unsigned int>> randstrobes3;
+
+    if (seq.length() < 2*w_max) {
+        return randstrobes3;
+    }
+
+    std::transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
+    uint64_t kmask=(1ULL<<2*k) - 1;
+    uint64_t q = pow (2, 16) - 1;
+    // make string of strobes into hashvalues all at once to avoid repetitive k-mer to hash value computations
+    std::vector<uint64_t> string_hashes;
+    make_string_to_hashvalues2(seq, string_hashes, k, kmask);
+    unsigned int seq_length = string_hashes.size();
+
+//    std::cout << seq << std::endl;
+
+    // create the randstrobes
+    for (unsigned int i = 0; i <= seq_length; i++) {
+
+        if ((i % 1000000) == 0 ){
+            std::cout << i << " randstrobes created." << std::endl;
+        }
+        uint64_t strobe_hash;
+        strobe_hash = string_hashes[i];
+
+        unsigned int strobe_pos_next1;
+        uint64_t strobe_hashval_next1;
+        unsigned int strobe_pos_next2;
+        uint64_t strobe_hashval_next2;
+
+        if (i + 2*w_max <= seq_length){
+            unsigned int w1_start = i+w_min;
+            unsigned int w1_end = i+w_max;
+            get_next_strobe(string_hashes, strobe_hash, strobe_pos_next1, strobe_hashval_next1, w1_start, w1_end, q);
+
+            unsigned int w2_start = i+w_max + w_min;
+            unsigned int w2_end = i+2*w_max;
+//            uint64_t conditional_next = strobe_hash ^ strobe_hashval_next1;
+            get_next_strobe(string_hashes, strobe_hashval_next1, strobe_pos_next2, strobe_hashval_next2, w2_start, w2_end, q);
+        }
+//        else if (i + w_max <= seq_length){
+//            unsigned int w1_start = i+w_min;
+//            unsigned int w1_end = i+w_max;
+//            get_next_strobe(string_hashes, strobe_hash, strobe_pos_next1, strobe_hashval_next1, w1_start, w1_end, q);
+//
+//            unsigned int w2_start = i+w_max + w_min;
+//            unsigned int w2_end = i+2*w_max;
+//            get_next_strobe(string_hashes, strobe_pos_next1, strobe_pos_next2, strobe_hashval_next2, w2_start, w2_end, q);
+//        }
+        else if ((i + 2*w_min + 1 < seq_length) && (seq_length < i + 2*w_max) ){
+//            unsigned int w_start = i+w_min;
+//            unsigned int w_end = seq_length -1;
+//            uint64_t strobe_hash;
+//            strobe_hash = string_hashes[i];
+//            get_next_strobe(string_hashes, strobe_hash, strobe_pos_next1, strobe_hashval_next1, w_start, w_end, q);
+
+            int overshot;
+            overshot = i + 2*w_max - seq_length;
+            unsigned int w1_start = i+w_min;
+            unsigned int w1_end = i+w_max - overshot/2;
+            get_next_strobe(string_hashes, strobe_hash, strobe_pos_next1, strobe_hashval_next1, w1_start, w1_end, q);
+
+            unsigned int w2_start = i+w_max - overshot/2 + w_min;
+            unsigned int w2_end = i+2*w_max - overshot;
+//            uint64_t conditional_next = strobe_hash ^ strobe_hashval_next1;
+            get_next_strobe(string_hashes, strobe_hashval_next1, strobe_pos_next2, strobe_hashval_next2, w2_start, w2_end, q);
+        }
+        else{
+            return randstrobes3;
+        }
+
+        uint64_t hash_randstrobe3 = (((strobe_hash << k) ^ strobe_hashval_next1) << k) ^ strobe_hashval_next2;
+
+        std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int> s (hash_randstrobe3, ref_index, i, strobe_pos_next1, strobe_pos_next2);
+        randstrobes3.push_back(s);
+
+
+//        auto strobe1 = seq.substr(i, k);
+//        std::cout << std::string(i, ' ') << strobe1 << std::string(strobe_pos_next1 - (i+k), ' ') << std::string(k, 'X') << std::string(strobe_pos_next2 - strobe_pos_next1 - k, ' ') << std::string(k, 'X') << std::endl;
+//        std::cout << i << " " << strobe_pos_next1 << " " << strobe_pos_next2 << " " << seq_length << std::endl;
+    }
+    return randstrobes3;
 }
 
 
@@ -480,7 +623,7 @@ std::vector<std::tuple<uint64_t, unsigned int, unsigned int, unsigned int>> seq_
     int q3_min_pos = -1;
     initialize_window(string_hashes, q3, q3_min_val, q3_min_pos, w_min+2*x, w_max, k);
 
-    std::cout << seq << std::endl;
+//    std::cout << seq << std::endl;
 
     // create the hybridstrobes
     for (unsigned int i = 0; i <= seq_length; i++) {
@@ -558,8 +701,8 @@ std::vector<std::tuple<uint64_t, unsigned int, unsigned int, unsigned int>> seq_
             return hybridstrobes2;
         }
 
-        auto strobe1 = seq.substr(i, k);
-        std::cout << std::string(i, ' ') << strobe1 << std::string(strobe2_pos - (i+k)-1, ' ') << std::string(k, 'X') << std::endl;
+//        auto strobe1 = seq.substr(i, k);
+//        std::cout << std::string(i, ' ') << strobe1 << std::string(strobe2_pos - (i+k)-1, ' ') << std::string(k, 'X') << std::endl;
 //        std::cout << i << " " << strobe2_pos << " " << seq_length << std::endl;
 
 
