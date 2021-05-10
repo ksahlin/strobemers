@@ -153,17 +153,17 @@ static void print_diagnostics2(seq_index2 &h, idx_to_acc &acc_map) {
 
 int main (int argc, char *argv[])
 {
-//    std::string filename  = "example.txt";
-    std::string filename  = "ecoli.fa";
+    std::string filename  = "example.txt";
+//    std::string filename  = "ecoli.fa";
 //    std::string filename  = "hg18.fa";
 //    std::string choice = "kmer_index";
-    std::string choice = "minstrobe_index";
-//   std::string choice = "hybridstrobe_index";
+//    std::string choice = "minstrobe_index";
+   std::string choice = "hybridstrobe_index";
 //   std::string choice = "randstrobe_index";
     int n = 2;
     int k = 15;
     int w_min = 20;
-    int w_max = 40;
+    int w_max = 50;
     assert(k <= w_min && "k have to be smaller than w_min");
     std::string* file_p;
     file_p = &filename;
@@ -196,19 +196,29 @@ int main (int argc, char *argv[])
     }
 
     else if (choice == "hybridstrobe_index" ){
-        seq_index2 h;
+        two_pos_index tmp_index; // hash table holding all reference hybridstrobes
+//        seq_index2 h;
         if (n == 2 ){
             for (auto x : ref_seqs){
                 ;
 //                generate_hybridstrobe2_index(h, n, k, w_min, w_max, x.second, x.first);
+                std::vector<std::tuple<uint64_t, unsigned int, unsigned int, unsigned int>> hybridstrobes2; // pos, chr_id, kmer hash value
+                hybridstrobes2 = seq_to_hybridstrobes2(n, k, w_min, w_max, x.second, x.first);
+                tmp_index[x.first] = hybridstrobes2;
             }
-            print_diagnostics2(h, acc_map);
+            std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int>> mers_vector;
+            mers_vector = construct_flat_vector_two_pos(tmp_index); // construct flat array or all strobemers
+            tmp_index.clear();
+            robin_hood::unordered_map< uint64_t, std::tuple<uint64_t, unsigned int >> mers_index; // k-mer -> (offset in flat_vector, occurence count )
+            mers_index = index_vector_two_pos(mers_vector); // construct index over flat array
+            print_diagnostics_new3(mers_vector, mers_index);
+//            print_diagnostics2(h, acc_map);
         }
 //        else if (n == 3){ for (auto x : ref_seqs){generate_hybridstrobe3_index(h, k, x.second, x.first);}}
     }
     else if (choice == "minstrobe_index" ){
         if (n == 2 ){
-            two_pos_index tmp_index; // hash table holding all reference randstrobes
+            two_pos_index tmp_index; // hash table holding all reference minstrobes
 //            seq_index2 h;
             for (auto x : ref_seqs){
 //                generate_minstrobe2_index(h, n, k, w_min, w_max, x.second, x.first);

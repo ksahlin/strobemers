@@ -45,7 +45,7 @@ robin_hood::unordered_map< uint64_t, std::tuple<uint64_t, unsigned int >> index_
 std::vector<std::tuple<uint64_t, unsigned int, unsigned int>> seq_to_kmers(int k, std::string &seq, unsigned int ref_index);
 std::vector<std::tuple<uint64_t, unsigned int, unsigned int, unsigned int>> seq_to_randstrobes2(int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index);
 std::vector<std::tuple<uint64_t, unsigned int, unsigned int, unsigned int>> seq_to_minstrobes2(int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index);
-
+std::vector<std::tuple<uint64_t, unsigned int, unsigned int, unsigned int>> seq_to_hybridstrobes2(int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index);
 
 struct strobemer2 {
     uint64_t hashval;

@@ -413,7 +413,7 @@ std::vector<std::tuple<uint64_t, unsigned int, unsigned int, unsigned int>> seq_
         minstrobes2.push_back(s);
 
         // update queue and current minimum and position
-        if (i + w_max <= seq_length - k){
+        if (i + w_max <= seq_length){
 //            auto new_strobe = seq.substr(i + w_max, k);
 //            uint64_t new_bstrobe = kmer_to_uint64(new_strobe, kmask);
 //            uint64_t new_strobe_hashval = hash64(new_bstrobe, kmask);
@@ -421,7 +421,7 @@ std::vector<std::tuple<uint64_t, unsigned int, unsigned int, unsigned int>> seq_
 
             update_window(q, q_min_val, q_min_pos, new_strobe, w_min, w_max, i );
         }
-        else if ((i + w_min + 1 < seq_length - k) && (seq_length - k < i + w_max) ){
+        else if ((i + w_min + 1 < seq_length) && (seq_length < i + w_max) ){
 //            uint64_t new_strobe_hashval =  UINT64_MAX;
             uint64_t new_strobe = UINT64_MAX;
             update_window(q, q_min_val, q_min_pos, new_strobe, w_min, w_max, i );
@@ -439,6 +439,130 @@ std::vector<std::tuple<uint64_t, unsigned int, unsigned int, unsigned int>> seq_
 
 
 
+
+
+std::vector<std::tuple<uint64_t, unsigned int, unsigned int, unsigned int>> seq_to_hybridstrobes2(int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index)
+{
+    std::vector<std::tuple<uint64_t, unsigned int, unsigned int,unsigned int>> hybridstrobes2;
+    if (seq.length() < w_max) {
+        return hybridstrobes2;
+    }
+
+    std::transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
+    // make string of strobes into hashvalues all at once to avoid repetitive k-mer to hash value computations
+    uint64_t kmask=(1ULL<<2*k) - 1;
+    std::vector<uint64_t> string_hashes;
+    make_string_to_hashvalues2(seq, string_hashes, k, kmask);
+    unsigned int seq_length = string_hashes.size();
+    int x = (w_max - w_min) /3;
+
+    // initialize deque1
+    std::deque <uint64_t> q1;
+    uint64_t q1_min_val = UINT64_MAX;
+    int q1_min_pos = -1;
+    initialize_window(string_hashes, q1, q1_min_val, q1_min_pos, w_min, w_min+ x, k);
+
+    // initialize deque2
+    std::deque <uint64_t> q2;
+    uint64_t q2_min_val = UINT64_MAX;
+    int q2_min_pos = -1;
+    initialize_window(string_hashes, q2, q2_min_val, q2_min_pos, w_min+x, w_min+2*x, k);
+
+    // initialize deque3
+    std::deque <uint64_t> q3;
+    uint64_t q3_min_val = UINT64_MAX;
+    int q3_min_pos = -1;
+    initialize_window(string_hashes, q3, q3_min_val, q3_min_pos, w_min+2*x, w_max, k);
+
+//    std::cout << seq << std::endl;
+
+    // create the hybridstrobes
+    for (unsigned int i = 0; i <= seq_length; i++) {
+//        auto strobe1 = seq.substr(i, k);
+//        uint64_t bstrobe = kmer_to_uint64(strobe1, kmask);
+//        uint64_t strobe_hashval = hash64(bstrobe, kmask);
+
+        uint64_t bstrobe = string_hashes[i];
+
+        int strobe2_pos;
+        uint64_t strobe2_val;
+        uint r =  bstrobe % 3;
+        if (r == 0){
+            strobe2_val = q1_min_val;
+            strobe2_pos = q1_min_pos;
+        }
+        else if (r == 1){
+            strobe2_val = q2_min_val;
+            strobe2_pos = q2_min_pos;
+        }
+        else{
+            strobe2_val = q3_min_val;
+            strobe2_pos = q3_min_pos;
+        }
+
+        uint64_t hash_hybridstrobe2;
+        hash_hybridstrobe2 = (bstrobe << k) ^ strobe2_val;
+
+        std::tuple<uint64_t, unsigned int, unsigned int, unsigned int> s (hash_hybridstrobe2, ref_index, i, strobe2_pos);
+        hybridstrobes2.push_back(s);
+
+
+        // update queue and current minimum and position
+        if (i + w_max <= seq_length){
+//            auto new_strobe1 = seq.substr(i + w_min+x, k);
+//            uint64_t new_bstrobe1 = kmer_to_uint64(new_strobe1, kmask);
+//            uint64_t new_strobe_hashval1 = hash64(new_bstrobe1, kmask);
+            uint64_t new_strobe_hashval1 = string_hashes[i + w_min+x];
+            update_window(q1, q1_min_val, q1_min_pos, new_strobe_hashval1, w_min, w_min+x, i );
+
+//            auto new_strobe2 = seq.substr(i + w_min+2*x, k);
+//            uint64_t new_bstrobe2 = kmer_to_uint64(new_strobe2, kmask);
+//            uint64_t new_strobe_hashval2 = hash64(new_bstrobe2, kmask);
+            uint64_t new_strobe_hashval2 = string_hashes[i + w_min+2*x];
+            update_window(q2, q2_min_val, q2_min_pos, new_strobe_hashval2, w_min+x, w_min+2*x, i );
+
+//            auto new_strobe3 = seq.substr(i + w_max, k);
+//            uint64_t new_bstrobe3 = kmer_to_uint64(new_strobe3, kmask);
+//            uint64_t new_strobe_hashval3 = hash64(new_bstrobe3, kmask);
+            uint64_t new_strobe_hashval3 = string_hashes[i + w_max];
+            update_window(q3, q3_min_val, q3_min_pos, new_strobe_hashval3, w_min+2*x, w_max, i );
+        }
+            // TODO: Fix the below code to generate hybridstrobes all the way to the end of the sequence.
+            //  It probably creates and empty queue which leads to an infinity loop or something.
+//        else if ((i + w_min + 1 < seq_length) && (seq_length < i + w_min+x) ){
+//            uint64_t new_strobe_hashval =  UINT64_MAX;
+//            update_window(q1, q1_min_val, q1_min_pos, new_strobe_hashval, w_min, w_min+x, i );
+//            update_window(q2, q2_min_val, q2_min_pos, new_strobe_hashval, w_min+x, w_min+2*x, i );
+//            update_window(q3, q3_min_val, q3_min_pos, new_strobe_hashval, w_min+2*x, w_max, i );
+//        }
+//        else if ((i + w_min + 1 < seq_length) && (seq_length < i + w_min+2*x) ){
+//            uint64_t new_strobe_hashval =  UINT64_MAX;
+//            update_window(q2, q2_min_val, q2_min_pos, new_strobe_hashval, w_min+x, w_min+2*x, i );
+//            update_window(q3, q3_min_val, q3_min_pos, new_strobe_hashval, w_min+2*x, w_max, i );
+//        }
+//        else if ((i + w_min + 1 < seq_length) && (seq_length < i + w_max) ){
+//            uint64_t new_strobe_hashval1 = string_hashes[i + w_min+x];
+//            update_window(q1, q1_min_val, q1_min_pos, new_strobe_hashval1, w_min, w_min+x, i );
+//            uint64_t new_strobe_hashval2 = string_hashes[i + w_min+2*x];
+//            update_window(q2, q2_min_val, q2_min_pos, new_strobe_hashval2, w_min+x, w_min+2*x, i );
+//            uint64_t new_strobe_hashval3 =  UINT64_MAX;
+//            update_window(q3, q3_min_val, q3_min_pos, new_strobe_hashval3, w_min, w_max, i );
+//        }
+        else{
+            return hybridstrobes2;
+        }
+
+//        auto strobe1 = seq.substr(i, k);
+//        std::cout << std::string(i, ' ') << strobe1 << std::string(strobe2_pos - (i+k), ' ') << std::string(k, 'X') << std::endl;
+
+    }
+    return hybridstrobes2;
+}
+
+
+
+
+
 //static inline void make_string_to_hashvalues(std::string &seq, std::vector<uint64_t> &string_hashes, int k, uint64_t kmask){
 //    for (int i = 0; i <= seq.length() - k; i++) {
 //        auto strobe1 = seq.substr(i, k);
@@ -450,179 +574,69 @@ std::vector<std::tuple<uint64_t, unsigned int, unsigned int, unsigned int>> seq_
 
 
 
-void generate_randstrobe2_index(seq_index2 &h, int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index)
-{
-    if (seq.length() < w_max) {
-        return;
-    }
-
-    std::transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
-    uint64_t kmask=(1ULL<<2*k) - 1;
-    uint64_t q = pow (2, 10) - 1;
-    // make string of strobes into hashvalues all at once to avoid repetitive k-mer to hash value computations
-    std::vector<uint64_t> string_hashes;
-    make_string_to_hashvalues2(seq, string_hashes, k, kmask);
-    unsigned int seq_length = string_hashes.size();
-//    uint64_t strobe_hash = 1223;
-//    uint64_t randstrobe_h = 12203;
-//    std::cout << seq << std::endl;
-
-    // create the randstrobes
-    for (unsigned int i = 0; i <= seq_length; i++) {
-
-        if ((i % 1000000) == 0 ){
-            std::cout << i << " strobemers created." << std::endl;
-        }
-        unsigned int strobe_pos_next;
-        uint64_t strobe_hashval_next;
-
-        if (i + w_max <= seq_length){
-            unsigned int w_start = i+w_min;
-            unsigned int w_end = i+w_max;
-            uint64_t strobe_hash;
-            strobe_hash = string_hashes[i];
-            get_next_strobe(string_hashes, strobe_hash, strobe_pos_next, strobe_hashval_next, w_start, w_end, q);
-        }
-        else if ((i + w_min + 1 < seq_length) && (seq_length < i + w_max) ){
-            unsigned int w_start = i+w_min;
-            unsigned int w_end = seq_length -1;
-            uint64_t strobe_hash;
-            strobe_hash = string_hashes[i];
-            get_next_strobe(string_hashes, strobe_hash, strobe_pos_next, strobe_hashval_next, w_start, w_end, q);
-        }
-        else{
-            return;
-        }
-
-        uint64_t randstrobe_h = (string_hashes[i] << k) ^ strobe_hashval_next;
-
-
-        if (h.find(randstrobe_h) == h.end()){ // Not  in  index
-            h[randstrobe_h] = std::vector< std::tuple<unsigned int, unsigned int, unsigned int> >();  //std::vector<unsigned int>(); // Initialize key with null vector
-            std::tuple<unsigned int, unsigned int, unsigned int> s (ref_index, i, strobe_pos_next);
-            h[randstrobe_h].push_back(s);
-
-        }
-        else{
-            std::tuple<unsigned int, unsigned int, unsigned int> s (ref_index, i, strobe_pos_next);
-            h[randstrobe_h].push_back(s);
-        }
-
-//        auto strobe1 = seq.substr(i, k);
-//        std::cout << std::string(i, ' ') << strobe1 << std::string(strobe_pos_next - (i+k), ' ') << std::string(k, 'X') << std::endl;
-
-    }
-}
-
-//
-//
-//void generate_hybridstrobe2_index(seq_index2 &h, int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index)
+//void generate_randstrobe2_index(seq_index2 &h, int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index)
 //{
 //    if (seq.length() < w_max) {
 //        return;
 //    }
 //
 //    std::transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
-//    unsigned int seq_length = seq.length();
 //    uint64_t kmask=(1ULL<<2*k) - 1;
-//    int x = (w_max - w_min) /3;
-//
-//    // initialize deque1
-//    std::deque <uint64_t> q1;
-//    uint64_t q1_min_val = UINT64_MAX;
-//    int q1_min_pos = -1;
-//    initialize_window(seq, q1, q1_min_val, q1_min_pos, w_min, w_min+ x, k, kmask);
-//
-//    // initialize deque2
-//    std::deque <uint64_t> q2;
-//    uint64_t q2_min_val = UINT64_MAX;
-//    int q2_min_pos = -1;
-//    initialize_window(seq, q2, q2_min_val, q2_min_pos, w_min+x, w_min+2*x, k, kmask);
-//
-//    // initialize deque3
-//    std::deque <uint64_t> q3;
-//    uint64_t q3_min_val = UINT64_MAX;
-//    int q3_min_pos = -1;
-//    initialize_window(seq, q3, q3_min_val, q3_min_pos, w_min+2*x, w_max, k, kmask);
-//
+//    uint64_t q = pow (2, 10) - 1;
+//    // make string of strobes into hashvalues all at once to avoid repetitive k-mer to hash value computations
+//    std::vector<uint64_t> string_hashes;
+//    make_string_to_hashvalues2(seq, string_hashes, k, kmask);
+//    unsigned int seq_length = string_hashes.size();
+////    uint64_t strobe_hash = 1223;
+////    uint64_t randstrobe_h = 12203;
 ////    std::cout << seq << std::endl;
 //
-//    // create the hybridstrobes
-//    for (unsigned int i = 0; i <= seq_length - k; i++) {
-//        auto strobe1 = seq.substr(i, k);
-//        uint64_t bstrobe = kmer_to_uint64(strobe1, kmask);
-//        uint64_t strobe_hashval = hash64(bstrobe, kmask);
+//    // create the randstrobes
+//    for (unsigned int i = 0; i <= seq_length; i++) {
 //
-//        int strobe2_pos;
-//        uint64_t strobe2_val;
-//        uint r =  strobe_hashval % 3;
-//        if (r == 0){
-//            strobe2_val = q1_min_val;
-//            strobe2_pos = q1_min_pos;
+//        if ((i % 1000000) == 0 ){
+//            std::cout << i << " strobemers created." << std::endl;
 //        }
-//        else if (r == 1){
-//            strobe2_val = q2_min_val;
-//            strobe2_pos = q2_min_pos;
+//        unsigned int strobe_pos_next;
+//        uint64_t strobe_hashval_next;
+//
+//        if (i + w_max <= seq_length){
+//            unsigned int w_start = i+w_min;
+//            unsigned int w_end = i+w_max;
+//            uint64_t strobe_hash;
+//            strobe_hash = string_hashes[i];
+//            get_next_strobe(string_hashes, strobe_hash, strobe_pos_next, strobe_hashval_next, w_start, w_end, q);
 //        }
-//        else{
-//            strobe2_val = q3_min_val;
-//            strobe2_pos = q3_min_pos;
+//        else if ((i + w_min + 1 < seq_length) && (seq_length < i + w_max) ){
+//            unsigned int w_start = i+w_min;
+//            unsigned int w_end = seq_length -1;
+//            uint64_t strobe_hash;
+//            strobe_hash = string_hashes[i];
+//            get_next_strobe(string_hashes, strobe_hash, strobe_pos_next, strobe_hashval_next, w_start, w_end, q);
 //        }
-//
-//        uint64_t hybridstrobe_h;
-//        hybridstrobe_h = (strobe_hashval << k) ^ strobe2_val;
-//
-//
-//        if (h.find(hybridstrobe_h) == h.end()){ // Not  in  index
-//            h[hybridstrobe_h] = std::vector< std::tuple<unsigned int, unsigned int, unsigned int> >();  //std::vector<unsigned int>(); // Initialize key with null vector
-//            std::tuple<unsigned int, unsigned int, unsigned int> s (ref_index, i, strobe2_pos);
-//            h[hybridstrobe_h].push_back(s);
-//        }
-//        else{
-//            std::tuple<unsigned int, unsigned int, unsigned int> s (ref_index, i, strobe2_pos);
-//            h[hybridstrobe_h].push_back(s);
-//        }
-//
-//        // update queue and current minimum and position
-//        if (i + w_max <= seq_length - k){
-//            auto new_strobe1 = seq.substr(i + w_min+x, k);
-//            uint64_t new_bstrobe1 = kmer_to_uint64(new_strobe1, kmask);
-//            uint64_t new_strobe_hashval1 = hash64(new_bstrobe1, kmask);
-//            update_window(q1, q1_min_val, q1_min_pos, new_strobe_hashval1, w_min, w_min+x, i );
-//
-//            auto new_strobe2 = seq.substr(i + w_min+2*x, k);
-//            uint64_t new_bstrobe2 = kmer_to_uint64(new_strobe2, kmask);
-//            uint64_t new_strobe_hashval2 = hash64(new_bstrobe2, kmask);
-//            update_window(q2, q2_min_val, q2_min_pos, new_strobe_hashval2, w_min+x, w_min+2*x, i );
-//
-//            auto new_strobe3 = seq.substr(i + w_max, k);
-//            uint64_t new_bstrobe3 = kmer_to_uint64(new_strobe3, kmask);
-//            uint64_t new_strobe_hashval3 = hash64(new_bstrobe3, kmask);
-//            update_window(q3, q3_min_val, q3_min_pos, new_strobe_hashval3, w_min+2*x, w_max, i );
-//        }
-//        // TODO: Fix the below code to generate hybridstrobes all the way to the end of the sequence.
-//        //  It probably creates and empty queue which leads to an infinity loop or something.
-////        else if ((i + w_min + 1 < seq_length - k) && (seq_length - k < i + w_min+x) ){
-////            uint64_t new_strobe_hashval =  UINT64_MAX;
-////            update_window(q1, q1_min_val, q1_min_pos, new_strobe_hashval, w_min, w_min+x, i );
-////            update_window(q2, q2_min_val, q2_min_pos, new_strobe_hashval, w_min+x, w_min+2*x, i );
-////            update_window(q3, q3_min_val, q3_min_pos, new_strobe_hashval, w_min+2*x, w_max, i );
-////        }
-////        else if ((i + w_min + 1 < seq_length - k) && (seq_length - k < i + w_min+2*x) ){
-////            uint64_t new_strobe_hashval =  UINT64_MAX;
-////            update_window(q2, q2_min_val, q2_min_pos, new_strobe_hashval, w_min+x, w_min+2*x, i );
-////            update_window(q3, q3_min_val, q3_min_pos, new_strobe_hashval, w_min+2*x, w_max, i );
-////        }
-////        else if ((i + w_min + 1 < seq_length - k) && (seq_length - k < i + w_max) ){
-////            uint64_t new_strobe_hashval =  UINT64_MAX;
-////            update_window(q3, q3_min_val, q3_min_pos, new_strobe_hashval, w_min, w_max, i );
-////        }
 //        else{
 //            return;
 //        }
 //
-////        std::cout << std::string(i, ' ') << strobe1 << std::string(strobe2_pos - (i+k), ' ') << std::string(k, 'X') << std::endl;
+//        uint64_t randstrobe_h = (string_hashes[i] << k) ^ strobe_hashval_next;
+//
+//
+//        if (h.find(randstrobe_h) == h.end()){ // Not  in  index
+//            h[randstrobe_h] = std::vector< std::tuple<unsigned int, unsigned int, unsigned int> >();  //std::vector<unsigned int>(); // Initialize key with null vector
+//            std::tuple<unsigned int, unsigned int, unsigned int> s (ref_index, i, strobe_pos_next);
+//            h[randstrobe_h].push_back(s);
+//
+//        }
+//        else{
+//            std::tuple<unsigned int, unsigned int, unsigned int> s (ref_index, i, strobe_pos_next);
+//            h[randstrobe_h].push_back(s);
+//        }
+//
+////        auto strobe1 = seq.substr(i, k);
+////        std::cout << std::string(i, ' ') << strobe1 << std::string(strobe_pos_next - (i+k), ' ') << std::string(k, 'X') << std::endl;
 //
 //    }
 //}
-//
+
+
+
