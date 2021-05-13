@@ -197,7 +197,7 @@ mers_vector seq_to_kmers(int k, std::string &seq, unsigned int ref_index)
             x = (x << 2 | c) & mask;                  // forward strand
             if (++l >= k) { // we find a k-mer
                 uint64_t hash_k = x;
-                std::tuple<uint64_t, unsigned int, unsigned int, unsigned short int, unsigned short int> s (hash_k, ref_index, i, i, i);
+                std::tuple<uint64_t, unsigned int, unsigned int, unsigned short int, unsigned short int> s (hash_k, ref_index, i-k, i-k, i-k);
                 kmers.push_back(s);
                 cnt ++;
                 if ((cnt % 1000000) == 0 ){

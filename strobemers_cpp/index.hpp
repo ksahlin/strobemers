@@ -55,17 +55,20 @@ mers_vector construct_flat_vector_three_pos(three_pos_index &tmp_index);
 robin_hood::unordered_map< uint64_t, std::tuple<uint64_t, unsigned int >> index_vector_three_pos(mers_vector  &mers_vector);
 
 
-struct strobemer2 {
-    uint64_t hashval;
-    unsigned short int p1;
-    unsigned short int p2;
+struct hit {
+    uint64_t query_s;
+    uint64_t query_e;
+    uint64_t ref_s;
+    uint64_t ref_e;
 };
 
-struct kmer {
-    uint64_t hashval;
-    unsigned short int p1;
+struct nam {
+    unsigned int ref_id;
+    uint64_t query_s;
+    uint64_t query_e;
+    uint64_t ref_s;
+    uint64_t ref_e;
 };
-
 #endif /* index_hpp */
 
 

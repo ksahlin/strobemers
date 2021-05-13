@@ -160,29 +160,83 @@ static void read_references(references &seqs, idx_to_acc &acc_map, std::string f
 
 static void print_diagnostics_new4(mers_vector &mers_vector, vector_index mers_index ) {
     uint64_t tot_flat_vector_size = 0;
-    for (int i = 0; i < mers_vector.size(); ++i)
+    for (size_t i = 0; i < mers_vector.size(); ++i)
     {
         // access using []
         auto t = mers_vector[i];
 //        std::cout << "(" << std::get<0>(t) << ", " << std::get<1>(t) << ", " << std::get<2>(t) << ", " << std::get<3>(t) << ", " << std::get<4>(t) << "), ";
         tot_flat_vector_size += sizeof(t);
     }
-    std::cout << "Total size of flat kmer vector : " << tot_flat_vector_size/1000000  << " Mb." << std::endl;
+    std::cout << "Total size of flat mers-vector : " << tot_flat_vector_size/1000000  << " Mb." << std::endl;
 
-    uint64_t tot_hashtable_index_size = 0;
-    for (auto &it : mers_index)
-    {
-//        std::cout << it.first << ": (" << std::get<0>(it.second) << ", " << std::get<1>(it.second) << "), " ;
-        tot_hashtable_index_size += sizeof(it.first);
-        tot_hashtable_index_size += sizeof(it.second);
-    }
-    std::cout << "Total size of hash table index : " << tot_hashtable_index_size/1000000  << " Mb." << std::endl;
+//    uint64_t tot_hashtable_index_size = 0;
+//    for (auto &it : mers_index)
+//    {
+////        std::cout << it.first << ": (" << std::get<0>(it.second) << ", " << std::get<1>(it.second) << "), " ;
+//        tot_hashtable_index_size += sizeof(it.first);
+//        tot_hashtable_index_size += sizeof(it.second);
+//    }
+//    std::cout << "Total size of hash table index : " << tot_hashtable_index_size/1000000  << " Mb." << std::endl;
+
+    std::cout << "Total size of hash table index : " << (mers_index.size() * sizeof(vector_index::value_type))/1000000 << " Mb." << "\n";
 }
 
-//
-//mers_vector find_nams(mers_vector &kmers, mers_vector_order2 &mers_vector, vector_index &mers_index){
-//
-//}
+
+std::vector<std::tuple<unsigned int, uint64_t, uint64_t, uint64_t, uint64_t>> find_nams(mers_vector &query_mers, mers_vector &mers_vector, vector_index &mers_index){
+    std::cout << "ENTER FIND NAMS " <<  std::endl;
+    robin_hood::unordered_map< unsigned int, std::vector<hit>> hits_per_ref; // [ref_id] -> vector( struct hit)
+
+    for (size_t i = 0; i < query_mers.size(); ++i)
+    {
+        // access using []
+        auto q = query_mers[i];
+        uint64_t mer_hashv = std::get<0>(q);
+        if (mers_index.find(mer_hashv) != mers_index.end()){ //  In  index
+            std::tuple<uint64_t, unsigned int> mer;
+            mer = mers_index[mer_hashv];
+            uint64_t offset = std::get<0>(mer);
+            unsigned int count = std::get<1>(mer);
+            for(size_t i = offset; i < offset+count; ++i)
+            {
+                hit h;
+                h.query_s = std::get<2>(q);
+                h.query_e = std::get<4>(q);
+
+                auto r = mers_vector[i];
+                h.ref_s = std::get<2>(r);
+                h.ref_e = std::get<4>(r);
+
+
+                unsigned int ref_id = std::get<1>(q);
+                hits_per_ref[ref_id].push_back(h);
+            }
+//            std::cout << "In index! (" << std::get<0>(q) << ", " << std::get<1>(q) << ", " << std::get<2>(q) << ", " << std::get<3>(q) << ", " << std::get<4>(q) << "), ";
+
+        }
+//        std::cout << "(" << std::get<0>(t) << ", " << std::get<1>(t) << ", " << std::get<2>(t) << ", " << std::get<3>(t) << ", " << std::get<4>(t) << "), ";
+    }
+
+
+    robin_hood::unordered_map<unsigned int, std::vector<nam>> open_matches; // [ref_id] -> vector(struct nam)
+
+    for (auto &it : hits_per_ref)
+    {
+        unsigned int ref_id = it.first;
+        std::vector<hit> hits = it.second;
+        open_matches[ref_id] = std::vector<nam> (); // Initialize key with null vector
+        for (size_t i = 0; i < hits.size(); ++i){
+            ;
+        }
+//        for end_q in list(cpm[r_id].keys()):
+//        std::cout << it.first << ": (" << std::get<0>(it.second) << ", " << std::get<1>(it.second) << "), " ;
+
+    }
+
+    std::vector<nam> all_nams;
+    // flatten out to vector of all NAMs
+
+    return all_nams;
+}
 
 int main (int argc, char *argv[])
 {
@@ -193,14 +247,14 @@ int main (int argc, char *argv[])
     std::string reads_filename  = "example2_reads.txt";
     std::string filename  = "ecoli.fa";
 //    std::string filename  = "chr21.fa";
-//    std::string choice = "kmers";
+    std::string choice = "kmers";
 //    std::string choice = "minstrobes";
 //   std::string choice = "hybridstrobes";
-   std::string choice = "randstrobes";
+//   std::string choice = "randstrobes";
     int n = 3;
-    int k = 20;
-    int w_min = 21;
-    int w_max = 100;
+    int k = 10;
+    int w_min = 11;
+    int w_max = 30;
     assert(k <= w_min && "k have to be smaller than w_min");
     std::string* file_p;
     file_p = &filename;
@@ -249,7 +303,6 @@ int main (int argc, char *argv[])
     else if (choice == "randstrobes" ){
         if (n == 2 ){
             for (auto x : ref_seqs){
-//                generate_randstrobe2_index(h, n, k, w_min, w_max, x.second, x.first);
                 mers_vector randstrobes2; // pos, chr_id, kmer hash value
                 randstrobes2 = seq_to_randstrobes2(n, k, w_min, w_max, x.second, x.first);
                 tmp_index[x.first] = randstrobes2;
@@ -295,22 +348,34 @@ int main (int argc, char *argv[])
 
     std::string line, seq, prev_acc;
     unsigned int q_id = 0;
+    mers_vector query_mers; // pos, chr_id, kmer hash value
     while (getline(query_file, line)) {
         if (line[0] == '>') {
             if (seq.length() > 0){
                 // generate mers here
                 if (choice == "kmers" ){
-                    mers_vector kmers; // pos, chr_id, kmer hash value
-                    kmers = seq_to_kmers(k, seq, q_id);
-
-                    // Find NAMs
-//                    std::vector nams;
-//                    nams = find_nams(kmers, all_mers_vector, mers_index);
-                    // Output results
-//                    output_file << "> " <<  prev_acc << "\n";
-//                    output_file << "  " << ref_acc << " " << ref_p << " " << q_pos << " " << "\n";
-//                    outfile.write("  {0} {1} {2} {3}\n".format(ref_acc, ref_p, q_pos, k))
+                    query_mers = seq_to_kmers(k, seq, q_id);
                 }
+                else if (choice == "randstrobes" ){
+                    if (n == 2 ){
+                        query_mers = seq_to_randstrobes2(n, k, w_min, w_max, seq, q_id);
+                        }
+
+                    else if (n == 3){
+                        query_mers = seq_to_randstrobes3(n, k, w_min, w_max, seq, q_id);
+                    }
+                }
+//                std::cout << "HERE " << line << std::endl;
+                // Find NAMs
+                std::cout << "Processing read, kmers generated: " << query_mers.size() << ", read length: " <<  seq.length() << line << std::endl;
+                std::vector<std::tuple<unsigned int, uint64_t, uint64_t, uint64_t, uint64_t>> nams; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
+                nams = find_nams(query_mers, all_mers_vector, mers_index);
+                std::cout <<  "NAMs generated: " << nams.size() << line << std::endl;
+
+                // Output results
+//              output_file << "> " <<  prev_acc << "\n";
+//              output_file << "  " << ref_acc << " " << ref_p << " " << q_pos << " " << "\n";
+//              outfile.write("  {0} {1} {2} {3}\n".format(ref_acc, ref_p, q_pos, k))
 
             }
             prev_acc = line.substr(1, line.length() -1);
