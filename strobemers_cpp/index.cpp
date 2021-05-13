@@ -10,6 +10,8 @@
 #include <math.h>       /* pow */
 #include <bitset>
 
+
+
 /**********************************************************
  *
  * hash kmer into uint64
@@ -79,8 +81,12 @@ static inline uint64_t kmer_to_uint64(std::string &kmer, uint64_t kmask)
 }
 
 
-std::vector< std::tuple<uint64_t, unsigned int, unsigned int>> construct_flat_vector_one_pos(one_pos_index &tmp_index){
-    std::vector< std::tuple<uint64_t, unsigned int, unsigned int>> flat_vector;
+
+
+
+
+mers_vector construct_flat_vector_three_pos(three_pos_index &tmp_index){
+    mers_vector flat_vector;
     for (auto &it : tmp_index)  {
         for (auto &t : it.second) // it.second is the vector of k-mers, t is a tuple
         {
@@ -92,14 +98,15 @@ std::vector< std::tuple<uint64_t, unsigned int, unsigned int>> construct_flat_ve
     return flat_vector;
 }
 
-robin_hood::unordered_map< uint64_t, std::tuple<uint64_t, unsigned int >> index_vector_one_pos(std::vector< std::tuple<uint64_t, unsigned int, unsigned int>>  &flat_vector){
+
+robin_hood::unordered_map< uint64_t, std::tuple<uint64_t, unsigned int >> index_vector_three_pos(mers_vector  &flat_vector){
     robin_hood::unordered_map< uint64_t, std::tuple<uint64_t, unsigned int >> mers_index;
     uint64_t offset = 0;
     uint64_t prev_offset = 0;
     unsigned int count = 0;
 
     uint64_t prev_k;
-    std::tuple<uint64_t, unsigned int, unsigned int > t = flat_vector[0];
+    std::tuple<uint64_t, unsigned int, unsigned int, unsigned short int, unsigned short int> t = flat_vector[0];
     prev_k = std::get<0>(t);
     uint64_t curr_k;
 
@@ -125,133 +132,6 @@ robin_hood::unordered_map< uint64_t, std::tuple<uint64_t, unsigned int >> index_
 
     return mers_index;
 }
-
-
-std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int>> construct_flat_vector_two_pos(two_pos_index &tmp_index){
-    std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int>> flat_vector;
-    for (auto &it : tmp_index)  {
-        for (auto &t : it.second) // it.second is the vector of k-mers, t is a tuple
-        {
-            flat_vector.push_back(t);
-        }
-    }
-    //    flat_array sort
-    std::stable_sort(flat_vector.begin(), flat_vector.end());
-    return flat_vector;
-}
-
-
-robin_hood::unordered_map< uint64_t, std::tuple<uint64_t, unsigned int >> index_vector_two_pos(std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int>>  &flat_vector){
-    robin_hood::unordered_map< uint64_t, std::tuple<uint64_t, unsigned int >> mers_index;
-    uint64_t offset = 0;
-    uint64_t prev_offset = 0;
-    unsigned int count = 0;
-
-    uint64_t prev_k;
-    std::tuple<uint64_t, unsigned int, unsigned int, unsigned int > t = flat_vector[0];
-    prev_k = std::get<0>(t);
-    uint64_t curr_k;
-
-    for ( auto &t : flat_vector ) {
-//        std::cout << t << std::endl;
-        curr_k = std::get<0>(t);
-        if (curr_k == prev_k){
-            count ++;
-        }
-        else {
-            std::tuple<uint64_t, unsigned int> s(prev_offset, count);
-            mers_index[prev_k] = s;
-            count = 1;
-            prev_k = curr_k;
-            prev_offset = offset;
-        }
-        offset ++;
-    }
-
-    // last k-mer
-    std::tuple<uint64_t, unsigned int> s(prev_offset, count);
-    mers_index[curr_k] = s;
-
-    return mers_index;
-}
-
-
-
-std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int>> construct_flat_vector_three_pos(three_pos_index &tmp_index){
-    std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int>> flat_vector;
-    for (auto &it : tmp_index)  {
-        for (auto &t : it.second) // it.second is the vector of k-mers, t is a tuple
-        {
-            flat_vector.push_back(t);
-        }
-    }
-    //    flat_array sort
-    std::stable_sort(flat_vector.begin(), flat_vector.end());
-    return flat_vector;
-}
-
-
-robin_hood::unordered_map< uint64_t, std::tuple<uint64_t, unsigned int >> index_vector_three_pos(std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int>>  &flat_vector){
-    robin_hood::unordered_map< uint64_t, std::tuple<uint64_t, unsigned int >> mers_index;
-    uint64_t offset = 0;
-    uint64_t prev_offset = 0;
-    unsigned int count = 0;
-
-    uint64_t prev_k;
-    std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int> t = flat_vector[0];
-    prev_k = std::get<0>(t);
-    uint64_t curr_k;
-
-    for ( auto &t : flat_vector ) {
-//        std::cout << t << std::endl;
-        curr_k = std::get<0>(t);
-        if (curr_k == prev_k){
-            count ++;
-        }
-        else {
-            std::tuple<uint64_t, unsigned int> s(prev_offset, count);
-            mers_index[prev_k] = s;
-            count = 1;
-            prev_k = curr_k;
-            prev_offset = offset;
-        }
-        offset ++;
-    }
-
-    // last k-mer
-    std::tuple<uint64_t, unsigned int> s(prev_offset, count);
-    mers_index[curr_k] = s;
-
-    return mers_index;
-}
-
-
-//
-//void generate_kmer_index(seq_index1 &h, int k, std::string &seq, unsigned int ref_index)
-//{
-//    robin_hood::hash<std::string> robin_hash;
-//    uint64_t kmask=(1ULL<<2*k) - 1;
-//    std::transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
-//    for (int i = 0; i <= seq.length() - k; i++) {
-//        auto kmer = seq.substr(i, k);
-//        uint64_t bkmer = kmer_to_uint64(kmer, kmask);
-//        if (h.find(bkmer) == h.end()){ // Not  in  index
-//            h[bkmer] = std::vector< std::tuple<unsigned int, unsigned int> >();  //std::vector<unsigned int>(); // Initialize key with null vector
-//            std::tuple<unsigned int, unsigned int> s (ref_index, i);
-//            h[bkmer].push_back(s);
-//
-//        }
-//        else{
-//            std::tuple<unsigned int, unsigned int> s (ref_index, i);
-//            h[bkmer].push_back(s);
-//        }
-//
-//    }
-//}
-
-
-
-
 
 
 
@@ -302,9 +182,9 @@ static inline void update_window(std::deque <uint64_t> &q, uint64_t &q_min_val, 
     }
 }
 
-std::vector< std::tuple<uint64_t, unsigned int, unsigned int>> seq_to_kmers(int k, std::string &seq, unsigned int ref_index)
+mers_vector seq_to_kmers(int k, std::string &seq, unsigned int ref_index)
 {
-    std::vector<std::tuple<uint64_t, unsigned int, unsigned int> > kmers;
+    mers_vector kmers;
     int l;
     int i;
     uint64_t mask=(1ULL<<2*k) - 1;
@@ -317,7 +197,7 @@ std::vector< std::tuple<uint64_t, unsigned int, unsigned int>> seq_to_kmers(int 
             x = (x << 2 | c) & mask;                  // forward strand
             if (++l >= k) { // we find a k-mer
                 uint64_t hash_k = x;
-                std::tuple<uint64_t, unsigned int, unsigned int> s (hash_k, ref_index, i);
+                std::tuple<uint64_t, unsigned int, unsigned int, unsigned short int, unsigned short int> s (hash_k, ref_index, i, i, i);
                 kmers.push_back(s);
                 cnt ++;
                 if ((cnt % 1000000) == 0 ){
@@ -372,9 +252,9 @@ static inline void get_next_strobe(std::vector<uint64_t> &string_hashes, uint64_
     }
 }
 
-std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int>> seq_to_randstrobes2(int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index)
+mers_vector seq_to_randstrobes2(int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index)
 {
-    std::vector<std::tuple<uint64_t, unsigned int, unsigned int,unsigned int>> randstrobes2;
+    mers_vector randstrobes2;
 
     if (seq.length() < w_max) {
         return randstrobes2;
@@ -421,7 +301,7 @@ std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int>> seq
 
         uint64_t hash_randstrobe2 = (string_hashes[i] << k) ^ strobe_hashval_next;
 
-        std::tuple<uint64_t, unsigned int, unsigned int, unsigned int> s (hash_randstrobe2, ref_index, i, strobe_pos_next);
+        std::tuple<uint64_t, unsigned int, unsigned int, unsigned short int, unsigned short int> s (hash_randstrobe2, ref_index, i, strobe_pos_next, strobe_pos_next);
         randstrobes2.push_back(s);
 
 
@@ -433,9 +313,9 @@ std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int>> seq
 }
 
 
-std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int>> seq_to_randstrobes3(int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index)
+mers_vector seq_to_randstrobes3(int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index)
 {
-    std::vector<std::tuple<uint64_t, unsigned int, unsigned int,unsigned int, unsigned int>> randstrobes3;
+    mers_vector randstrobes3;
 
     if (seq.length() < 2*w_max) {
         return randstrobes3;
@@ -508,7 +388,7 @@ std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsi
 
         uint64_t hash_randstrobe3 = (((strobe_hash << k) ^ strobe_hashval_next1) << k) ^ strobe_hashval_next2;
 
-        std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int> s (hash_randstrobe3, ref_index, i, strobe_pos_next1, strobe_pos_next2);
+        std::tuple<uint64_t, unsigned int, unsigned int, unsigned short int, unsigned short int> s (hash_randstrobe3, ref_index, i, strobe_pos_next1, strobe_pos_next2);
         randstrobes3.push_back(s);
 
 
@@ -523,9 +403,9 @@ std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsi
 
 
 
-std::vector<std::tuple<uint64_t, unsigned int, unsigned int, unsigned int>> seq_to_minstrobes2(int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index)
+mers_vector seq_to_minstrobes2(int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index)
 {
-    std::vector<std::tuple<uint64_t, unsigned int, unsigned int,unsigned int>> minstrobes2;
+    mers_vector minstrobes2;
     if (seq.length() < w_max) {
         return minstrobes2;
     }
@@ -553,7 +433,7 @@ std::vector<std::tuple<uint64_t, unsigned int, unsigned int, unsigned int>> seq_
 
         uint64_t bstrobe = string_hashes[i];
         uint64_t hash_minstrobe2 = (bstrobe << k) ^ q_min_val;
-        std::tuple<uint64_t, unsigned int, unsigned int, unsigned int> s (hash_minstrobe2, ref_index, i, q_min_pos);
+        std::tuple<uint64_t, unsigned int, unsigned int, unsigned short int, unsigned short int> s (hash_minstrobe2, ref_index, i, q_min_pos, q_min_pos);
         minstrobes2.push_back(s);
 
         // update queue and current minimum and position
@@ -585,9 +465,9 @@ std::vector<std::tuple<uint64_t, unsigned int, unsigned int, unsigned int>> seq_
 
 
 
-std::vector<std::tuple<uint64_t, unsigned int, unsigned int, unsigned int>> seq_to_hybridstrobes2(int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index)
+mers_vector seq_to_hybridstrobes2(int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index)
 {
-    std::vector<std::tuple<uint64_t, unsigned int, unsigned int,unsigned int>> hybridstrobes2;
+    mers_vector hybridstrobes2;
 
     // TODO: This if-statement leads to downstream bug:
     //  Process finished with exit code 139 (interrupted by signal 11: SIGSEGV). Fix this
@@ -652,7 +532,7 @@ std::vector<std::tuple<uint64_t, unsigned int, unsigned int, unsigned int>> seq_
         uint64_t hash_hybridstrobe2;
         hash_hybridstrobe2 = (bstrobe << k) ^ strobe2_val;
 
-        std::tuple<uint64_t, unsigned int, unsigned int, unsigned int> s (hash_hybridstrobe2, ref_index, i, strobe2_pos);
+        std::tuple<uint64_t, unsigned int, unsigned int, unsigned short int, unsigned short int> s (hash_hybridstrobe2, ref_index, i, strobe2_pos, strobe2_pos);
         hybridstrobes2.push_back(s);
 
 
