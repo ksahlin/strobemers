@@ -182,7 +182,7 @@ static void print_diagnostics_new4(mers_vector &mers_vector, vector_index mers_i
 }
 
 
-std::vector<std::tuple<unsigned int, uint64_t, uint64_t, uint64_t, uint64_t>> find_nams(mers_vector &query_mers, mers_vector &mers_vector, vector_index &mers_index){
+std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &mers_vector, vector_index &mers_index){
     std::cout << "ENTER FIND NAMS " <<  std::endl;
     robin_hood::unordered_map< unsigned int, std::vector<hit>> hits_per_ref; // [ref_id] -> vector( struct hit)
 
@@ -368,7 +368,7 @@ int main (int argc, char *argv[])
 //                std::cout << "HERE " << line << std::endl;
                 // Find NAMs
                 std::cout << "Processing read, kmers generated: " << query_mers.size() << ", read length: " <<  seq.length() << line << std::endl;
-                std::vector<std::tuple<unsigned int, uint64_t, uint64_t, uint64_t, uint64_t>> nams; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
+                std::vector<nam> nams; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
                 nams = find_nams(query_mers, all_mers_vector, mers_index);
                 std::cout <<  "NAMs generated: " << nams.size() << line << std::endl;
 
