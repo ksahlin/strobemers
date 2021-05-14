@@ -50,115 +50,9 @@ static void read_references(references &seqs, idx_to_acc &acc_map, std::string f
     file.close();
 }
 
-//static void print_diagnostics_new(mers_vector_order1  kmers, idx_to_acc &acc_map) {
-//    uint64_t tot_index_size = 0;
-//    for (int i = 0; i < kmers.size(); ++i)
-//    {
-//        // access using []
-//        auto t = kmers[i];
-////        std::cout << "(" << std::get<0>(t) << ", " << std::get<1>(t) << ", " << std::get<2>(t) << ")";
-//        tot_index_size += sizeof(t);
-////        std::cout << sizeof(t) << std::endl;
-//    }
-//    std::cout << "Total size of index vector : " << tot_index_size/1000000  << " Mb." << std::endl;
-//
-//}
-
-//static void print_diagnostics_new2(mers_vector_order1 &mers_vector, vector_index &mers_index ) {
-//    uint64_t tot_flat_vector_size = 0;
-//    for (int i = 0; i < mers_vector.size(); ++i)
-//    {
-//        // access using []
-//        auto t = mers_vector[i];
-////        std::cout << "(" << std::get<0>(t) << ", " << std::get<1>(t) << ", " << std::get<2>(t) << "), ";
-//        tot_flat_vector_size += sizeof(t);
-//    }
-//    std::cout << "Total size of flat kmer vector : " << tot_flat_vector_size/1000000  << " Mb." << std::endl;
-//
-//    uint64_t tot_hashtable_index_size = 0;
-//    for (auto &it : mers_index)
-//    {
-////        std::cout << it.first << ": (" << std::get<0>(it.second) << ", " << std::get<1>(it.second) << "), " ;
-//        tot_hashtable_index_size += sizeof(it.first);
-//        tot_hashtable_index_size += sizeof(it.second);
-//    }
-//    std::cout << "Total size of hash table index : " << tot_hashtable_index_size/1000000  << " Mb." << std::endl;
-//}
-
-//static void print_diagnostics_new3(mers_vector_order2 &mers_vector, vector_index &mers_index ) {
-//    uint64_t tot_flat_vector_size = 0;
-//    for (int i = 0; i < mers_vector.size(); ++i)
-//    {
-//        // access using []
-//        auto t = mers_vector[i];
-////        std::cout << "(" << std::get<0>(t) << ", " << std::get<1>(t) << ", " << std::get<2>(t) << ", " << std::get<3>(t) << "), ";
-//        tot_flat_vector_size += sizeof(t);
-//    }
-//    std::cout << "Total size of flat kmer vector : " << tot_flat_vector_size/1000000  << " Mb." << std::endl;
-//
-//    uint64_t tot_hashtable_index_size = 0;
-//    for (auto &it : mers_index)
-//    {
-////        std::cout << it.first << ": (" << std::get<0>(it.second) << ", " << std::get<1>(it.second) << "), " ;
-//        tot_hashtable_index_size += sizeof(it.first);
-//        tot_hashtable_index_size += sizeof(it.second);
-//    }
-//    std::cout << "Total size of hash table index : " << tot_hashtable_index_size/1000000  << " Mb." << std::endl;
-//}
-
-//static void print_diagnostics(seq_index1 &h, idx_to_acc &acc_map) {
-//    uint64_t tot_index_size = 0;
-//    for (auto &it : h)
-//    {
-////        std::cout << "\nKey: " << it.first << ",  values: ";
-//        tot_index_size += sizeof(it.first);
-//        for (auto &t : it.second) // it.second is the vector, i is a tuple
-//        {
-////            std::cout << "tuple: " << std::get<0>(t) << " " << std::get<1>(t)  << std::endl;
-//            tot_index_size += sizeof(t);
-//        }
-////        std::cout << "Size of key : " << sizeof(it.first)  << " byte" << "Size of vector : " << sizeof(it.second)  << " byte" << std::endl;
-//        tot_index_size += sizeof(it.second);
-//
-//    }
-//
-////    // Traversing an unordered map
-////    for (auto x : acc_map)
-////        std::cout << x.first << " " << x.second << std::endl;
-//
-//    std::cout << "Total size of index : " << tot_index_size/1000000  << " Mb." << std::endl;
-//
-//}
 
 
-//static void print_diagnostics2(seq_index2 &h, idx_to_acc &acc_map) {
-//    uint64_t tot_index_size = 0;
-//
-//    for (auto &it : h)
-//    {
-////        std::cout << "\nKey: " << it.first << ",  values: ";
-//        tot_index_size += sizeof(it.first);
-//        for (auto &t : it.second) // it.second is the vector, i is a tuple
-//        {
-////            std::cout << "(" << std::get<0>(t) << " " << std::get<1>(t)  << " " << std::get<2>(t) << ") ";
-//            tot_index_size += sizeof(t);
-//        }
-////        std::cout << ". Size of key : " << sizeof(it.first)  << " byte" << "Size of vector : " << sizeof(it.second)  << " byte" << std::endl;
-//        tot_index_size += sizeof(it.second);
-//
-//    }
-//
-////    // Traversing an unordered map
-////    for (auto x : acc_map) {
-////        std::cout << x.first << " " << x.second << std::endl;
-////    }
-//
-//    std::cout << "Total size of index : " << tot_index_size/1000000  << " Mb." << std::endl;
-//
-//}
-
-
-static void print_diagnostics_new4(mers_vector &mers_vector, vector_index mers_index ) {
+static inline void print_diagnostics_new4(mers_vector &mers_vector, vector_index mers_index ) {
     uint64_t tot_flat_vector_size = 0;
     for (size_t i = 0; i < mers_vector.size(); ++i)
     {
@@ -182,7 +76,7 @@ static void print_diagnostics_new4(mers_vector &mers_vector, vector_index mers_i
 }
 
 
-std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &mers_vector, vector_index &mers_index, int k){
+static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &mers_vector, vector_index &mers_index, int k){
     std::cout << "ENTER FIND NAMS " <<  std::endl;
     robin_hood::unordered_map< unsigned int, std::vector<hit>> hits_per_ref; // [ref_id] -> vector( struct hit)
 
@@ -215,17 +109,17 @@ std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &mers_vector, ve
         }
     }
 
-    // TODO: Make set an unordered_set to speedup lookup, insertion and deletion to O(1) instead of O(log n)
     std::vector<nam>  open_nams;
-    robin_hood::unordered_map<unsigned int, std::vector<nam>> final_nams; // [ref_id] -> vector(struct nam)
+    std::vector<nam> final_nams; // [ref_id] -> vector(struct nam)
 
     for (auto &it : hits_per_ref)
     {
         unsigned int ref_id = it.first;
         std::vector<hit> hits = it.second;
         open_nams = std::vector<nam> (); // Initialize vector
-        for (size_t i = 0; i < hits.size(); ++i){
-            hit h = hits[i];
+        for (auto &h : hits){
+//        for (size_t i = 0; i < hits.size(); ++i){
+//            hit h = hits[i];
             bool is_added = false;
 
             for (auto & o : open_nams) {
@@ -245,20 +139,8 @@ std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &mers_vector, ve
                     }
                     is_added = true;
                 }
-            }
 
-            // Output all NAMs from open_matches to final_nams that the current hit have passed
-            for (size_t i = 0; i < open_nams.size(); ++i){
-                nam n = open_nams[i];
-                if (n.query_e < h.query_s) {
-                    final_nams[ref_id].push_back(open_nams[i]);
-                }
             }
-
-            // Remove all NAMs from open_matches that the current hit have passed
-            unsigned int c = h.query_s;
-            auto predicate = [c](decltype(open_nams)::value_type const& nam) {return nam.query_e < c;};
-            open_nams.erase(std::remove_if(open_nams.begin(), open_nams.end(), predicate), open_nams.end());
 
             // Add the hit to open matches
             if (not is_added){
@@ -271,36 +153,59 @@ std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &mers_vector, ve
                 open_nams.push_back(n);
             }
 
+            // Output all NAMs from open_matches to final_nams that the current hit have passed
+            for (size_t i = 0; i < open_nams.size(); ++i){
+                nam n = open_nams[i];
+                if (n.query_e < h.query_s) {
+                    final_nams.push_back(open_nams[i]);
+                }
+            }
+
+            // Remove all NAMs from open_matches that the current hit have passed
+            unsigned int c = h.query_s;
+            auto predicate = [c](decltype(open_nams)::value_type const& nam) {return nam.query_e < c;};
+            open_nams.erase(std::remove_if(open_nams.begin(), open_nams.end(), predicate), open_nams.end());
+
         }
 
         // Add all current open_matches to final NAMs
         for (size_t i = 0; i < open_nams.size(); ++i){
-            final_nams[ref_id].push_back(open_nams[i]);
+            final_nams.push_back(open_nams[i]);
         }
     }
 
-    for (auto &it : final_nams){
-        for (auto &n : it.second) // it.second is the vector, i is a tuple
-        {
-            std::cout << it.first << ": (" << n.query_s << ", " << n.query_e << ", " << n.ref_s << ", " << n.ref_e << ")" << std::endl;
-        }
+    for (auto &n : final_nams){
+//        for (auto &n : it.second) // it.second is the vector, i is a tuple
+//        {
+            std::cout << n.ref_id << ": (" << n.query_s << ", " << n.query_e << ", " << n.ref_s << ", " << n.ref_e << ")" << std::endl;
+//        }
     }
 
-    std::vector<nam> all_nams_flattened;
-    // flatten out to final_nams vector
 
-    return all_nams_flattened;
+    return final_nams;
 }
+
+
+//static inline void output_nams(std::vector<nam> &nams, std::ofstream output_file ) {
+//
+//
+//    // Output results
+//    for (auto &n : data) {
+//        output_file << "> " << prev_acc << "\n";
+//        output_file << "  " << ref_acc << " " << ref_p << " " << q_pos << " " << "\n";
+////      python: outfile.write("  {0} {1} {2} {3}\n".format(ref_acc, ref_p, q_pos, k))
+//    }
+//}
 
 int main (int argc, char *argv[])
 {
 
     ///////////////////// INPUT /////////////////////////
-
-    std::string filename  = "example2.txt";
-    std::string reads_filename  = "example2_reads.txt";
+    std::string filename  = "example_repeats.txt";
+//    std::string filename  = "example2.txt";
+    std::string reads_filename  = "example_repeats.txt";
 //    std::string filename  = "ecoli.fa";
-//    std::string filename  = "chr21.fa";
+//    std::string filename  = "hg38_chr21.fa";
     std::string choice = "kmers";
 //    std::string choice = "minstrobes";
 //   std::string choice = "hybridstrobes";
@@ -421,12 +326,13 @@ int main (int argc, char *argv[])
                 }
 //                std::cout << "HERE " << line << std::endl;
                 // Find NAMs
-                std::cout << "Processing read, kmers generated: " << query_mers.size() << ", read length: " <<  seq.length() << line << std::endl;
+                std::cout << "Processing read: " << prev_acc << " kmers generated: " << query_mers.size() << ", read length: " <<  seq.length() << std::endl;
                 std::vector<nam> nams; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
                 nams = find_nams(query_mers, all_mers_vector, mers_index, k);
-                std::cout <<  "NAMs generated: " << nams.size() << line << std::endl;
-
+                std::cout <<  "NAMs generated: " << nams.size() << std::endl;
                 // Output results
+//                output_nams(nams, output_file)
+
 //              output_file << "> " <<  prev_acc << "\n";
 //              output_file << "  " << ref_acc << " " << ref_p << " " << q_pos << " " << "\n";
 //              outfile.write("  {0} {1} {2} {3}\n".format(ref_acc, ref_p, q_pos, k))
@@ -442,9 +348,13 @@ int main (int argc, char *argv[])
     }
     if (seq.length() > 0){
         if (choice == "kmers" ){
-            mers_vector kmers; // pos, chr_id, kmer hash value
-            kmers = seq_to_kmers(k, seq, q_id);
+            query_mers = seq_to_kmers(k, seq, q_id);
         }
+        // Find NAMs
+        std::cout << "Processing read: " << prev_acc << " kmers generated: " << query_mers.size() << ", read length: " <<  seq.length() << std::endl;
+        std::vector<nam> nams; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
+        nams = find_nams(query_mers, all_mers_vector, mers_index, k);
+        std::cout <<  "NAMs generated: " << nams.size() << std::endl;
     }
 
     query_file.close();
