@@ -182,7 +182,7 @@ static void print_diagnostics_new4(mers_vector &mers_vector, vector_index mers_i
 }
 
 
-std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &mers_vector, vector_index &mers_index){
+std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &mers_vector, vector_index &mers_index, int k){
     std::cout << "ENTER FIND NAMS " <<  std::endl;
     robin_hood::unordered_map< unsigned int, std::vector<hit>> hits_per_ref; // [ref_id] -> vector( struct hit)
 
@@ -200,42 +200,96 @@ std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &mers_vector, ve
             {
                 hit h;
                 h.query_s = std::get<2>(q);
-                h.query_e = std::get<4>(q);
+                h.query_e = std::get<4>(q) + k;
 
                 auto r = mers_vector[i];
                 h.ref_s = std::get<2>(r);
-                h.ref_e = std::get<4>(r);
+                h.ref_e = std::get<4>(r) + k;
 
 
-                unsigned int ref_id = std::get<1>(q);
+                unsigned int ref_id = std::get<1>(r);
                 hits_per_ref[ref_id].push_back(h);
-            }
-//            std::cout << "In index! (" << std::get<0>(q) << ", " << std::get<1>(q) << ", " << std::get<2>(q) << ", " << std::get<3>(q) << ", " << std::get<4>(q) << "), ";
+//                std::cout << "Hit! " << h.query_s << ", " << h.query_e << ", " << h.ref_s << ", " << h.ref_e << ", " << std::endl;
 
+            }
         }
-//        std::cout << "(" << std::get<0>(t) << ", " << std::get<1>(t) << ", " << std::get<2>(t) << ", " << std::get<3>(t) << ", " << std::get<4>(t) << "), ";
     }
 
-
-    robin_hood::unordered_map<unsigned int, std::vector<nam>> open_matches; // [ref_id] -> vector(struct nam)
+    // TODO: Make set an unordered_set to speedup lookup, insertion and deletion to O(1) instead of O(log n)
+    std::vector<nam>  open_nams;
+    robin_hood::unordered_map<unsigned int, std::vector<nam>> final_nams; // [ref_id] -> vector(struct nam)
 
     for (auto &it : hits_per_ref)
     {
         unsigned int ref_id = it.first;
         std::vector<hit> hits = it.second;
-        open_matches[ref_id] = std::vector<nam> (); // Initialize key with null vector
+        open_nams = std::vector<nam> (); // Initialize vector
         for (size_t i = 0; i < hits.size(); ++i){
-            ;
-        }
-//        for end_q in list(cpm[r_id].keys()):
-//        std::cout << it.first << ": (" << std::get<0>(it.second) << ", " << std::get<1>(it.second) << "), " ;
+            hit h = hits[i];
+            bool is_added = false;
 
+            for (auto & o : open_nams) {
+//            for (size_t i = 0; i < open_nams.size(); ++i){
+//                nam o = open_nams[i];
+
+                // Extend NAM
+                if ( ( o.query_s <= h.query_s) && (h.query_s <= o.query_e ) && ( o.ref_s <= h.ref_s) && (h.ref_s <= o.ref_e) ){
+                    if (h.query_e > o.query_e){
+//                        std::cout << "Changing query " << o.query_e <<  " to " << h.query_e << std::endl;
+                        o.query_e = h.query_e;
+//                        std::cout << o.query_e << std::endl;
+                    }
+                    if (h.ref_e > o.ref_e){
+//                        std::cout << "Changing ref " << o.ref_e <<  " to " << h.ref_e << std::endl;
+                        o.ref_e = h.ref_e;
+                    }
+                    is_added = true;
+                }
+            }
+
+            // Output all NAMs from open_matches to final_nams that the current hit have passed
+            for (size_t i = 0; i < open_nams.size(); ++i){
+                nam n = open_nams[i];
+                if (n.query_e < h.query_s) {
+                    final_nams[ref_id].push_back(open_nams[i]);
+                }
+            }
+
+            // Remove all NAMs from open_matches that the current hit have passed
+            unsigned int c = h.query_s;
+            auto predicate = [c](decltype(open_nams)::value_type const& nam) {return nam.query_e < c;};
+            open_nams.erase(std::remove_if(open_nams.begin(), open_nams.end(), predicate), open_nams.end());
+
+            // Add the hit to open matches
+            if (not is_added){
+                nam n;
+                n.query_s = h.query_s;
+                n.query_e = h.query_e;
+                n.ref_s = h.ref_s;
+                n.ref_e = h.ref_e;
+                n.ref_id = ref_id;
+                open_nams.push_back(n);
+            }
+
+        }
+
+        // Add all current open_matches to final NAMs
+        for (size_t i = 0; i < open_nams.size(); ++i){
+            final_nams[ref_id].push_back(open_nams[i]);
+        }
     }
 
-    std::vector<nam> all_nams;
-    // flatten out to vector of all NAMs
+    for (auto &it : final_nams){
+        for (auto &n : it.second) // it.second is the vector, i is a tuple
+        {
+            std::cout << it.first << ": (" << n.query_s << ", " << n.query_e << ", " << n.ref_s << ", " << n.ref_e << ")" << std::endl;
+        }
+    }
 
-    return all_nams;
+    std::vector<nam> all_nams_flattened;
+    // flatten out to final_nams vector
+
+    return all_nams_flattened;
 }
 
 int main (int argc, char *argv[])
@@ -243,9 +297,9 @@ int main (int argc, char *argv[])
 
     ///////////////////// INPUT /////////////////////////
 
-//    std::string filename  = "example2.txt";
+    std::string filename  = "example2.txt";
     std::string reads_filename  = "example2_reads.txt";
-    std::string filename  = "ecoli.fa";
+//    std::string filename  = "ecoli.fa";
 //    std::string filename  = "chr21.fa";
     std::string choice = "kmers";
 //    std::string choice = "minstrobes";
@@ -369,7 +423,7 @@ int main (int argc, char *argv[])
                 // Find NAMs
                 std::cout << "Processing read, kmers generated: " << query_mers.size() << ", read length: " <<  seq.length() << line << std::endl;
                 std::vector<nam> nams; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
-                nams = find_nams(query_mers, all_mers_vector, mers_index);
+                nams = find_nams(query_mers, all_mers_vector, mers_index, k);
                 std::cout <<  "NAMs generated: " << nams.size() << line << std::endl;
 
                 // Output results

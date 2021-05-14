@@ -191,13 +191,13 @@ mers_vector seq_to_kmers(int k, std::string &seq, unsigned int ref_index)
     uint64_t x = 0;
     std::transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
     int cnt = 0;
-    for (int i = l = 0; i <= seq.length() - k; i++) {
+    for (int i = l = 0; i <= seq.length()-1; i++) {
         int c = seq_nt4_table[(uint8_t)seq[i]];
         if (c < 4) { // not an "N" base
             x = (x << 2 | c) & mask;                  // forward strand
             if (++l >= k) { // we find a k-mer
                 uint64_t hash_k = x;
-                std::tuple<uint64_t, unsigned int, unsigned int, unsigned short int, unsigned short int> s (hash_k, ref_index, i-k, i-k, i-k);
+                std::tuple<uint64_t, unsigned int, unsigned int, unsigned short int, unsigned short int> s (hash_k, ref_index, i-k+1, i-k, i-k+1);
                 kmers.push_back(s);
                 cnt ++;
                 if ((cnt % 1000000) == 0 ){
