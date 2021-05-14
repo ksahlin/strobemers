@@ -34,7 +34,7 @@ static void read_references(references &seqs, idx_to_acc &acc_map, std::string f
 //                std::cout << ref_index - 1 << " here " << seq << " " << seq.length() << " " << seq.size() << std::endl;
 //                generate_kmers(h, k, seq, ref_index);
             }
-            acc_map[ref_index] = line;
+            acc_map[ref_index] = line.substr(1, line.length() -1); //line;
             ref_index++;
             seq = "";
         }
@@ -77,26 +77,27 @@ static inline void print_diagnostics_new4(mers_vector &mers_vector, vector_index
 
 
 static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &mers_vector, vector_index &mers_index, int k){
-    std::cout << "ENTER FIND NAMS " <<  std::endl;
+//    std::cout << "ENTER FIND NAMS " <<  std::endl;
     robin_hood::unordered_map< unsigned int, std::vector<hit>> hits_per_ref; // [ref_id] -> vector( struct hit)
 
-    for (size_t i = 0; i < query_mers.size(); ++i)
+    for (auto &q : query_mers)
+//    for (size_t i = 0; i < query_mers.size(); ++i)
     {
         // access using []
-        auto q = query_mers[i];
+//        auto q = query_mers[i];
         uint64_t mer_hashv = std::get<0>(q);
         if (mers_index.find(mer_hashv) != mers_index.end()){ //  In  index
             std::tuple<uint64_t, unsigned int> mer;
             mer = mers_index[mer_hashv];
             uint64_t offset = std::get<0>(mer);
             unsigned int count = std::get<1>(mer);
-            for(size_t i = offset; i < offset+count; ++i)
+            for(size_t j = offset; j < offset+count; ++j)
             {
                 hit h;
                 h.query_s = std::get<2>(q);
                 h.query_e = std::get<4>(q) + k;
 
-                auto r = mers_vector[i];
+                auto r = mers_vector[j];
                 h.ref_s = std::get<2>(r);
                 h.ref_e = std::get<4>(r) + k;
 
@@ -118,13 +119,9 @@ static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &m
         std::vector<hit> hits = it.second;
         open_nams = std::vector<nam> (); // Initialize vector
         for (auto &h : hits){
-//        for (size_t i = 0; i < hits.size(); ++i){
-//            hit h = hits[i];
             bool is_added = false;
 
             for (auto & o : open_nams) {
-//            for (size_t i = 0; i < open_nams.size(); ++i){
-//                nam o = open_nams[i];
 
                 // Extend NAM
                 if ( ( o.query_s <= h.query_s) && (h.query_s <= o.query_e ) && ( o.ref_s <= h.ref_s) && (h.ref_s <= o.ref_e) ){
@@ -154,10 +151,11 @@ static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &m
             }
 
             // Output all NAMs from open_matches to final_nams that the current hit have passed
-            for (size_t i = 0; i < open_nams.size(); ++i){
-                nam n = open_nams[i];
+            for (auto &n : open_nams){
+//            for (size_t i = 0; i < open_nams.size(); ++i){
+//                nam n = open_nams[i];
                 if (n.query_e < h.query_s) {
-                    final_nams.push_back(open_nams[i]);
+                    final_nams.push_back(n);
                 }
             }
 
@@ -169,54 +167,54 @@ static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &m
         }
 
         // Add all current open_matches to final NAMs
-        for (size_t i = 0; i < open_nams.size(); ++i){
-            final_nams.push_back(open_nams[i]);
+        for (auto &n : open_nams){
+//        for (size_t i = 0; i < open_nams.size(); ++i){
+            final_nams.push_back(n);
         }
     }
 
-    for (auto &n : final_nams){
-//        for (auto &n : it.second) // it.second is the vector, i is a tuple
-//        {
-            std::cout << n.ref_id << ": (" << n.query_s << ", " << n.query_e << ", " << n.ref_s << ", " << n.ref_e << ")" << std::endl;
-//        }
-    }
+//    for (auto &n : final_nams){
+//        std::cout << n.ref_id << ": (" << n.query_s << ", " << n.query_e << ", " << n.ref_s << ", " << n.ref_e << ")" << std::endl;
+//    }
 
 
     return final_nams;
 }
 
 
-//static inline void output_nams(std::vector<nam> &nams, std::ofstream output_file ) {
-//
-//
-//    // Output results
-//    for (auto &n : data) {
-//        output_file << "> " << prev_acc << "\n";
-//        output_file << "  " << ref_acc << " " << ref_p << " " << q_pos << " " << "\n";
-////      python: outfile.write("  {0} {1} {2} {3}\n".format(ref_acc, ref_p, q_pos, k))
-//    }
-//}
+static inline void output_nams(std::vector<nam> &nams, std::ofstream &output_file, std::string query_acc, idx_to_acc &acc_map) {
+    // Output results
+    output_file << "> " << query_acc << "\n";
+    for (auto &n : nams) {
+        output_file << "  " << acc_map[n.ref_id]  << " " << n.ref_s << " " << n.query_s << " " << n.ref_e - n.ref_s << "\n";
+//      python: outfile.write("  {0} {1} {2} {3}\n".format(ref_acc, ref_p, q_pos, k))
+    }
+}
 
 int main (int argc, char *argv[])
 {
 
     ///////////////////// INPUT /////////////////////////
-    std::string filename  = "example_repeats.txt";
-//    std::string filename  = "example2.txt";
-    std::string reads_filename  = "example_repeats.txt";
-//    std::string filename  = "ecoli.fa";
-//    std::string filename  = "hg38_chr21.fa";
-    std::string choice = "kmers";
+//    std::string filename  = "example_repeats.txt";
+//    std::string reads_filename  = "example_repeats.txt";
+
+//    std::string filename  = "example3.txt";
+//    std::string reads_filename  = "example3.txt";
+
+    std::string filename  = "ecoli.fa";
+    std::string reads_filename  = "ecoli.fa";
+
+    //    std::string filename  = "hg38_chr21.fa";
+//    std::string choice = "kmers";
 //    std::string choice = "minstrobes";
 //   std::string choice = "hybridstrobes";
-//   std::string choice = "randstrobes";
+   std::string choice = "randstrobes";
     int n = 3;
-    int k = 10;
-    int w_min = 11;
-    int w_max = 30;
+    int k = 31;
+    int w_min = 31;
+    int w_max = 100;
     assert(k <= w_min && "k have to be smaller than w_min");
-    std::string* file_p;
-    file_p = &filename;
+    assert(k <= w_min && "k have to be smaller than 32!");
     references ref_seqs;
     idx_to_acc acc_map;
     read_references(ref_seqs, acc_map, filename);
@@ -331,7 +329,7 @@ int main (int argc, char *argv[])
                 nams = find_nams(query_mers, all_mers_vector, mers_index, k);
                 std::cout <<  "NAMs generated: " << nams.size() << std::endl;
                 // Output results
-//                output_nams(nams, output_file)
+                output_nams(nams, output_file, prev_acc, acc_map);
 
 //              output_file << "> " <<  prev_acc << "\n";
 //              output_file << "  " << ref_acc << " " << ref_p << " " << q_pos << " " << "\n";
@@ -350,11 +348,21 @@ int main (int argc, char *argv[])
         if (choice == "kmers" ){
             query_mers = seq_to_kmers(k, seq, q_id);
         }
+        else if (choice == "randstrobes" ){
+            if (n == 2 ){
+                query_mers = seq_to_randstrobes2(n, k, w_min, w_max, seq, q_id);
+            }
+
+            else if (n == 3){
+                query_mers = seq_to_randstrobes3(n, k, w_min, w_max, seq, q_id);
+            }
+        }
         // Find NAMs
         std::cout << "Processing read: " << prev_acc << " kmers generated: " << query_mers.size() << ", read length: " <<  seq.length() << std::endl;
         std::vector<nam> nams; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
         nams = find_nams(query_mers, all_mers_vector, mers_index, k);
         std::cout <<  "NAMs generated: " << nams.size() << std::endl;
+        output_nams(nams, output_file, prev_acc, acc_map);
     }
 
     query_file.close();
@@ -364,7 +372,7 @@ int main (int argc, char *argv[])
     // Record mapping end time
     auto finish_map = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed_map = finish_map - start_map;
-    std::cout << "Total time generating matches: " << elapsed_map.count() << " s\n" <<  std::endl;
+    std::cout << "Total time mapping: " << elapsed_map.count() << " s\n" <<  std::endl;
 
 
     //////////////////////////////////////////////////////////////////////////

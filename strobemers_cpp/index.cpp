@@ -94,7 +94,7 @@ mers_vector construct_flat_vector_three_pos(three_pos_index &tmp_index){
         }
     }
     //    flat_array sort
-    std::stable_sort(flat_vector.begin(), flat_vector.end());
+    std::sort(flat_vector.begin(), flat_vector.end());
     return flat_vector;
 }
 
@@ -210,8 +210,8 @@ static inline void make_string_to_hashvalues2(std::string &seq, std::vector<uint
 
 static inline void get_next_strobe(std::vector<uint64_t> &string_hashes, uint64_t strobe_hashval, unsigned int &strobe_pos_next, uint64_t &strobe_hashval_next,  unsigned int w_start, unsigned int w_end, uint64_t q){
     uint64_t min_val = UINT64_MAX;
-    unsigned int min_pos;
-    min_pos = -1;
+//    unsigned int min_pos;
+//    min_pos = -1;
     for (auto i = w_start; i <= w_end; i++) {
         uint64_t res = (strobe_hashval + string_hashes[i]) & q ;
         if (res < min_val){
@@ -237,7 +237,7 @@ mers_vector seq_to_kmers(int k, std::string &seq, unsigned int ref_index)
             x = (x << 2 | c) & mask;                  // forward strand
             if (++l >= k) { // we find a k-mer
                 uint64_t hash_k = x;
-                std::tuple<uint64_t, unsigned int, unsigned int, unsigned short int, unsigned short int> s (hash_k, ref_index, i-k+1, i-k, i-k+1);
+                std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int> s (hash_k, ref_index, i-k+1, i-k+1, i-k+1);
                 kmers.push_back(s);
                 cnt ++;
                 if ((cnt % 1000000) == 0 ){
@@ -302,7 +302,7 @@ mers_vector seq_to_randstrobes2(int n, int k, int w_min, int w_max, std::string 
 
         uint64_t hash_randstrobe2 = (string_hashes[i] << k) ^ strobe_hashval_next;
 
-        std::tuple<uint64_t, unsigned int, unsigned int, unsigned short int, unsigned short int> s (hash_randstrobe2, ref_index, i, strobe_pos_next, strobe_pos_next);
+        std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int> s (hash_randstrobe2, ref_index, i, strobe_pos_next, strobe_pos_next);
         randstrobes2.push_back(s);
 
 
@@ -387,9 +387,10 @@ mers_vector seq_to_randstrobes3(int n, int k, int w_min, int w_max, std::string 
             return randstrobes3;
         }
 
-        uint64_t hash_randstrobe3 = (((strobe_hash << k) ^ strobe_hashval_next1) << k) ^ strobe_hashval_next2;
+//        uint64_t hash_randstrobe3 = (((strobe_hash << k) ^ strobe_hashval_next1) << k) ^ strobe_hashval_next2;
+        uint64_t hash_randstrobe3 = (strobe_hash/3) + (strobe_hashval_next1/4) + (strobe_hashval_next2/5);
 
-        std::tuple<uint64_t, unsigned int, unsigned int, unsigned short int, unsigned short int> s (hash_randstrobe3, ref_index, i, strobe_pos_next1, strobe_pos_next2);
+        std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int> s (hash_randstrobe3, ref_index, i, strobe_pos_next1, strobe_pos_next2);
         randstrobes3.push_back(s);
 
 
@@ -432,7 +433,7 @@ mers_vector seq_to_minstrobes2(int n, int k, int w_min, int w_max, std::string &
 
         uint64_t bstrobe = string_hashes[i];
         uint64_t hash_minstrobe2 = (bstrobe << k) ^ q_min_val;
-        std::tuple<uint64_t, unsigned int, unsigned int, unsigned short int, unsigned short int> s (hash_minstrobe2, ref_index, i, q_min_pos, q_min_pos);
+        std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int> s (hash_minstrobe2, ref_index, i, q_min_pos, q_min_pos);
         minstrobes2.push_back(s);
 
         // update queue and current minimum and position
@@ -529,7 +530,7 @@ mers_vector seq_to_hybridstrobes2(int n, int k, int w_min, int w_max, std::strin
         uint64_t hash_hybridstrobe2;
         hash_hybridstrobe2 = (bstrobe << k) ^ strobe2_val;
 
-        std::tuple<uint64_t, unsigned int, unsigned int, unsigned short int, unsigned short int> s (hash_hybridstrobe2, ref_index, i, strobe2_pos, strobe2_pos);
+        std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int> s (hash_hybridstrobe2, ref_index, i, strobe2_pos, strobe2_pos);
         hybridstrobes2.push_back(s);
 
 
