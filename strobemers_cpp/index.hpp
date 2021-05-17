@@ -68,6 +68,8 @@ struct nam {
     uint64_t query_e;
     uint64_t ref_s;
     uint64_t ref_e;
+    uint64_t previous_query_start;
+    uint64_t previous_ref_start;
 };
 #endif /* index_hpp */
 

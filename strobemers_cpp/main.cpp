@@ -11,7 +11,7 @@
 
 
 
-typedef robin_hood::unordered_map< std::string , std::string > queries;
+//typedef robin_hood::unordered_map< std::string , std::string > queries;
 typedef robin_hood::unordered_map< unsigned int , std::string > references;
 typedef robin_hood::unordered_map< unsigned int, std::string > idx_to_acc;
 
@@ -76,6 +76,7 @@ static inline void print_diagnostics_new4(mers_vector &mers_vector, vector_index
 }
 
 
+
 static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &mers_vector, vector_index &mers_index, int k){
 //    std::cout << "ENTER FIND NAMS " <<  std::endl;
     robin_hood::unordered_map< unsigned int, std::vector<hit>> hits_per_ref; // [ref_id] -> vector( struct hit)
@@ -110,7 +111,7 @@ static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &m
         }
     }
 
-    std::vector<nam>  open_nams;
+    std::vector<nam> open_nams;
     std::vector<nam> final_nams; // [ref_id] -> vector(struct nam)
 
     for (auto &it : hits_per_ref)
@@ -118,27 +119,41 @@ static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &m
         unsigned int ref_id = it.first;
         std::vector<hit> hits = it.second;
         open_nams = std::vector<nam> (); // Initialize vector
+//        uint64_t prev_q_s = 0;
+//        uint64_t prev_q_e = 0;
         for (auto &h : hits){
             bool is_added = false;
-
+//            std::cout << "OMG " << h.query_s <<  ", " << h.query_e << ", " << h.ref_s <<  ", " << h.ref_e << std::endl;
             for (auto & o : open_nams) {
 
                 // Extend NAM
-                if ( ( o.query_s <= h.query_s) && (h.query_s <= o.query_e ) && ( o.ref_s <= h.ref_s) && (h.ref_s <= o.ref_e) ){
-                    if (h.query_e > o.query_e){
+                if ( ( o.query_s <= h.query_s) && (h.query_s <= o.query_e ) && ( o.ref_s <= h.ref_s) && (h.ref_s <= o.ref_e)){ // && (o.previous_ref_start <= h.ref_s)  && (o.previous_query_start <= h.query_s)
+//                    if (o.previous_ref_start <= h.ref_s) {
+//                    std::cout << "In " << o.query_s <<  ", " << o.query_e <<  ", " << o.ref_s <<  ", " << o.ref_e << std::endl;
+                        if (h.query_e > o.query_e) {
 //                        std::cout << "Changing query " << o.query_e <<  " to " << h.query_e << std::endl;
-                        o.query_e = h.query_e;
+                            o.query_e = h.query_e;
 //                        std::cout << o.query_e << std::endl;
-                    }
-                    if (h.ref_e > o.ref_e){
+                        }
+                        if (h.ref_e > o.ref_e) {
 //                        std::cout << "Changing ref " << o.ref_e <<  " to " << h.ref_e << std::endl;
-                        o.ref_e = h.ref_e;
-                    }
+                            o.ref_e = h.ref_e;
+                        }
+//                    if (o.previous_ref_start <)
+//                        o.previous_ref_start = h.ref_s; // keeping track so that we don't . Can be caused by interleaved repeats.
+//                    o.previous_query_start = h.query_s;
+//                    }
                     is_added = true;
+//                    break;
                 }
+//                //Output local match
+//                else if (( o.query_s <= h.query_s) && (h.query_s <= o.query_e ) && ( o.ref_s <= h.ref_s) && (h.ref_s <= o.ref_e)){
+//                    std::cout << "Output local match " << o.query_s <<  " to " << o.query_e  << " " << o.ref_s <<  " to " << o.ref_e  << "     " << o.previous_ref_start << " " << h.ref_s << std::endl;
+//                }
 
             }
-
+//            std::cout << is_added << std::endl;
+//            std::cout << " " << std::endl;
             // Add the hit to open matches
             if (not is_added){
                 nam n;
@@ -147,8 +162,20 @@ static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &m
                 n.ref_s = h.ref_s;
                 n.ref_e = h.ref_e;
                 n.ref_id = ref_id;
+                n.previous_query_start = h.query_s;
+                n.previous_ref_start = h.ref_s;
                 open_nams.push_back(n);
             }
+
+            // Output matches with identical query and reference end coordinates to a longer match. This means that tone of the match is a submatch to another match
+            // TODO: Also output the matches,, not just remove them as is currently done..
+            // This may happen because of interleaved repeats. Example of an interleaved repeat (with k<= 30) from ecoli with identical strings [0-126] and from [96-222]: CTGTTGCTGTTCCAGCTTGCGCGCTTTGGCACGGGCAATAGCGGCTTCGACGGCGGCTTTGCGCGGATCGACCTGTTCTTCTGGTTCCGCATTAGCCTGTTGCTGTTCCAGCTTGCGCGCTTTGGCACGGGCAATAGCGGCTTCGACGGCGGCTTTGCGCGGATCGACCTGTTCTTCTGGTTCCGCATTAGCCTGTTGCTGTTCCAGCTTGCGCGCTTTGGCGCGGGCGATAGCTGCTTCAACGGCAGTTTTACGTGGATCAGCAACGGTTGCTGCGTCGTTAGTTTGCTGCA
+            auto comp = [] ( const nam& n1, const nam& n2 ) {return (n1.query_e == n2.query_e) && (n1.ref_e == n2.ref_e);};
+            auto pred = []( const nam& n1, const nam& n2 ) {return (n1.ref_e < n2.ref_e) || ((n1.ref_e == n2.ref_e ) && (n1.query_s < n2.query_s)) ;};
+            std::sort(open_nams.begin(),open_nams.end(), pred);
+            auto last = std::unique(open_nams.begin(), open_nams.end(),comp);
+            open_nams.erase(last, open_nams.end());
+
 
             // Output all NAMs from open_matches to final_nams that the current hit have passed
             for (auto &n : open_nams){
@@ -182,7 +209,22 @@ static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &m
 }
 
 
+static inline bool compareByQueryCoord(const nam &a, const nam &b)
+{
+    // first sort on ref ID, then on query, then on reference
+    return (a.ref_id < b.ref_id) ||
+           ( (a.ref_id == b.ref_id) && (a.query_s < b.query_s) ) ||
+           ((a.ref_id == b.ref_id) && (a.query_s == b.query_s ) && (a.ref_s < b.ref_s)) ;
+}
+
+static inline bool compareByQueryLength(const nam &a, const nam &b)
+{
+    return (a.query_e - a.query_s) < ( b.query_e - b.query_s);
+}
+
 static inline void output_nams(std::vector<nam> &nams, std::ofstream &output_file, std::string query_acc, idx_to_acc &acc_map) {
+    //Sort hits based on start choordinate on query sequence
+    std::sort(nams.begin(), nams.end(), compareByQueryCoord);
     // Output results
     output_file << "> " << query_acc << "\n";
     for (auto &n : nams) {
@@ -195,22 +237,34 @@ int main (int argc, char *argv[])
 {
 
     ///////////////////// INPUT /////////////////////////
-//    std::string filename  = "example_repeats.txt";
+//    std::string filename  = "test_ploy2.txt";
+//    std::string reads_filename  = "test_ploy2.txt";
+
+//        std::string filename  = "example_repeats.txt";
 //    std::string reads_filename  = "example_repeats.txt";
 
 //    std::string filename  = "example3.txt";
 //    std::string reads_filename  = "example3.txt";
 
-    std::string filename  = "ecoli.fa";
-    std::string reads_filename  = "ecoli.fa";
+    std::string filename  = "ecoli_repeats.txt";
+    std::string reads_filename  = "ecoli_repeats.txt";
+
+//    std::string filename  = "ecoli_bug.txt";
+//    std::string reads_filename  = "ecoli_bug.txt";
+
+//    std::string filename  = "ecoli_randmer_bug.txt";
+//    std::string reads_filename  = "ecoli_randmer_bug.txt";
+
+//    std::string filename  = "ecoli.fa";
+//    std::string reads_filename  = "ecoli.fa";
 
     //    std::string filename  = "hg38_chr21.fa";
-//    std::string choice = "kmers";
+    std::string choice = "kmers";
 //    std::string choice = "minstrobes";
 //   std::string choice = "hybridstrobes";
-   std::string choice = "randstrobes";
+//   std::string choice = "randstrobes";
     int n = 3;
-    int k = 31;
+    int k = 30;
     int w_min = 31;
     int w_max = 100;
     assert(k <= w_min && "k have to be smaller than w_min");

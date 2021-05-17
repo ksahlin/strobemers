@@ -81,10 +81,6 @@ static inline uint64_t kmer_to_uint64(std::string &kmer, uint64_t kmask)
 }
 
 
-
-
-
-
 mers_vector construct_flat_vector_three_pos(three_pos_index &tmp_index){
     mers_vector flat_vector;
     for (auto &it : tmp_index)  {
@@ -300,7 +296,8 @@ mers_vector seq_to_randstrobes2(int n, int k, int w_min, int w_max, std::string 
             return randstrobes2;
         }
 
-        uint64_t hash_randstrobe2 = (string_hashes[i] << k) ^ strobe_hashval_next;
+//        uint64_t hash_randstrobe2 = (string_hashes[i] << k) ^ strobe_hashval_next;
+        uint64_t hash_randstrobe2 = (string_hashes[i]/2) + (strobe_hashval_next/3);
 
         std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int> s (hash_randstrobe2, ref_index, i, strobe_pos_next, strobe_pos_next);
         randstrobes2.push_back(s);
@@ -432,7 +429,9 @@ mers_vector seq_to_minstrobes2(int n, int k, int w_min, int w_max, std::string &
 //        uint64_t bstrobe = kmer_to_uint64(strobe1, kmask);
 
         uint64_t bstrobe = string_hashes[i];
-        uint64_t hash_minstrobe2 = (bstrobe << k) ^ q_min_val;
+//        uint64_t hash_minstrobe2 = (bstrobe << k) ^ q_min_val;
+        uint64_t hash_minstrobe2 = (bstrobe/2) + (q_min_val/3);
+
         std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int> s (hash_minstrobe2, ref_index, i, q_min_pos, q_min_pos);
         minstrobes2.push_back(s);
 
@@ -528,7 +527,8 @@ mers_vector seq_to_hybridstrobes2(int n, int k, int w_min, int w_max, std::strin
         }
 
         uint64_t hash_hybridstrobe2;
-        hash_hybridstrobe2 = (bstrobe << k) ^ strobe2_val;
+//        hash_hybridstrobe2 = (bstrobe << k) ^ strobe2_val;
+        hash_hybridstrobe2 = (bstrobe/2) + (strobe2_val/3);
 
         std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int> s (hash_hybridstrobe2, ref_index, i, strobe2_pos, strobe2_pos);
         hybridstrobes2.push_back(s);

@@ -747,7 +747,7 @@ def get_matches(strobes, idx, k, dont_merge_matches,  ref_id_to_accession, acc, 
 
                     #     continue
 
-                    # print(r_p1, r_p2)
+                    # print(q_p1, q_p2+ k , r_p1, r_p2+k)
                     # remove self matches with below if statement, for now commented out to find eventual bugs
                     if not selfalign and ref_id_to_accession[r_id] == acc:
                         continue
