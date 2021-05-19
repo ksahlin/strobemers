@@ -70,6 +70,7 @@ struct nam {
     uint64_t ref_e;
     uint64_t previous_query_start;
     uint64_t previous_ref_start;
+//    uint64_t copy_id; // If many hits, keep track of which it in order of left to right on the reference
 };
 #endif /* index_hpp */
 

@@ -181,7 +181,7 @@ static inline void update_window(std::deque <uint64_t> &q, uint64_t &q_min_val, 
 
 
 static inline void make_string_to_hashvalues2(std::string &seq, std::vector<uint64_t> &string_hashes, int k, uint64_t kmask) {
-//    robin_hood::hash<uint64_t> robin_hash;
+    robin_hood::hash<uint64_t> robin_hash;
 //    std::vector<std::tuple<uint64_t, unsigned int, unsigned int> > kmers;
     int l;
     int i;
@@ -192,8 +192,9 @@ static inline void make_string_to_hashvalues2(std::string &seq, std::vector<uint
             x = (x << 2 | c) & kmask;                  // forward strand
             if (++l >= k) { // we find a k-mer
 //                uint64_t hash_k = x;
-//                uint64_t hash_k = robin_hash(x);
-                uint64_t hash_k = hash64(x, kmask);
+                uint64_t hash_k = robin_hash(x);
+//                uint64_t hash_k = hash64(x, kmask);
+//                std::cout << hash_k << " " << x << std::endl;
                 string_hashes.push_back(hash_k);
             }
         } else {
