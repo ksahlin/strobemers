@@ -56,20 +56,20 @@ robin_hood::unordered_map< uint64_t, std::tuple<uint64_t, unsigned int >> index_
 
 
 struct hit {
-    uint64_t query_s;
-    uint64_t query_e;
-    uint64_t ref_s;
-    uint64_t ref_e;
+    unsigned int query_s;
+    unsigned int query_e;
+    unsigned int ref_s;
+    unsigned int ref_e;
 };
 
 struct nam {
     unsigned int ref_id;
-    uint64_t query_s;
-    uint64_t query_e;
-    uint64_t ref_s;
-    uint64_t ref_e;
-    uint64_t previous_query_start;
-    uint64_t previous_ref_start;
+    unsigned int query_s;
+    unsigned int query_e;
+    unsigned int ref_s;
+    unsigned int ref_e;
+    unsigned int previous_query_start;
+    unsigned int previous_ref_start;
 //    uint64_t copy_id; // If many hits, keep track of which it in order of left to right on the reference
 };
 #endif /* index_hpp */

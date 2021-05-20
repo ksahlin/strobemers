@@ -88,56 +88,71 @@ static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &m
         hit h;
         h.query_s = std::get<2>(q);
         h.query_e = std::get<4>(q) + k;
+//        std::cout << h.query_s << " " << h.query_e <<  std::endl;
 
         uint64_t mer_hashv = std::get<0>(q);
         if (mers_index.find(mer_hashv) != mers_index.end()){ //  In  index
+//            std::cout << "Found: " << h.query_s <<  std::endl;
             std::tuple<uint64_t, unsigned int> mer;
             mer = mers_index[mer_hashv];
             uint64_t offset = std::get<0>(mer);
             unsigned int count = std::get<1>(mer);
-            uint64_t prev_ref_s = 0;
-            uint64_t prev_ref_e = 0;
-            uint64_t prev_ref_id = 0;
+            unsigned int prev_ref_s = 0;
+            unsigned int prev_ref_e = 0;
+            unsigned int prev_ref_id = 0;
             for(size_t j = offset; j < offset+count; ++j)
             {
 
                 auto r = mers_vector[j];
-                uint64_t ref_s = std::get<2>(r);
-                uint64_t ref_e = std::get<4>(r) + k;
+                unsigned int ref_s = std::get<2>(r);
+                unsigned int ref_e = std::get<4>(r) + k;
                 unsigned int ref_id = std::get<1>(r);
-                if (j== offset){
-//                    std::cout << "INITIALZING! " << std::endl;
-                    prev_ref_s = ref_s;
-                    prev_ref_e = ref_e;
-                    prev_ref_id = ref_id;
-                }
-                else if ( (prev_ref_s < ref_s) && (ref_s < prev_ref_e) && (ref_id == prev_ref_id)  ){
-                    if (ref_e > prev_ref_e){
-                        prev_ref_e = ref_e;
-                    }
 
-                }
-                else{
-                    h.ref_s = prev_ref_s;
-                    h.ref_e = prev_ref_e;
-                    hits_per_ref[prev_ref_id].push_back(h);
-                    hit_count_reduced ++;
-                    prev_ref_s = ref_s;
-                    prev_ref_e = ref_e;
-                    prev_ref_id = ref_id;
-//                    std::cout << "REDUCED Hit! " << h.query_s << ", " << h.query_e << ", " << h.ref_s << ", " << h.ref_e << ", " << std::endl;
-                }
+                h.ref_s = ref_s;
+                h.ref_e = ref_e;
+                hits_per_ref[ref_id].push_back(h);
+
+//                if (j== offset){
+////                    std::cout << "INITIALZING! " << std::endl;
+//                    prev_ref_s = ref_s;
+//                    prev_ref_e = ref_e;
+//                    prev_ref_id = ref_id;
+//                }
+//                else if ( (prev_ref_s < ref_s) && (ref_s < prev_ref_e) && (ref_id == prev_ref_id)  ){
+//                    if (ref_e > prev_ref_e){
+//                        prev_ref_e = ref_e;
+//                    }
+//
+//                }
+//                else{
+//                    h.ref_s = prev_ref_s;
+//                    h.ref_e = prev_ref_e;
+//                    hits_per_ref[prev_ref_id].push_back(h);
+//                    hit_count_reduced ++;
+//                    prev_ref_s = ref_s;
+//                    prev_ref_e = ref_e;
+//                    prev_ref_id = ref_id;
+////                    std::cout << "REDUCED Hit! " << h.query_s << ", " << h.query_e << ", " << h.ref_s << ", " << h.ref_e << ", " << std::endl;
+////                    if ( (h.query_e - h.query_s) < (h.ref_e - h.ref_s) ){
+////                        ;
+////                        std::cout << "REDUCED Hit! " << h.query_s << ", " << h.query_e << ", " << h.ref_s << ", " << h.ref_e << ", " << std::endl;
+////                    }
+//                }
 
 
                 hit_count_all ++;
 //                std::cout << "Hit! " << h.query_s << ", " << h.query_e << ", " << ref_s << ", " << ref_e << ", " << std::endl;
 
             }
-            h.ref_s = prev_ref_s;
-            h.ref_e = prev_ref_e;
-            hits_per_ref[prev_ref_id].push_back(h);
-            hit_count_reduced ++;
+//            h.ref_s = prev_ref_s;
+//            h.ref_e = prev_ref_e;
+//            hits_per_ref[prev_ref_id].push_back(h);
+//            hit_count_reduced ++;
 //            std::cout << "REDUCED Hit! " << h.query_s << ", " << h.query_e << ", " << h.ref_s << ", " << h.ref_e << ", " << std::endl;
+//            if ( (h.query_e - h.query_s) < (h.ref_e - h.ref_s) ){
+//                ;
+//                std::cout << "REDUCED Hit! " << h.query_s << ", " << h.query_e << ", " << h.ref_s << ", " << h.ref_e << ", " << std::endl;
+//            }
 
         }
     }
@@ -154,18 +169,21 @@ static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &m
         open_nams = std::vector<nam> (); // Initialize vector
 //        uint64_t prev_q_start = 0;
 //        uint64_t prev_q_end = 0;
-        uint64_t hit_copy_id = -1;
+//        uint64_t hit_copy_id = -1;
         for (auto &h : hits){
             bool is_added = false;
 //            assert(prev_q_start <= h.query_s && "Not larger!");
             if (h.query_s % 500000 == 0 ){
                 std::cout << h.query_s << std::endl;
             }
+//            if (h.query_s > 1110 ){
+//                return final_nams;
+//            }
 //            else {
 //                hit_copy_id = 0;
 //            }
 
-//            std::cout << "OMG " << h.query_s <<  ", " << h.query_e << ", " << h.ref_s <<  ", " << h.ref_e << std::endl;
+//            std::cout << "HIT " << h.query_s <<  ", " << h.query_e << ", " << h.ref_s <<  ", " << h.ref_e << std::endl;
             for (auto & o : open_nams) {
 
                 // Extend NAM
@@ -311,11 +329,12 @@ int main (int argc, char *argv[])
 //    std::string filename  = "ecoli_randmer_bug.txt";
 //    std::string reads_filename  = "ecoli_randmer_bug.txt";
 
-    std::string filename  = "ecoli.fa";
-    std::string reads_filename  = "ecoli.fa";
+//    std::string filename  = "ecoli.fa";
+//    std::string reads_filename  = "ecoli.fa";
 
-//        std::string filename  = "hg38_chr21.fa";
-//    std::string reads_filename  = "hg38_chr21.fa";
+        std::string filename  = "hg38_chr21.fa";
+    std::string reads_filename  = "hg38_chr21.fa";
+
 //    std::string filename  = "hg21_bug.txt";
 //    std::string reads_filename  = "hg21_bug.txt";
 
@@ -326,7 +345,7 @@ int main (int argc, char *argv[])
     int n = 3;
     int k = 10;
     int w_min = 11;
-    int w_max = 30;
+    int w_max = 50;
     int filter_nams = 0;
     assert(k <= w_min && "k have to be smaller than w_min");
     assert(k <= 32 && "k have to be smaller than 32!");

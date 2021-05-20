@@ -180,9 +180,10 @@ static inline void update_window(std::deque <uint64_t> &q, uint64_t &q_min_val, 
 
 
 
-static inline void make_string_to_hashvalues2(std::string &seq, std::vector<uint64_t> &string_hashes, int k, uint64_t kmask) {
+static inline void make_string_to_hashvalues2(std::string &seq, std::vector<uint64_t> &string_hashes, std::vector<unsigned int> &pos_to_seq_choord, int k, uint64_t kmask) {
     robin_hood::hash<uint64_t> robin_hash;
 //    std::vector<std::tuple<uint64_t, unsigned int, unsigned int> > kmers;
+    unsigned int hash_count = 0;
     int l;
     int i;
     uint64_t x = 0;
@@ -196,6 +197,9 @@ static inline void make_string_to_hashvalues2(std::string &seq, std::vector<uint
 //                uint64_t hash_k = hash64(x, kmask);
 //                std::cout << hash_k << " " << x << std::endl;
                 string_hashes.push_back(hash_k);
+                pos_to_seq_choord.push_back( i - k + 1);
+//                pos_to_seq_choord[hash_count] = i - k + 1;
+                hash_count ++;
             }
         } else {
             l = 0, x = 0; // if there is an "N", restart
@@ -265,7 +269,9 @@ mers_vector seq_to_randstrobes2(int n, int k, int w_min, int w_max, std::string 
 //    std::cout << x << '\n';
     // make string of strobes into hashvalues all at once to avoid repetitive k-mer to hash value computations
     std::vector<uint64_t> string_hashes;
-    make_string_to_hashvalues2(seq, string_hashes, k, kmask);
+    std::vector<unsigned int> pos_to_seq_choord;
+//    robin_hood::unordered_map< unsigned int, unsigned int>  pos_to_seq_choord;
+    make_string_to_hashvalues2(seq, string_hashes, pos_to_seq_choord, k, kmask);
     unsigned int seq_length = string_hashes.size();
 
 //    std::cout << seq << std::endl;
@@ -300,7 +306,9 @@ mers_vector seq_to_randstrobes2(int n, int k, int w_min, int w_max, std::string 
 //        uint64_t hash_randstrobe2 = (string_hashes[i] << k) ^ strobe_hashval_next;
         uint64_t hash_randstrobe2 = (string_hashes[i]/2) + (strobe_hashval_next/3);
 
-        std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int> s (hash_randstrobe2, ref_index, i, strobe_pos_next, strobe_pos_next);
+        unsigned int seq_pos_strobe1 = pos_to_seq_choord[i];
+        unsigned int seq_pos_strobe2 = pos_to_seq_choord[strobe_pos_next];
+        std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int> s (hash_randstrobe2, ref_index, seq_pos_strobe1, seq_pos_strobe2, seq_pos_strobe2);
         randstrobes2.push_back(s);
 
 
@@ -325,7 +333,10 @@ mers_vector seq_to_randstrobes3(int n, int k, int w_min, int w_max, std::string 
     uint64_t q = pow (2, 16) - 1;
     // make string of strobes into hashvalues all at once to avoid repetitive k-mer to hash value computations
     std::vector<uint64_t> string_hashes;
-    make_string_to_hashvalues2(seq, string_hashes, k, kmask);
+//    std::vector<uint64_t> pos_to_seq_choord;
+    std::vector<unsigned int> pos_to_seq_choord;
+//    robin_hood::unordered_map< unsigned int, unsigned int>  pos_to_seq_choord;
+    make_string_to_hashvalues2(seq, string_hashes, pos_to_seq_choord, k, kmask);
     unsigned int seq_length = string_hashes.size();
 
 //    std::cout << seq << std::endl;
@@ -388,7 +399,17 @@ mers_vector seq_to_randstrobes3(int n, int k, int w_min, int w_max, std::string 
 //        uint64_t hash_randstrobe3 = (((strobe_hash << k) ^ strobe_hashval_next1) << k) ^ strobe_hashval_next2;
         uint64_t hash_randstrobe3 = (strobe_hash/3) + (strobe_hashval_next1/4) + (strobe_hashval_next2/5);
 
-        std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int> s (hash_randstrobe3, ref_index, i, strobe_pos_next1, strobe_pos_next2);
+        unsigned int seq_pos_strobe1 = pos_to_seq_choord[i];
+        unsigned int seq_pos_strobe2 =  pos_to_seq_choord[strobe_pos_next1]; //seq_pos_strobe1 + (strobe_pos_next1 - i); //
+        unsigned int seq_pos_strobe3 =  pos_to_seq_choord[strobe_pos_next2]; //seq_pos_strobe1 + (strobe_pos_next2 - i); //
+//        std::cout << i << " " << strobe_pos_next1 << " " << strobe_pos_next2 << " " << seq_pos_strobe1 << " " << seq_pos_strobe2 << " " << seq_pos_strobe3 << " " << pos_to_seq_choord.size() << std::endl;
+
+        // TODO: Take care of corner case (tmep if statement below. Some values in end of string produce a cororidnate of 0 for the last strobe. Probably an off-by-one error in the calculation of the strobe coord in the last strobe window
+        if (strobe_pos_next2 ==  seq_length){
+//            std::cout << "OMGGGGGGG " << i << " " << seq_pos_strobe1 << " " << seq_pos_strobe2 << " " << seq_pos_strobe3 << std::endl;
+            seq_pos_strobe3 = seq_length-1;
+        }
+        std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int> s (hash_randstrobe3, ref_index, seq_pos_strobe1, seq_pos_strobe2, seq_pos_strobe3);
         randstrobes3.push_back(s);
 
 
@@ -412,7 +433,9 @@ mers_vector seq_to_minstrobes2(int n, int k, int w_min, int w_max, std::string &
     // make string of strobes into hashvalues all at once to avoid repetitive k-mer to hash value computations
     uint64_t kmask=(1ULL<<2*k) - 1;
     std::vector<uint64_t> string_hashes;
-    make_string_to_hashvalues2(seq, string_hashes, k, kmask);
+    std::vector<unsigned int> pos_to_seq_choord;
+//    robin_hood::unordered_map< unsigned int, unsigned int>  pos_to_seq_choord;
+    make_string_to_hashvalues2(seq, string_hashes, pos_to_seq_choord, k, kmask);
     unsigned int seq_length = string_hashes.size();
 //    unsigned int seq_length = seq.length();
 
@@ -433,7 +456,9 @@ mers_vector seq_to_minstrobes2(int n, int k, int w_min, int w_max, std::string &
 //        uint64_t hash_minstrobe2 = (bstrobe << k) ^ q_min_val;
         uint64_t hash_minstrobe2 = (bstrobe/2) + (q_min_val/3);
 
-        std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int> s (hash_minstrobe2, ref_index, i, q_min_pos, q_min_pos);
+        unsigned int seq_pos_strobe1 = pos_to_seq_choord[i];
+        unsigned int seq_pos_strobe2 = pos_to_seq_choord[q_min_pos];
+        std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int> s (hash_minstrobe2, ref_index, seq_pos_strobe1, seq_pos_strobe2, seq_pos_strobe2);
         minstrobes2.push_back(s);
 
         // update queue and current minimum and position
@@ -477,7 +502,9 @@ mers_vector seq_to_hybridstrobes2(int n, int k, int w_min, int w_max, std::strin
     // make string of strobes into hashvalues all at once to avoid repetitive k-mer to hash value computations
     uint64_t kmask=(1ULL<<2*k) - 1;
     std::vector<uint64_t> string_hashes;
-    make_string_to_hashvalues2(seq, string_hashes, k, kmask);
+    std::vector<unsigned int> pos_to_seq_choord;
+//    robin_hood::unordered_map< unsigned int, unsigned int>  pos_to_seq_choord;
+    make_string_to_hashvalues2(seq, string_hashes, pos_to_seq_choord, k, kmask);
     std::cout << seq.length() << " " << string_hashes.size() << " " << k << std::endl;
     unsigned int seq_length = string_hashes.size();
 
@@ -531,7 +558,9 @@ mers_vector seq_to_hybridstrobes2(int n, int k, int w_min, int w_max, std::strin
 //        hash_hybridstrobe2 = (bstrobe << k) ^ strobe2_val;
         hash_hybridstrobe2 = (bstrobe/2) + (strobe2_val/3);
 
-        std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int> s (hash_hybridstrobe2, ref_index, i, strobe2_pos, strobe2_pos);
+        unsigned int seq_pos_strobe1 = pos_to_seq_choord[i];
+        unsigned int seq_pos_strobe2 = pos_to_seq_choord[strobe2_pos];
+        std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int> s (hash_hybridstrobe2, ref_index, seq_pos_strobe1, seq_pos_strobe2, seq_pos_strobe2);
         hybridstrobes2.push_back(s);
 
 
