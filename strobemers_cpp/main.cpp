@@ -167,7 +167,7 @@ static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &m
         unsigned int ref_id = it.first;
         std::vector<hit> hits = it.second;
         open_nams = std::vector<nam> (); // Initialize vector
-//        uint64_t prev_q_start = 0;
+        uint64_t prev_q_start = 0;
 //        uint64_t prev_q_end = 0;
 //        uint64_t hit_copy_id = -1;
         for (auto &h : hits){
@@ -250,20 +250,23 @@ static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &m
 //                std::cout << "Removed " << before - after <<  " matches." <<  std::endl;
 //            }
 
+            // Only filter if we have advanced at least k nucleotides
+            if (h.query_s > prev_q_start + k) {
 
-            // Output all NAMs from open_matches to final_nams that the current hit have passed
-            for (auto &n : open_nams){
-//            for (size_t i = 0; i < open_nams.size(); ++i){
-//                nam n = open_nams[i];
-                if (n.query_e < h.query_s) {
-                    final_nams.push_back(n);
+                // Output all NAMs from open_matches to final_nams that the current hit have passed
+                for (auto &n : open_nams) {
+                    if (n.query_e < h.query_s) {
+                        final_nams.push_back(n);
+                    }
                 }
+
+                // Remove all NAMs from open_matches that the current hit have passed
+                unsigned int c = h.query_s;
+                auto predicate = [c](decltype(open_nams)::value_type const &nam) { return nam.query_e < c; };
+                open_nams.erase(std::remove_if(open_nams.begin(), open_nams.end(), predicate), open_nams.end());
+                prev_q_start = h.query_s;
             }
 
-            // Remove all NAMs from open_matches that the current hit have passed
-            unsigned int c = h.query_s;
-            auto predicate = [c](decltype(open_nams)::value_type const& nam) {return nam.query_e < c;};
-            open_nams.erase(std::remove_if(open_nams.begin(), open_nams.end(), predicate), open_nams.end());
 
         }
 
@@ -332,7 +335,7 @@ int main (int argc, char *argv[])
 //    std::string filename  = "ecoli.fa";
 //    std::string reads_filename  = "ecoli.fa";
 
-        std::string filename  = "hg38_chr21.fa";
+    std::string filename  = "hg38_chr21.fa";
     std::string reads_filename  = "hg38_chr21.fa";
 
 //    std::string filename  = "hg21_bug.txt";
