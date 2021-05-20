@@ -80,37 +80,70 @@ static inline void print_diagnostics_new4(mers_vector &mers_vector, vector_index
 static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &mers_vector, vector_index &mers_index, int k){
 //    std::cout << "ENTER FIND NAMS " <<  std::endl;
     robin_hood::unordered_map< unsigned int, std::vector<hit>> hits_per_ref; // [ref_id] -> vector( struct hit)
-
+    uint64_t hit_count_reduced = 0;
+    uint64_t hit_count_all = 0;
     for (auto &q : query_mers)
 //    for (size_t i = 0; i < query_mers.size(); ++i)
     {
-        // access using []
-//        auto q = query_mers[i];
+        hit h;
+        h.query_s = std::get<2>(q);
+        h.query_e = std::get<4>(q) + k;
+
         uint64_t mer_hashv = std::get<0>(q);
         if (mers_index.find(mer_hashv) != mers_index.end()){ //  In  index
             std::tuple<uint64_t, unsigned int> mer;
             mer = mers_index[mer_hashv];
             uint64_t offset = std::get<0>(mer);
             unsigned int count = std::get<1>(mer);
+            uint64_t prev_ref_s = 0;
+            uint64_t prev_ref_e = 0;
+            uint64_t prev_ref_id = 0;
             for(size_t j = offset; j < offset+count; ++j)
             {
-                hit h;
-                h.query_s = std::get<2>(q);
-                h.query_e = std::get<4>(q) + k;
 
                 auto r = mers_vector[j];
-                h.ref_s = std::get<2>(r);
-                h.ref_e = std::get<4>(r) + k;
-
-
+                uint64_t ref_s = std::get<2>(r);
+                uint64_t ref_e = std::get<4>(r) + k;
                 unsigned int ref_id = std::get<1>(r);
-                hits_per_ref[ref_id].push_back(h);
-//                std::cout << "Hit! " << h.query_s << ", " << h.query_e << ", " << h.ref_s << ", " << h.ref_e << ", " << std::endl;
+                if (j== offset){
+//                    std::cout << "INITIALZING! " << std::endl;
+                    prev_ref_s = ref_s;
+                    prev_ref_e = ref_e;
+                    prev_ref_id = ref_id;
+                }
+                else if ( (prev_ref_s < ref_s) && (ref_s < prev_ref_e) && (ref_id == prev_ref_id)  ){
+                    if (ref_e > prev_ref_e){
+                        prev_ref_e = ref_e;
+                    }
+
+                }
+                else{
+                    h.ref_s = prev_ref_s;
+                    h.ref_e = prev_ref_e;
+                    hits_per_ref[prev_ref_id].push_back(h);
+                    hit_count_reduced ++;
+                    prev_ref_s = ref_s;
+                    prev_ref_e = ref_e;
+                    prev_ref_id = ref_id;
+//                    std::cout << "REDUCED Hit! " << h.query_s << ", " << h.query_e << ", " << h.ref_s << ", " << h.ref_e << ", " << std::endl;
+                }
+
+
+                hit_count_all ++;
+//                std::cout << "Hit! " << h.query_s << ", " << h.query_e << ", " << ref_s << ", " << ref_e << ", " << std::endl;
 
             }
+            h.ref_s = prev_ref_s;
+            h.ref_e = prev_ref_e;
+            hits_per_ref[prev_ref_id].push_back(h);
+            hit_count_reduced ++;
+//            std::cout << "REDUCED Hit! " << h.query_s << ", " << h.query_e << ", " << h.ref_s << ", " << h.ref_e << ", " << std::endl;
+
         }
     }
 
+    std::cout << "NUMBER OF HITS GENERATED: " << hit_count_all << std::endl;
+    std::cout << "NUMBER OF REDUCED HITS GENERATED: " << hit_count_reduced << std::endl;
     std::vector<nam> open_nams;
     std::vector<nam> final_nams; // [ref_id] -> vector(struct nam)
 
@@ -125,9 +158,9 @@ static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &m
         for (auto &h : hits){
             bool is_added = false;
 //            assert(prev_q_start <= h.query_s && "Not larger!");
-//            if (h.query_s == prev_q_start ){
-//                hit_copy_id++;
-//            }
+            if (h.query_s % 500000 == 0 ){
+                std::cout << h.query_s << std::endl;
+            }
 //            else {
 //                hit_copy_id = 0;
 //            }
@@ -136,7 +169,7 @@ static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &m
             for (auto & o : open_nams) {
 
                 // Extend NAM
-                if ( ( o.previous_query_start < h.query_s) && (h.query_s <= o.query_e ) && ( o.previous_ref_start < h.ref_s) && (h.ref_s <= o.ref_e) ){ // && (o.previous_ref_start <= h.ref_s)  && (o.previous_query_start <= h.query_s) && (hit_copy_id <= o.copy_id)
+                if ( ( o.previous_query_start < h.query_s) && (h.query_s <= o.query_e ) && ( o.previous_ref_start <= h.ref_s) && (h.ref_s <= o.ref_e) ){ // && (o.previous_ref_start <= h.ref_s)  && (o.previous_query_start <= h.query_s) && (hit_copy_id <= o.copy_id)
 //                    if (o.previous_ref_start <= h.ref_s) {
 //                    std::cout << "In " << o.query_s <<  ", " << o.query_e <<  ", " << o.ref_s <<  ", " << o.ref_e << std::endl;
                         if (h.query_e > o.query_e) {
@@ -263,8 +296,8 @@ int main (int argc, char *argv[])
 //    std::string filename  = "test_ploy2.txt";
 //    std::string reads_filename  = "test_ploy2.txt";
 
-    std::string filename  = "example_repeats.txt";
-    std::string reads_filename  = "example_repeats.txt";
+//    std::string filename  = "example_repeats.txt";
+//    std::string reads_filename  = "example_repeats.txt";
 
 //    std::string filename  = "example3.txt";
 //    std::string reads_filename  = "example3.txt";
@@ -278,20 +311,25 @@ int main (int argc, char *argv[])
 //    std::string filename  = "ecoli_randmer_bug.txt";
 //    std::string reads_filename  = "ecoli_randmer_bug.txt";
 
-//    std::string filename  = "ecoli.fa";
-//    std::string reads_filename  = "ecoli.fa";
+    std::string filename  = "ecoli.fa";
+    std::string reads_filename  = "ecoli.fa";
 
-    //    std::string filename  = "hg38_chr21.fa";
-    std::string choice = "kmers";
+//        std::string filename  = "hg38_chr21.fa";
+//    std::string reads_filename  = "hg38_chr21.fa";
+//    std::string filename  = "hg21_bug.txt";
+//    std::string reads_filename  = "hg21_bug.txt";
+
+//    std::string choice = "kmers";
 //    std::string choice = "minstrobes";
 //   std::string choice = "hybridstrobes";
-//   std::string choice = "randstrobes";
+   std::string choice = "randstrobes";
     int n = 3;
     int k = 10;
-    int w_min = 31;
-    int w_max = 100;
+    int w_min = 11;
+    int w_max = 30;
+    int filter_nams = 0;
     assert(k <= w_min && "k have to be smaller than w_min");
-    assert(k <= w_min && "k have to be smaller than 32!");
+    assert(k <= 32 && "k have to be smaller than 32!");
     references ref_seqs;
     idx_to_acc acc_map;
     read_references(ref_seqs, acc_map, filename);
