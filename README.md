@@ -12,6 +12,30 @@ Strobemers are currently being implemented in compiled languages
 - [C++](https://github.com/BGI-Qingdao/strobemer_cpptest)
 - [Go](https://github.com/shenwei356/strobemers)
 
+I have also implemented randstrobes (order 2 and 3), hybridstrobes (order 2), and minstrobes (order 2). They can be used by copying `index.cpp` and `index.hpp` in the `strobemers_cpp` folder in this repository. These implementations uses bitpacking and some other clever tricks (inspired by [this repo](https://github.com/lh3/kmer-cnt)) to be fast. The limitation is that any single strobe cannot be lager than 32, which means that the maximum strobemer length is 96 to randstrobes order 3. This should be large enough for most applications. The functions be used as follows:
+
+```
+typedef std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int>> strobes_vector;
+strobes_vector randstrobes3; // (kmer hash value, chr_id, strobe1_pos, strobe2_pos, strobe3_pos)
+seq = "ACGCGTACGAATCACGCCGGGTGTGTGTGATCGGGGCTATCAGCTACGTACTATGCTAGCTACGGACGGCGATTTTTTTTCATATCGTACGCTAGCTAGCTAGCTGCGATCGATTCG"
+chr_id = 0 // using integers for compactness, you can store a vector with accessions v = [acc_chr1, acc_chr2,...] then chr_id = 0 means v[0].
+randstrobes3 = seq_to_randstrobes3(2, k, w_min, w_max, seq, chr_id);
+for (auto &t : randstrobes3) // iterate over the strobemer tuples
+{
+strobemer_hash = std::get<0>(t);
+strobe1_pos = std::get<2>(t);
+strobe2_pos = std::get<3>(t);
+strobe3_pos = std::get<4>(t);
+// if you want the actual strobemer sequences:
+randstrobe = seq.substr(strobe1_pos, k) + seq.substr(strobe2_pos, k)+ seq.substr(strobe3_pos, k);
+}
+```
+
+If you are using some of `seq_to_randstrobes2`, `seq_to_hybridstrobes2`, or `seq_to_minstrobes3` they return the same vectore tuples but position of strobe 2 copied twice, i.e., `(kmer hash value, chr_id, strobe1_pos, strobe2_pos, strobe2_pos)`. 
+
+My benchmarking is saying that randstrobes is roughly as fast as hybridstrobes and minstrobes, and that randstrobes is unexpectedly fast in this implementation in general, about 2-3 times slower than generating k-mers for randstrobes of (n=2, s=15, w_min=16,w_max=70). What takes time is pushing the tuples to vector and not computing the strobemers. But more detailed investigation will follow.
+
+
 ## This repository
 
 The repository consists of a library and a tool `StrobeMap`. The library `indexing.py` contains functions and generators for creating the datastructures used in the evaluation of the [preprint](https://doi.org/10.1101/2021.01.28.428549). The tool `StrobeMap` is a program which roughly has the same interface as `MUMmer`. `StrobeMap` takes a reference and queries file in fasta or fastq format. It produces NAMs (Non-overlapping Approximate Matches) between the queries and references and outputs them in a format simular to nucmer/MUMmer. See [preprint](https://doi.org/10.1101/2021.01.28.428549) for definition of NAMs.

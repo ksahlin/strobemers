@@ -279,9 +279,9 @@ mers_vector seq_to_randstrobes2(int n, int k, int w_min, int w_max, std::string 
     // create the randstrobes
     for (unsigned int i = 0; i <= seq_length; i++) {
 
-        if ((i % 1000000) == 0 ){
-            std::cout << i << " strobemers created." << std::endl;
-        }
+//        if ((i % 1000000) == 0 ){
+//            std::cout << i << " strobemers created." << std::endl;
+//        }
         unsigned int strobe_pos_next;
         uint64_t strobe_hashval_next;
 
@@ -344,9 +344,9 @@ mers_vector seq_to_randstrobes3(int n, int k, int w_min, int w_max, std::string 
     // create the randstrobes
     for (unsigned int i = 0; i <= seq_length; i++) {
 
-        if ((i % 1000000) == 0 ){
-            std::cout << i << " randstrobes created." << std::endl;
-        }
+//        if ((i % 1000000) == 0 ){
+//            std::cout << i << " randstrobes created." << std::endl;
+//        }
         uint64_t strobe_hash;
         strobe_hash = string_hashes[i];
 

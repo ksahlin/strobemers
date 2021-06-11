@@ -82,12 +82,14 @@ static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &m
     robin_hood::unordered_map< unsigned int, std::vector<hit>> hits_per_ref; // [ref_id] -> vector( struct hit)
     uint64_t hit_count_reduced = 0;
     uint64_t hit_count_all = 0;
+    uint64_t total_mers = 0;
     for (auto &q : query_mers)
 //    for (size_t i = 0; i < query_mers.size(); ++i)
     {
         hit h;
         h.query_s = std::get<2>(q);
         h.query_e = std::get<4>(q) + k;
+        total_mers ++;
 //        std::cout << h.query_s << " " << h.query_e <<  std::endl;
 
         uint64_t mer_hashv = std::get<0>(q);
@@ -158,7 +160,9 @@ static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &m
     }
 
     std::cout << "NUMBER OF HITS GENERATED: " << hit_count_all << std::endl;
-    std::cout << "NUMBER OF REDUCED HITS GENERATED: " << hit_count_reduced << std::endl;
+    std::cout << "TOTAL STROBEMERS GENERATED: " << total_mers << std::endl;
+
+//    std::cout << "NUMBER OF REDUCED HITS GENERATED: " << hit_count_reduced << std::endl;
     std::vector<nam> open_nams;
     std::vector<nam> final_nams; // [ref_id] -> vector(struct nam)
 
@@ -173,9 +177,9 @@ static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &m
         for (auto &h : hits){
             bool is_added = false;
 //            assert(prev_q_start <= h.query_s && "Not larger!");
-            if (h.query_s % 500000 == 0 ){
-                std::cout << h.query_s << std::endl;
-            }
+//            if (h.query_s % 500000 == 0 ){
+//                std::cout << h.query_s << std::endl;
+//            }
 //            if (h.query_s > 1110 ){
 //                return final_nams;
 //            }
@@ -285,6 +289,18 @@ static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &m
     return final_nams;
 }
 
+static inline std::string reverse_complement(std::string &read) {
+    auto read_rev = read;
+    std::reverse(read_rev.begin(), read_rev.end()); // reverse
+//    std::cout << read_rev << std::endl;
+    for (size_t j = 0; j < read_rev.length(); ++j) { // complement
+        if (read_rev[j] == 'A') read_rev[j] = 'T';
+        else if (read_rev[j] == 'T') read_rev[j] = 'A';
+        else if (read_rev[j] == 'C') read_rev[j] = 'G';
+        else if (read_rev[j] == 'G') read_rev[j] = 'C';
+    }
+    return read_rev;
+}
 
 static inline bool compareByQueryCoord(const nam &a, const nam &b)
 {
@@ -314,6 +330,9 @@ int main (int argc, char *argv[])
 {
 
     ///////////////////// INPUT /////////////////////////
+    std::string filename  = "ahmed_ref.txt";
+    std::string reads_filename  = "ahmed_reads.txt";
+
 //    std::string filename  = "test_ploy2.txt";
 //    std::string reads_filename  = "test_ploy2.txt";
 
@@ -334,21 +353,25 @@ int main (int argc, char *argv[])
 
 //    std::string filename  = "ecoli.fa";
 //    std::string reads_filename  = "ecoli.fa";
+//    std::string reads_filename  = "SRR8187994_1.fasta";
 
-    std::string filename  = "hg38_chr21.fa";
-    std::string reads_filename  = "hg38_chr21.fa";
+//    std::string filename  = "hg38_chr21.fa";
+//    std::string reads_filename  = "hg38_chr21.fa";
+
+//    std::string filename  = "/Users/kxs624//Documents/data/genomes/human/chm13_chr21.fa";
+//    std::string reads_filename  = "/Users/kxs624/Documents/data/genomes/human/HG_38/GRCh38_chr21.fa";
 
 //    std::string filename  = "hg21_bug.txt";
 //    std::string reads_filename  = "hg21_bug.txt";
 
 //    std::string choice = "kmers";
 //    std::string choice = "minstrobes";
-//   std::string choice = "hybridstrobes";
-   std::string choice = "randstrobes";
-    int n = 3;
-    int k = 10;
-    int w_min = 11;
-    int w_max = 50;
+   std::string choice = "hybridstrobes";
+//   std::string choice = "randstrobes";
+    int n = 2;
+    int k = 9;
+    int w_min = 13;
+    int w_max = 21;
     int filter_nams = 0;
     assert(k <= w_min && "k have to be smaller than w_min");
     assert(k <= 32 && "k have to be smaller than 32!");
@@ -441,10 +464,14 @@ int main (int argc, char *argv[])
     output_file.open ("output.tsv");
 
     std::string line, seq, prev_acc;
+    std::string seq_rc;
     unsigned int q_id = 0;
+    unsigned int read_cnt = 0;
     mers_vector query_mers; // pos, chr_id, kmer hash value
+    mers_vector query_mers_rc; // pos, chr_id, kmer hash value
     while (getline(query_file, line)) {
         if (line[0] == '>') {
+            read_cnt ++;
             if (seq.length() > 0){
                 // generate mers here
                 if (choice == "kmers" ){
@@ -459,19 +486,33 @@ int main (int argc, char *argv[])
                         query_mers = seq_to_randstrobes3(n, k, w_min, w_max, seq, q_id);
                     }
                 }
+                else if (choice == "hybridstrobes" ){
+                    if (n == 2 ){
+                        for (auto x : ref_seqs){
+                            query_mers = seq_to_hybridstrobes2(n, k, w_min, w_max, seq, q_id);
+                            seq_rc = reverse_complement(seq);
+                            query_mers_rc = seq_to_hybridstrobes2(n, k, w_min, w_max, seq_rc, q_id);
+                        }
+                    }
+//                      else if (n == 3){ for (auto x : ref_seqs){generate_hybridstrobe3_index(h, k, x.second, x.first);}}
+                }
 //                std::cout << "HERE " << line << std::endl;
                 // Find NAMs
                 std::cout << "Processing read: " << prev_acc << " kmers generated: " << query_mers.size() << ", read length: " <<  seq.length() << std::endl;
                 std::vector<nam> nams; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
+//                std::vector<nam> nams_rc; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
                 nams = find_nams(query_mers, all_mers_vector, mers_index, k);
-                std::cout <<  "NAMs generated: " << nams.size() << std::endl;
+//                nams_rc = find_nams(query_mers_rc, all_mers_vector, mers_index, k);
+//                std::cout <<  "NAMs generated: " << nams.size() << std::endl;
                 // Output results
                 output_nams(nams, output_file, prev_acc, acc_map);
 
 //              output_file << "> " <<  prev_acc << "\n";
 //              output_file << "  " << ref_acc << " " << ref_p << " " << q_pos << " " << "\n";
 //              outfile.write("  {0} {1} {2} {3}\n".format(ref_acc, ref_p, q_pos, k))
-
+                if (read_cnt % 10000 == 0){
+                    std::cout << "Processed " << read_cnt << "reads. " << std::endl;
+                }
             }
             prev_acc = line.substr(1, line.length() -1);
             seq = "";
@@ -498,7 +539,7 @@ int main (int argc, char *argv[])
         std::cout << "Processing read: " << prev_acc << " kmers generated: " << query_mers.size() << ", read length: " <<  seq.length() << std::endl;
         std::vector<nam> nams; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
         nams = find_nams(query_mers, all_mers_vector, mers_index, k);
-        std::cout <<  "NAMs generated: " << nams.size() << std::endl;
+//        std::cout <<  "NAMs generated: " << nams.size() << std::endl;
         output_nams(nams, output_file, prev_acc, acc_map);
     }
 

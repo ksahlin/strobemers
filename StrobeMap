@@ -94,7 +94,7 @@ def update_queue(q, curr_min, min_index, new_hash, i, start_offset, end_offset):
 def seq_to_hybridstrobes2_iter(seq, k_size, w_min, w_max, prime, w):
     if len(seq) < 2*w_max:
         return -1, -1, None
-    hash_list = [ hash(seq[i:i+k_size]) for i in range(len(seq) - k_size +1)]
+    hash_list = [ hash(seq[i:i+k_size]) for i in range(len(seq) - k_size +1) ]
     n_partition = 3
     w_p = (w_max - w_min ) // n_partition
 
@@ -239,7 +239,7 @@ def randstrobe_order3(hash_seq_list, start1, stop1, start2, stop2, hash_m1, k_si
     return min_index1, min_index2, min_hash_val
 
 def seq_to_randstrobes3_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
-    hash_seq_list = [(i, hash(seq[i:i+k_size])) for i in range(len(seq) - k_size +1)]
+    hash_seq_list = [(i, hash(seq[i:i+k_size])) for i in range(len(seq) - k_size +1) if "N" not in seq[i:i+k_size]]
     if w > 1:
         hash_seq_list_thinned = thinner([h for i,h in hash_seq_list], w) # produce a subset of positions, still with samme index as in full sequence
     else:
@@ -272,7 +272,7 @@ def randstrobe_order2(hash_seq_list, start, stop, hash_m1, k_size, prime):
 
 
 def seq_to_randstrobes2_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
-    hash_seq_list = [(i, hash(seq[i:i+k_size])) for i in range(len(seq) - k_size +1)]
+    hash_seq_list = [(i, hash(seq[i:i+k_size])) for i in range(len(seq) - k_size +1) if "N" not in seq[i:i+k_size]]
     if w > 1:
         hash_seq_list_thinned = thinner([h for i,h in hash_seq_list], w) # produce a subset of positions, still with samme index as in full sequence
     else:
@@ -472,7 +472,7 @@ def build_hybridstrobe2_index(refs, k_size, strobe_w_min_offset, strobe_w_max_of
 
 
 def seq_to_minstrobes2_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
-    hash_seq_list = [(i, hash(seq[i:i+k_size])) for i in range(len(seq) - k_size +1)]
+    hash_seq_list = [(i, hash(seq[i:i+k_size])) for i in range(len(seq) - k_size +1) if "N" not in seq[i:i+k_size]]
     strobes = deque(thinner([h for i,h in hash_seq_list], strobe_w_max_offset - strobe_w_min_offset)) # produce a subset of positions, still with samme index as in full sequence
 
     if w > 1:
@@ -514,7 +514,7 @@ def build_minstrobe2_index(refs, k_size, strobe_w_min_offset, strobe_w_max_offse
 
 
 def seq_to_minstrobes3_iter(seq, k_size, strobe_w_min_offset, strobe_w_max_offset, prime, w):
-    hash_seq_list = [(i, hash(seq[i:i+k_size])) for i in range(len(seq) - k_size +1)]
+    hash_seq_list = [(i, hash(seq[i:i+k_size])) for i in range(len(seq) - k_size +1) if "N" not in seq[i:i+k_size]]
     strobes = deque(thinner([h for i,h in hash_seq_list], strobe_w_max_offset - strobe_w_min_offset)) # produce a subset of positions, still with samme index as in full sequence
     strobes2 = copy.deepcopy(strobes)
     if w > 1:
@@ -894,7 +894,7 @@ def get_matches(strobes, idx, k, dont_merge_matches,  ref_id_to_accession, acc, 
         
 
 def seq_to_kmer_iter(seq, k_size, w):
-    hash_seq_list = [(i, hash(seq[i:i+k_size])) for i in range(len(seq) - k_size +1)]
+    hash_seq_list = [(i, hash(seq[i:i+k_size])) for i in range(len(seq) - k_size +1) if "N" not in seq[i:i+k_size]]
     if w > 1:
         hash_seq_list = thinner([h for i,h in hash_seq_list], w)
     # assert range(len(seq) - k_size + 1) == range(len(hash_seq_list))
