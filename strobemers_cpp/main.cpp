@@ -159,8 +159,8 @@ static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &m
         }
     }
 
-    std::cout << "NUMBER OF HITS GENERATED: " << hit_count_all << std::endl;
-    std::cout << "TOTAL STROBEMERS GENERATED: " << total_mers << std::endl;
+//    std::cout << "NUMBER OF HITS GENERATED: " << hit_count_all << std::endl;
+//    std::cout << "TOTAL STROBEMERS GENERATED: " << total_mers << std::endl;
 
 //    std::cout << "NUMBER OF REDUCED HITS GENERATED: " << hit_count_reduced << std::endl;
     std::vector<nam> open_nams;
@@ -404,7 +404,13 @@ int main (int argc, char *argv[])
                 tmp_index[x.first] = hybridstrobes2;
             }
         }
-//        else if (n == 3){ for (auto x : ref_seqs){generate_hybridstrobe3_index(h, k, x.second, x.first);}}
+        else if (n == 3){
+            for (auto x : ref_seqs){
+                mers_vector hybridstrobes3; // pos, chr_id, kmer hash value
+                hybridstrobes3 = seq_to_hybridstrobes3(n, k, w_min, w_max, x.second, x.first);
+                tmp_index[x.first] = hybridstrobes3;
+            }
+        }
     }
     else if (choice == "minstrobes" ){
         if (n == 2 ){
@@ -494,15 +500,21 @@ int main (int argc, char *argv[])
                             query_mers_rc = seq_to_hybridstrobes2(n, k, w_min, w_max, seq_rc, q_id);
                         }
                     }
-//                      else if (n == 3){ for (auto x : ref_seqs){generate_hybridstrobe3_index(h, k, x.second, x.first);}}
+                      else if (n == 3){
+                        for (auto x : ref_seqs){
+                            query_mers = seq_to_hybridstrobes3(n, k, w_min, w_max, seq, q_id);
+                            seq_rc = reverse_complement(seq);
+                            query_mers_rc = seq_to_hybridstrobes3(n, k, w_min, w_max, seq_rc, q_id);
+                        }
+                      }
                 }
 //                std::cout << "HERE " << line << std::endl;
                 // Find NAMs
-                std::cout << "Processing read: " << prev_acc << " kmers generated: " << query_mers.size() << ", read length: " <<  seq.length() << std::endl;
+//                std::cout << "Processing read: " << prev_acc << " kmers generated: " << query_mers.size() << ", read length: " <<  seq.length() << std::endl;
                 std::vector<nam> nams; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
-//                std::vector<nam> nams_rc; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
+                std::vector<nam> nams_rc; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
                 nams = find_nams(query_mers, all_mers_vector, mers_index, k);
-//                nams_rc = find_nams(query_mers_rc, all_mers_vector, mers_index, k);
+                nams_rc = find_nams(query_mers_rc, all_mers_vector, mers_index, k);
 //                std::cout <<  "NAMs generated: " << nams.size() << std::endl;
                 // Output results
                 output_nams(nams, output_file, prev_acc, acc_map);
@@ -536,7 +548,7 @@ int main (int argc, char *argv[])
             }
         }
         // Find NAMs
-        std::cout << "Processing read: " << prev_acc << " kmers generated: " << query_mers.size() << ", read length: " <<  seq.length() << std::endl;
+//        std::cout << "Processing read: " << prev_acc << " kmers generated: " << query_mers.size() << ", read length: " <<  seq.length() << std::endl;
         std::vector<nam> nams; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
         nams = find_nams(query_mers, all_mers_vector, mers_index, k);
 //        std::cout <<  "NAMs generated: " << nams.size() << std::endl;

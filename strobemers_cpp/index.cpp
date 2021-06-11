@@ -505,7 +505,7 @@ mers_vector seq_to_hybridstrobes2(int n, int k, int w_min, int w_max, std::strin
     std::vector<unsigned int> pos_to_seq_choord;
 //    robin_hood::unordered_map< unsigned int, unsigned int>  pos_to_seq_choord;
     make_string_to_hashvalues2(seq, string_hashes, pos_to_seq_choord, k, kmask);
-    std::cout << seq.length() << " " << string_hashes.size() << " " << k << std::endl;
+//    std::cout << seq.length() << " " << string_hashes.size() << " " << k << std::endl;
     unsigned int seq_length = string_hashes.size();
 
     int x = (w_max - w_min) /3;
@@ -610,8 +610,10 @@ mers_vector seq_to_hybridstrobes2(int n, int k, int w_min, int w_max, std::strin
         }
 
 //        auto strobe1 = seq.substr(i, k);
+//        auto strobe2 = seq.substr(strobe2_pos, k);
 //        std::cout << std::string(i, ' ') << strobe1 << std::string(strobe2_pos - (i+k)-1, ' ') << std::string(k, 'X') << std::endl;
 //        std::cout << i << " " << strobe2_pos << " " << seq_length << std::endl;
+//        std::cout << i << ": " << strobe1 << strobe2 << std::endl;
 
 
     }
@@ -619,6 +621,180 @@ mers_vector seq_to_hybridstrobes2(int n, int k, int w_min, int w_max, std::strin
 }
 
 
+
+
+mers_vector seq_to_hybridstrobes3(int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index)
+{
+    mers_vector hybridstrobes3;
+
+    // TODO: This if-statement leads to downstream bug:
+    //  Process finished with exit code 139 (interrupted by signal 11: SIGSEGV). Fix this
+    if (seq.length() < 2*w_max) {
+        return hybridstrobes3;
+    }
+
+    std::transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
+    // make string of strobes into hashvalues all at once to avoid repetitive k-mer to hash value computations
+    uint64_t kmask=(1ULL<<2*k) - 1;
+    std::vector<uint64_t> string_hashes;
+    std::vector<unsigned int> pos_to_seq_choord;
+//    robin_hood::unordered_map< unsigned int, unsigned int>  pos_to_seq_choord;
+    make_string_to_hashvalues2(seq, string_hashes, pos_to_seq_choord, k, kmask);
+//    std::cout << seq.length() << " " << string_hashes.size() << " " << k << std::endl;
+    unsigned int seq_length = string_hashes.size();
+
+    int x = (w_max - w_min) /3;
+
+    // initialize deque1 window1
+    std::deque <uint64_t> q1;
+    uint64_t q1_min_val = UINT64_MAX;
+    int q1_min_pos = -1;
+    initialize_window(string_hashes, q1, q1_min_val, q1_min_pos, w_min, w_min+ x, k);
+
+    // initialize deque2 window1
+    std::deque <uint64_t> q2;
+    uint64_t q2_min_val = UINT64_MAX;
+    int q2_min_pos = -1;
+    initialize_window(string_hashes, q2, q2_min_val, q2_min_pos, w_min+x, w_min+2*x, k);
+
+    // initialize deque3 window1
+    std::deque <uint64_t> q3;
+    uint64_t q3_min_val = UINT64_MAX;
+    int q3_min_pos = -1;
+    initialize_window(string_hashes, q3, q3_min_val, q3_min_pos, w_min+2*x, w_max, k);
+
+    // initialize deque1 window2
+    std::deque <uint64_t> q4;
+    uint64_t q4_min_val = UINT64_MAX;
+    int q4_min_pos = -1;
+    initialize_window(string_hashes, q4, q4_min_val, q4_min_pos, w_max+ w_min, w_max + w_min+ x, k);
+
+    // initialize deque2 window2
+    std::deque <uint64_t> q5;
+    uint64_t q5_min_val = UINT64_MAX;
+    int q5_min_pos = -1;
+    initialize_window(string_hashes, q5, q5_min_val, q5_min_pos, w_max+ w_min+x, w_max+ w_min+2*x, k);
+
+    // initialize deque3 window2
+    std::deque <uint64_t> q6;
+    uint64_t q6_min_val = UINT64_MAX;
+    int q6_min_pos = -1;
+    initialize_window(string_hashes, q6, q6_min_val, q6_min_pos, w_max+ w_min+2*x, 2*w_max, k);
+
+//    std::cout << seq << std::endl;
+
+    // create the hybridstrobes
+    for (unsigned int i = 0; i <= seq_length; i++) {
+//        auto strobe1 = seq.substr(i, k);
+//        uint64_t bstrobe = kmer_to_uint64(strobe1, kmask);
+//        uint64_t strobe_hashval = hash64(bstrobe, kmask);
+
+        uint64_t bstrobe = string_hashes[i];
+
+        int strobe2_pos;
+        uint64_t strobe2_val;
+        uint r =  bstrobe % 3;
+        if (r == 0){
+            strobe2_val = q1_min_val;
+            strobe2_pos = q1_min_pos;
+        }
+        else if (r == 1){
+            strobe2_val = q2_min_val;
+            strobe2_pos = q2_min_pos;
+        }
+        else{
+            strobe2_val = q3_min_val;
+            strobe2_pos = q3_min_pos;
+        }
+
+        uint64_t hash_hybridstrobe2;
+//        hash_hybridstrobe2 = (bstrobe << k) ^ strobe2_val;
+        hash_hybridstrobe2 = (bstrobe/2) + (strobe2_val/3);
+
+        int strobe3_pos;
+        uint64_t strobe3_val;
+        uint r2 =  hash_hybridstrobe2 % 3;
+        if (r2 == 0){
+            strobe3_val = q4_min_val;
+            strobe3_pos = q4_min_pos;
+        }
+        else if (r2 == 1){
+            strobe3_val = q5_min_val;
+            strobe3_pos = q5_min_pos;
+        }
+        else{
+            strobe3_val = q5_min_val;
+            strobe3_pos = q5_min_pos;
+        }
+
+        uint64_t hash_hybridstrobe3;
+//        hash_hybridstrobe2 = (bstrobe << k) ^ strobe2_val;
+        hash_hybridstrobe3 = hash_hybridstrobe2 + (strobe3_val/4);
+
+        unsigned int seq_pos_strobe1 = pos_to_seq_choord[i];
+        unsigned int seq_pos_strobe2 = pos_to_seq_choord[strobe2_pos];
+        unsigned int seq_pos_strobe3 = pos_to_seq_choord[strobe3_pos];
+        std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int> s (hash_hybridstrobe2, ref_index, seq_pos_strobe1, seq_pos_strobe2, seq_pos_strobe3);
+        hybridstrobes3.push_back(s);
+
+
+        // update queue and current minimum and position
+        uint64_t new_strobe_hashval1 = string_hashes[i + w_min+x];
+        update_window(q1, q1_min_val, q1_min_pos, new_strobe_hashval1, w_min, w_min+x, i, seq_length);
+
+        uint64_t new_strobe_hashval2 = string_hashes[i + w_min+2*x];
+        update_window(q2, q2_min_val, q2_min_pos, new_strobe_hashval2, w_min+x, w_min+2*x, i, seq_length);
+
+        uint64_t new_strobe_hashval3 = string_hashes[i + w_max];
+        update_window(q3, q3_min_val, q3_min_pos, new_strobe_hashval3, w_min+2*x, w_max, i, seq_length);
+
+        if (i + 2*w_max < seq_length){
+            uint64_t new_strobe_hashval4 = string_hashes[i + w_max + w_min+x];
+            update_window(q4, q4_min_val, q4_min_pos, new_strobe_hashval4, w_max + w_min, w_max + w_min+x, i, seq_length);
+
+            uint64_t new_strobe_hashval5 = string_hashes[i + w_max + w_min+2*x];
+            update_window(q5, q5_min_val, q5_min_pos, new_strobe_hashval5, w_max + w_min+x, w_max + w_min+2*x, i, seq_length);
+
+            uint64_t new_strobe_hashval6 = string_hashes[i + 2*w_max];
+            update_window(q6, q6_min_val, q6_min_pos, new_strobe_hashval6, w_max + w_min+2*x, 2*w_max, i, seq_length);
+        }
+        else if ((i + w_max + w_min + 1 < seq_length) && (seq_length <= i + w_max + w_min+x) ){
+            uint64_t new_strobe_hashval =  UINT64_MAX;
+            update_window(q4, q4_min_val, q4_min_pos, new_strobe_hashval, w_max + w_min, w_max + w_min+x, i, seq_length);
+            update_window(q5, q5_min_val, q5_min_pos, new_strobe_hashval, w_max + w_min+x, w_max + w_min+2*x, i, seq_length);
+            update_window(q6, q6_min_val, q6_min_pos, new_strobe_hashval, w_max + w_min+2*x, 2*w_max, i, seq_length);
+        }
+        else if ((i + w_max + w_min+x < seq_length) && (seq_length <= i + w_max + w_min+2*x)  ){
+            uint64_t new_strobe_hashval4 = string_hashes[i + w_max + w_min+x];
+            update_window(q4, q4_min_val, q4_min_pos, new_strobe_hashval4, w_max + w_min, w_max + w_min+x, i, seq_length);
+            uint64_t new_strobe_hashval =  UINT64_MAX;
+            update_window(q5, q5_min_val, q5_min_pos, new_strobe_hashval, w_max + w_min+x, w_max + w_min+2*x, i, seq_length);
+            update_window(q6, q6_min_val, q6_min_pos, new_strobe_hashval, w_max + w_min+2*x, 2*w_max, i, seq_length);
+        }
+        else if ((i + w_max + w_min+2*x < seq_length) && (seq_length <= i + 2*w_max) ){
+            uint64_t new_strobe_hashval4 = string_hashes[i + w_max + w_min+x];
+            update_window(q4, q4_min_val, q4_min_pos, new_strobe_hashval4, w_max + w_min, w_max + w_min+x, i, seq_length);
+            uint64_t new_strobe_hashval5 = string_hashes[i + w_max + w_min+2*x];
+            update_window(q5, q5_min_val, q5_min_pos, new_strobe_hashval5, w_max + w_min+x, w_max + w_min+2*x, i, seq_length);
+            uint64_t new_strobe_hashval =  UINT64_MAX;
+            update_window(q6, q6_min_val, q6_min_pos, new_strobe_hashval, w_max + w_min+2*x, 2*w_max, i, seq_length);
+        }
+        else{
+            return hybridstrobes3;
+        }
+
+//        auto strobe1 = seq.substr(i, k);
+//        auto strobe2 = seq.substr(strobe2_pos, k);
+//        std::cout << std::string(i, ' ') << strobe1 << std::string(strobe2_pos - (i+k) - 1, ' ') << std::string(k, 'X') << std::string(strobe3_pos - strobe2_pos - k, ' ') << std::string(k, 'X') << std::endl;
+
+//        std::cout << std::string(i, ' ') << strobe1 << std::string(strobe2_pos - (i+k)-1, ' ') << std::string(k, 'X') << std::endl;
+//        std::cout << i << " " << strobe2_pos << " " << seq_length << std::endl;
+//        std::cout << i << ": " << strobe1 << strobe2 << std::endl;
+
+
+    }
+    return hybridstrobes3;
+}
 
 
 

@@ -7,7 +7,7 @@ A repository for generating strobemers and evaluation.
 
 The repository consists of a python library, a C++ library (work in progress) and a tool `StrobeMap` implemented in Python. 
 
-The C++ library `strobemers_cpp/index.[cpp/hpp]` contains functions for creating the randstobes (order 2 and 3), hybridstrobes (order 2) and minstrobes (order 2).
+The C++ library `strobemers_cpp/index.[cpp/hpp]` contains functions for creating the randstobes (order 2 and 3), hybridstrobes (order 2 and 3) and minstrobes (order 2).
 
 The python library `indexing.py` contains functions and generators for creating the datastructures used in the evaluation of the [preprint](https://doi.org/10.1101/2021.01.28.428549). 
 
@@ -54,7 +54,7 @@ My benchmarking is saying that randstrobes is roughly as fast as hybridstrobes a
 
 #### Limitations and constraints
 
-Because of bitpacking, the limitation is that any single strobe cannot be lager than 32, which means that the maximum strobemer length for randstrobes of order 3 is `3*32 = 96`, and `2*32 = 64` for order 2. This should be large enough for most applications. Another constraint is that `w_min > 0`, this more of a constraint as I don't see the use case of setting `w_min= 0`, usually one would set `w_min > k`.  
+Because of bitpacking, the limitation is that any single strobe cannot be lager than 32, which means that the maximum strobemer length for randstrobes of order 3 is `3*32 = 96`, and `2*32 = 64` for order 2. This should be large enough for most applications. Another constraint is that `w_min > k`, this more of a constraint as I don't see the immediate use case of setting `w_min<=k` (which would not yield disjoint strobes and therefore could give shorter strobemers than `n*k`).  
 
 
 
