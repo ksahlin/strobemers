@@ -44,7 +44,7 @@ My benchmarking is saying that randstrobes is roughly as fast as hybridstrobes a
 
 #### Limitations and constraints
 
-Because of bitpacking, the limitation is that any single strobe cannot be lager than 32, which means that the maximum strobemer length for randstrobes of order 3 is 96, and 64 for order 2. This should be large enough for most applications. Another constraint is that `w_min > 0`, this more of a constraint as I don't see the use case of setting `w_min= 0`, usually one would set `w_min > k`.  
+Because of bitpacking, the limitation is that any single strobe cannot be lager than 32, which means that the maximum strobemer length for randstrobes of order 3 is `3*32 = 96`, and `2*32 = 64` for order 2. This should be large enough for most applications. Another constraint is that `w_min > 0`, this more of a constraint as I don't see the use case of setting `w_min= 0`, usually one would set `w_min > k`.  
 
 
 
