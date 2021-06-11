@@ -14,14 +14,19 @@ Strobemers are currently being implemented in compiled languages
 
 ### My implementation in C++
 
-I have also implemented randstrobes (order 2 and 3), hybridstrobes (order 2), and minstrobes (order 2). They can be used by copying `index.cpp` and `index.hpp` in the `strobemers_cpp` folder in this repository. The implementation of these functions uses bitpacking and some other clever tricks (inspired by [this repo](https://github.com/lh3/kmer-cnt)) to be fast. The limitation is that any single strobe cannot be lager than 32, which means that the maximum strobemer length for randstrobes of order 3 is 96, and 64 for order 2. This should be large enough for most applications. The functions be used as follows:
+I have also implemented randstrobes (order 2 and 3), hybridstrobes (order 2), and minstrobes (order 2). They can be used by copying `index.cpp` and `index.hpp` in the `strobemers_cpp` folder in this repository. The implementation of these functions uses bitpacking and some other clever tricks (inspired by [this repo](https://github.com/lh3/kmer-cnt)) to be fast. The functions be used as follows:
 
 ```
 typedef std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int>> strobes_vector;
-strobes_vector randstrobes3; // (kmer hash value, chr_id, strobe1_pos, strobe2_pos, strobe3_pos)
-seq = "ACGCGTACGAATCACGCCGGGTGTGTGTGATCGGGGCTATCAGCTACGTACTATGCTAGCTACGGACGGCGATTTTTTTTCATATCGTACGCTAGCTAGCTAGCTGCGATCGATTCG"
-chr_id = 0 // using integers for compactness, you can store a vector with accessions v = [acc_chr1, acc_chr2,...] then chr_id = 0 means v[0].
-randstrobes3 = seq_to_randstrobes3(2, k, w_min, w_max, seq, chr_id);
+strobes_vector randstrobes3; // (kmer hash value, seq_id, strobe1_pos, strobe2_pos, strobe3_pos)
+seq = "ACGCGTACGAATCACGCCGGGTGTGTGTGATCGGGGCTATCAGCTACGTACTATGCTAGCTACGGACGGCGATTTTTTTTCATATCGTACGCTAGCTAGCTAGCTGCGATCGATTCG";
+n=3;
+k=15;
+w_min=16;
+w_max=30;
+seq_id = 0; // using integers for compactness, you can store a vector with accessions v = [acc_chr1, acc_chr2,...] then seq_id = 0 means v[0].
+
+randstrobes3 = seq_to_randstrobes3(n, k, w_min, w_max, seq, seq_id);
 for (auto &t : randstrobes3) // iterate over the strobemer tuples
 {
 strobemer_hash = std::get<0>(t);
@@ -33,9 +38,14 @@ randstrobe = seq.substr(strobe1_pos, k) + seq.substr(strobe2_pos, k)+ seq.substr
 }
 ```
 
-If you are using some of `seq_to_randstrobes2`, `seq_to_hybridstrobes2`, or `seq_to_minstrobes3` they return the same vectore tuples but position of strobe 2 copied twice, i.e., `(kmer hash value, chr_id, strobe1_pos, strobe2_pos, strobe2_pos)`. 
+If you are using some of `seq_to_randstrobes2`, `seq_to_hybridstrobes2`, or `seq_to_minstrobes3` they return the same vector tuples but position of strobe 2 copied twice, i.e., `(kmer hash value, seq_id, strobe1_pos, strobe2_pos, strobe2_pos)`. 
 
 My benchmarking is saying that randstrobes is roughly as fast as hybridstrobes and minstrobes, and that randstrobes is unexpectedly fast in this implementation in general, about 2-3 times slower than generating k-mers for randstrobes of (n=2, s=15, w_min=16,w_max=70). What takes time is pushing the tuples to vector and not computing the strobemers. But more detailed investigation will follow.
+
+#### Limitations and constraints
+
+Because of bitpacking, the limitation is that any single strobe cannot be lager than 32, which means that the maximum strobemer length for randstrobes of order 3 is 96, and 64 for order 2. This should be large enough for most applications. Another constraint is that `w_min > 0`, this more of a constraint as I don't see the use case of setting `w_min= 0`, usually one would set `w_min > k`.  
+
 
 
 ## This repository
