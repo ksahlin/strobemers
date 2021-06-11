@@ -12,7 +12,9 @@ Strobemers are currently being implemented in compiled languages
 - [C++](https://github.com/BGI-Qingdao/strobemer_cpptest)
 - [Go](https://github.com/shenwei356/strobemers)
 
-I have also implemented randstrobes (order 2 and 3), hybridstrobes (order 2), and minstrobes (order 2). They can be used by copying `index.cpp` and `index.hpp` in the `strobemers_cpp` folder in this repository. These implementations uses bitpacking and some other clever tricks (inspired by [this repo](https://github.com/lh3/kmer-cnt)) to be fast. The limitation is that any single strobe cannot be lager than 32, which means that the maximum strobemer length is 96 to randstrobes order 3. This should be large enough for most applications. The functions be used as follows:
+### My implementation in C++
+
+I have also implemented randstrobes (order 2 and 3), hybridstrobes (order 2), and minstrobes (order 2). They can be used by copying `index.cpp` and `index.hpp` in the `strobemers_cpp` folder in this repository. The implementation of these functions uses bitpacking and some other clever tricks (inspired by [this repo](https://github.com/lh3/kmer-cnt)) to be fast. The limitation is that any single strobe cannot be lager than 32, which means that the maximum strobemer length for randstrobes of order 3 is 96, and 64 for order 2. This should be large enough for most applications. The functions be used as follows:
 
 ```
 typedef std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int>> strobes_vector;
