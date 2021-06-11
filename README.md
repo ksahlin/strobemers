@@ -52,9 +52,13 @@ If you are using some of `seq_to_randstrobes2`, `seq_to_hybridstrobes2`, or `seq
 
 My benchmarking is saying that randstrobes is roughly as fast as hybridstrobes and minstrobes, and that randstrobes is unexpectedly fast in this implementation in general, about 2-3 times slower than generating k-mers for randstrobes of (n=2, s=15, w_min=16,w_max=70). What takes time is pushing the tuples to vector and not computing the strobemers. But more detailed investigation will follow.
 
-#### Limitations and constraints
+#### Notes, limitations and constraints
 
-Because of bitpacking, the limitation is that any single strobe cannot be lager than 32, which means that the maximum strobemer length for randstrobes of order 3 is `3*32 = 96`, and `2*32 = 64` for order 2. This should be large enough for most applications. Another constraint is that `w_min > k`, this more of a constraint as I don't see the immediate use case of setting `w_min<=k` (which would not yield disjoint strobes and therefore could give shorter strobemers than `n*k`).  
+Because of bitpacking, the limitation is that any single strobe cannot be lager than 32, which means that the maximum strobemer length for randstrobes of order 3 is `3*32 = 96`, and `2*32 = 64` for order 2. This should be large enough for most applications. 
+
+Another constraint is that `w_min > k`.s I don't see the immediate use case of setting `w_min<=k` (which would not yield disjoint strobes and therefore could give shorter strobemers than `n*k`).  
+
+At ends of sequences (e.g., reads), there is no need to shrink windows to assure that the number of strobemers generated is the same as the number of k-mers. This is because if we modify windows at the ends, they are not guaranteed to match the reference, as first described in [this issue](https://github.com/ksahlin/strobemers/issues/2). Therefore, in my implementation, there will be `n - (k + w_min) +1` strobemers of order 2 generated form a sequence of length `n`, and `n - (k + w_max + w_min) +1` strobemers of order 3. In other words, we will only slide last strobe's window outside the sequence. Once it is fully outside the sequence we stop (illistrated in approach B for order 2 in [here](https://github.com/ksahlin/strobemers/issues/2).
 
 
 
