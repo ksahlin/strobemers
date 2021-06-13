@@ -56,7 +56,7 @@ My benchmarking is saying that randstrobes is roughly as fast as hybridstrobes a
 
 Because of bitpacking, the limitation is that any single strobe cannot be lager than 32, which means that the maximum strobemer length for randstrobes of order 3 is `3*32 = 96`, and `2*32 = 64` for order 2. This should be large enough for most applications. 
 
-Another constraint is that `w_min > k`.s I don't see the immediate use case of setting `w_min<=k` (which would not yield disjoint strobes and therefore could give shorter strobemers than `n*k`).  
+Another constraint is that `w_min > k`. I don't see the immediate use case of setting `w_min<=k` (which would not guarantee to yield disjoint strobes and therefore could give shorter strobemers than `n*k`).  
 
 At ends of sequences (e.g., reads), there is no need to shrink windows to assure that the number of strobemers generated is the same as the number of k-mers. This is because if we modify windows at the ends, they are not guaranteed to match the reference, as first described in [this issue](https://github.com/ksahlin/strobemers/issues/2). Therefore, in my implementation, there will be `n - (k + w_min) +1` strobemers of order 2 generated form a sequence of length `n`, and `n - (k + w_max + w_min) +1` strobemers of order 3. In other words, we will only slide last strobe's window outside the sequence. Once it is fully outside the sequence we stop (illistrated in approach B for order 2 in [here](https://github.com/ksahlin/strobemers/issues/2).
 
