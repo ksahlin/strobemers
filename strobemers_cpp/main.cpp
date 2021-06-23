@@ -326,12 +326,100 @@ static inline void output_nams(std::vector<nam> &nams, std::ofstream &output_fil
     }
 }
 
+void print_usage() {
+    std::cerr << "strobealign [options] <references.fa> <queries.fasta>\n";
+    std::cerr << "options:\n";
+    std::cerr << "\t-n INT number of strobes [2]\n";
+    std::cerr << "\t-k INT strobe length, limited to 32 [20]\n";
+    std::cerr << "\t-v strobe w_min offset [k+1]\n";
+    std::cerr << "\t-w strobe w_max offset [70]\n";
+    std::cerr << "\t-o name of output tsv-file [output.tsv]\n";
+    std::cerr << "\t-c Choice of protocol to use; kmers, minstrobes, hybridstrobes, randstrobes [randstrobes]. \n";
+}
+
+
 int main (int argc, char *argv[])
 {
 
+
+    if (argc < 3) {
+        print_usage();
+        return 0;
+    }
+
+    // Default parameters
+    std::string choice = "randstrobes";
+
+    int n = 2;
+    int k = 20;
+    int s = k - 4;
+    float f = 0.0002;
+    std::string output_file_name = "output.tsv";
+    int w_min = 21;
+    int w_max = 70;
+
+    int opn = 1;
+    while (opn < argc) {
+        bool flag = false;
+        if (argv[opn][0] == '-') {
+            if (argv[opn][1] == 'n') {
+                n = std::stoi(argv[opn + 1]);
+                opn += 2;
+                flag = true;
+            } else if (argv[opn][1] == 'k') {
+                k = std::stoi(argv[opn + 1]);
+                opn += 2;
+                flag = true;
+            } else if (argv[opn][1] == 'o') {
+                output_file_name = argv[opn + 1];
+                opn += 2;
+                flag = true;
+            } else if (argv[opn][1] == 'v') {
+                w_min = std::stoi(argv[opn + 1]);
+                opn += 2;
+                flag = true;
+            } else if (argv[opn][1] == 'w') {
+                w_max = std::stoi(argv[opn + 1]);
+                opn += 2;
+                flag = true;
+            } else if (argv[opn][1] == 'c') {
+                choice = argv[opn + 1];
+                opn += 2;
+                flag = true;
+            }
+
+            else {
+                print_usage();
+            }
+        }
+        if (!flag)
+            break;
+    }
+
+
+    std::cout << "Using" << std::endl;
+    std::cout << "n: " << n << std::endl;
+    std::cout << "k: " << k << std::endl;
+    std::cout << "s: " << s << std::endl;
+    std::cout << "w_min: " << w_min << std::endl;
+    std::cout << "w_max: " << w_max << std::endl;
+
+//    assert(k <= (w/2)*w_min && "k should be smaller than (w/2)*w_min to avoid creating short strobemers");
+    assert(k > 7 && "You should really not use too small strobe size!");
+    assert(k <= 32 && "k have to be smaller than 32!");
+    int filter_nams = 0;
+    assert(k <= w_min && "k have to be smaller than w_min");
+    assert(k <= 32 && "k have to be smaller than 32!");
+
+    // File name to reference
+    std::string filename = argv[opn];
+    opn++;
+    std::string reads_filename = argv[opn];
+
+
     ///////////////////// INPUT /////////////////////////
-    std::string filename  = "ahmed_ref.txt";
-    std::string reads_filename  = "ahmed_reads.txt";
+//    std::string filename  = "ahmed_ref.txt";
+//    std::string reads_filename  = "ahmed_reads.txt";
 
 //    std::string filename  = "test_ploy2.txt";
 //    std::string reads_filename  = "test_ploy2.txt";
@@ -366,15 +454,11 @@ int main (int argc, char *argv[])
 
 //    std::string choice = "kmers";
 //    std::string choice = "minstrobes";
-   std::string choice = "hybridstrobes";
+//   std::string choice = "hybridstrobes";
 //   std::string choice = "randstrobes";
-    int n = 2;
-    int k = 9;
-    int w_min = 13;
-    int w_max = 21;
-    int filter_nams = 0;
-    assert(k <= w_min && "k have to be smaller than w_min");
-    assert(k <= 32 && "k have to be smaller than 32!");
+
+
+
     references ref_seqs;
     idx_to_acc acc_map;
     read_references(ref_seqs, acc_map, filename);
@@ -443,6 +527,10 @@ int main (int argc, char *argv[])
         std::cout << choice << "not implemented : " << std::endl;
     }
 
+    auto finish_generating_mers = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed_mers = finish_generating_mers - start;
+    std::cout << "Total time generating mers: " << elapsed_mers.count() << " s\n" <<  std::endl;
+
 
     mers_vector all_mers_vector;
     all_mers_vector = construct_flat_vector_three_pos(tmp_index);
@@ -467,7 +555,7 @@ int main (int argc, char *argv[])
 
     std::ifstream query_file(reads_filename);
     std::ofstream output_file;
-    output_file.open ("output.tsv");
+    output_file.open (output_file_name);
 
     std::string line, seq, prev_acc;
     std::string seq_rc;

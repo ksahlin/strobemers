@@ -241,7 +241,7 @@ mers_vector seq_to_kmers(int k, std::string &seq, unsigned int ref_index)
                 std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int> s (hash_k, ref_index, i-k+1, i-k+1, i-k+1);
                 kmers.push_back(s);
                 cnt ++;
-                if ((cnt % 1000000) == 0 ){
+                if ((cnt % 10000000) == 0 ){
                     std::cout << cnt << " kmers created." << std::endl;
                 }
             }
