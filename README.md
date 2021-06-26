@@ -5,7 +5,7 @@ A repository for generating strobemers and evaluation.
 
 # This repository
 
-The repository consists of a python library, a C++ library (work in progress) and a tool `StrobeMap` implemented in Python. 
+The repository consists of a python library, a C++ library (work in progress) and a tool `StrobeMap` implemented in both Python and C++. 
 
 The C++ library `strobemers_cpp/index.[cpp/hpp]` contains functions for creating the randstobes (order 2 and 3), hybridstrobes (order 2 and 3) and minstrobes (order 2).
 
@@ -87,7 +87,7 @@ for (p1,p2), s in indexing.randstrobes_iter(seq, k_size, w_min, w_max, order = 2
 Functions `minstrobes_iter` and `hybridstrobes_iter` have the same interface.
 
 
-# Using StrobeMap
+# Using StrobeMap (Python)
 
 `StrobeMap` implements order 2 and 3 hybridstrobes (default), randstrobes, minstrobes, as well as kmers. The tool produces NAMs (Non-overlapping Approximate Matches; see explanation in preprint) for both strobemers and kmers. Test data is found in the folder `data` in this repository.
 Here are some example uses:
@@ -120,6 +120,34 @@ Here are some example uses:
 
 Minstrobes has the same parameters as hybridstrobes and randstrobes but are invoked with parameter `--minstrobe_index`
 
+# Using StrobeMap (C++)
+
+## Installation
+
+```
+git clone https://github.com/ksahlin/strobemers
+cd strobemers/strobemers_cpp/
+g++ -std=c++11 main.cpp index.cpp -o StrobeMap -O3 -mavx2
+```
+
+## Usage
+
+```
+ StrobeMap
+strobealign [options] <references.fa> <queries.fasta>
+options:
+  -n INT number of strobes [2]
+  -k INT strobe length, limited to 32 [20]
+  -v strobe w_min offset [k+1]
+  -w strobe w_max offset [70]
+  -o name of output tsv-file [output.tsv]
+  -c Choice of protocol to use; kmers, minstrobes, hybridstrobes, randstrobes [randstrobes]. 
+```
+
+```
+# randstrobes (3,30,31,60)
+StrobeMap -k 30 -n 3 -v 31 -w 60 -c randstrobes -o mapped.tsv  ref.fa query.fa
+```
 
 ## Output
 

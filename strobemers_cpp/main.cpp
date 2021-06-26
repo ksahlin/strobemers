@@ -315,11 +315,16 @@ static inline bool compareByQueryLength(const nam &a, const nam &b)
     return (a.query_e - a.query_s) < ( b.query_e - b.query_s);
 }
 
-static inline void output_nams(std::vector<nam> &nams, std::ofstream &output_file, std::string query_acc, idx_to_acc &acc_map) {
+static inline void output_nams(std::vector<nam> &nams, std::ofstream &output_file, std::string query_acc, idx_to_acc &acc_map, bool is_rc) {
     //Sort hits based on start choordinate on query sequence
     std::sort(nams.begin(), nams.end(), compareByQueryCoord);
     // Output results
-    output_file << "> " << query_acc << "\n";
+    if (is_rc) {
+        output_file << "> " << query_acc << " Reverse\n";
+    }
+    else{
+        output_file << "> " << query_acc << "\n";
+    }
     for (auto &n : nams) {
         output_file << "  " << acc_map[n.ref_id]  << " " << n.ref_s << " " << n.query_s << " " << n.ref_e - n.ref_s << "\n";
 //      python: outfile.write("  {0} {1} {2} {3}\n".format(ref_acc, ref_p, q_pos, k))
@@ -397,12 +402,12 @@ int main (int argc, char *argv[])
     }
 
 
-    std::cout << "Using" << std::endl;
-    std::cout << "n: " << n << std::endl;
-    std::cout << "k: " << k << std::endl;
-    std::cout << "s: " << s << std::endl;
-    std::cout << "w_min: " << w_min << std::endl;
-    std::cout << "w_max: " << w_max << std::endl;
+//    std::cout << "Using" << std::endl;
+//    std::cout << "n: " << n << std::endl;
+//    std::cout << "k: " << k << std::endl;
+//    std::cout << "s: " << s << std::endl;
+//    std::cout << "w_min: " << w_min << std::endl;
+//    std::cout << "w_max: " << w_max << std::endl;
 
 //    assert(k <= (w/2)*w_min && "k should be smaller than (w/2)*w_min to avoid creating short strobemers");
     assert(k > 7 && "You should really not use too small strobe size!");
@@ -529,8 +534,10 @@ int main (int argc, char *argv[])
 
     auto finish_generating_mers = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed_mers = finish_generating_mers - start;
-    std::cout << "Total time generating mers: " << elapsed_mers.count() << " s\n" <<  std::endl;
-
+    float rounded = truncf(elapsed_mers.count() * 10) / 10;
+    std::cout << rounded << "s";
+//    std::cout << "Total time generating mers: " << elapsed_mers.count() << " s\n" <<  std::endl;
+//    return 0;
 
     mers_vector all_mers_vector;
     all_mers_vector = construct_flat_vector_three_pos(tmp_index);
@@ -570,14 +577,20 @@ int main (int argc, char *argv[])
                 // generate mers here
                 if (choice == "kmers" ){
                     query_mers = seq_to_kmers(k, seq, q_id);
+                    seq_rc = reverse_complement(seq);
+                    query_mers_rc = seq_to_kmers(k, seq_rc, q_id);
                 }
                 else if (choice == "randstrobes" ){
                     if (n == 2 ){
                         query_mers = seq_to_randstrobes2(n, k, w_min, w_max, seq, q_id);
+                        seq_rc = reverse_complement(seq);
+                        query_mers_rc = seq_to_randstrobes2(n, k, w_min, w_max, seq_rc, q_id);
                         }
 
                     else if (n == 3){
                         query_mers = seq_to_randstrobes3(n, k, w_min, w_max, seq, q_id);
+                        seq_rc = reverse_complement(seq);
+                        query_mers_rc = seq_to_randstrobes3(n, k, w_min, w_max, seq_rc, q_id);
                     }
                 }
                 else if (choice == "hybridstrobes" ){
@@ -605,7 +618,8 @@ int main (int argc, char *argv[])
                 nams_rc = find_nams(query_mers_rc, all_mers_vector, mers_index, k);
 //                std::cout <<  "NAMs generated: " << nams.size() << std::endl;
                 // Output results
-                output_nams(nams, output_file, prev_acc, acc_map);
+                output_nams(nams, output_file, prev_acc, acc_map, false);
+                output_nams(nams_rc, output_file, prev_acc, acc_map, true);
 
 //              output_file << "> " <<  prev_acc << "\n";
 //              output_file << "  " << ref_acc << " " << ref_p << " " << q_pos << " " << "\n";
@@ -625,22 +639,48 @@ int main (int argc, char *argv[])
     if (seq.length() > 0){
         if (choice == "kmers" ){
             query_mers = seq_to_kmers(k, seq, q_id);
+            seq_rc = reverse_complement(seq);
+            query_mers_rc = seq_to_kmers(k, seq_rc, q_id);
         }
         else if (choice == "randstrobes" ){
             if (n == 2 ){
                 query_mers = seq_to_randstrobes2(n, k, w_min, w_max, seq, q_id);
+                seq_rc = reverse_complement(seq);
+                query_mers_rc = seq_to_randstrobes2(n, k, w_min, w_max, seq_rc, q_id);
             }
 
             else if (n == 3){
                 query_mers = seq_to_randstrobes3(n, k, w_min, w_max, seq, q_id);
+                seq_rc = reverse_complement(seq);
+                query_mers_rc = seq_to_randstrobes3(n, k, w_min, w_max, seq_rc, q_id);
+            }
+        }
+        else if (choice == "hybridstrobes" ){
+            if (n == 2 ){
+                for (auto x : ref_seqs){
+                    query_mers = seq_to_hybridstrobes2(n, k, w_min, w_max, seq, q_id);
+                    seq_rc = reverse_complement(seq);
+                    query_mers_rc = seq_to_hybridstrobes2(n, k, w_min, w_max, seq_rc, q_id);
+                }
+            }
+            else if (n == 3){
+                for (auto x : ref_seqs){
+                    query_mers = seq_to_hybridstrobes3(n, k, w_min, w_max, seq, q_id);
+                    seq_rc = reverse_complement(seq);
+                    query_mers_rc = seq_to_hybridstrobes3(n, k, w_min, w_max, seq_rc, q_id);
+                }
             }
         }
         // Find NAMs
 //        std::cout << "Processing read: " << prev_acc << " kmers generated: " << query_mers.size() << ", read length: " <<  seq.length() << std::endl;
         std::vector<nam> nams; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
+        std::vector<nam> nams_rc; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
         nams = find_nams(query_mers, all_mers_vector, mers_index, k);
-//        std::cout <<  "NAMs generated: " << nams.size() << std::endl;
-        output_nams(nams, output_file, prev_acc, acc_map);
+        nams_rc = find_nams(query_mers_rc, all_mers_vector, mers_index, k);
+//                std::cout <<  "NAMs generated: " << nams.size() << std::endl;
+        // Output results
+        output_nams(nams, output_file, prev_acc, acc_map, false);
+        output_nams(nams_rc, output_file, prev_acc, acc_map, true);
     }
 
     query_file.close();
