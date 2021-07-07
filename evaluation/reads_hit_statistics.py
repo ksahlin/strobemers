@@ -9,7 +9,7 @@ from collections import defaultdict
 from collections import namedtuple
 
 
-NAM = namedtuple('NAM', ['x', 'y', 'c', 'd', 'val', 'j', "exon_part_id"])
+NAM = namedtuple('NAM', ['x', 'y', 'c', 'd', 'val', 'j', "chr_id"])
 
 
 '''
@@ -193,29 +193,169 @@ def colinear_solver_read_coverage(mems, max_intron):
     return solutions, C_max #, is_unique_solution(C)
     # traceback(C, best_solution_index)
 
+def read_sam(sam_file):
+    SAM_file = pysam.AlignmentFile(sam_file, "r", check_sq=False)
+    read_positions = {} # acc -> [ref_id, ref_start, refstop]
+
+
+    for read in SAM_file.fetch(until_eof=True):
+        if read.flag == 0:
+            read_positions[read.query_name] = (read.reference_name, read.reference_start, read.reference_end, False)
+        elif read.flag == 16:
+            # print(read.query_name, len(read_positions))
+            read_positions[read.query_name] = (read.reference_name, read.reference_start, read.reference_end, True)
+        elif read.flag == 4:
+            read_positions[read.query_name] = False
+
+    return read_positions  
+
+
+def compute_overlap_with_truth_genome(true_chr_id, t_start, t_stop, nams):
+    tot_overlap = 0
+    tot_nam_length = 0
+    for n in nams:
+        # print(n.chr_id)
+        # print(true_chr_id, n.chr_id, true_chr_id == n.chr_id, t_start, t_stop, n.x, n.y )
+        if n.chr_id == true_chr_id:
+            if t_start <= n.x <=  n.y <= t_stop:
+                tot_overlap += n.y - n.x
+            elif t_stop < n.x:
+                pass
+            elif n.y < t_start:
+                pass
+            elif t_start <= n.x <= t_stop < n.y:
+                tot_overlap += t_stop - n.x
+            elif  n.x < t_start <= n.y <= t_stop:
+                tot_overlap += n.y - t_start
+            elif n.x < t_start <  t_stop < n.y :
+                tot_overlap += t_stop - t_start
+            else:
+                print("BUG!", true_chr_id, t_start, t_stop, n.x, n.y )
+                 
+
+        tot_nam_length += n.y - n.x
+    # print(tot_overlap, tot_nam_length)
+    # print(tot_overlap/tot_nam_length)
+    return tot_overlap/tot_nam_length
+
+
+def read_paf(paf_file):
+    read_positions = {} # acc -> [ref_id, ref_start, refstop]
+    for line in open(paf_file, 'r'):
+        vals = line.split()
+        read_acc, ref_name, reference_start, reference_end  = vals[0], vals[5], int(vals[7]), int(vals[8])
+        if read_acc not in read_positions:
+            read_positions[read_acc] = {}
+
+        read_positions[read_acc][ref_name] = (reference_start, reference_end)
+    return read_positions
+
+def overlap(q_a, q_b, p_a, p_b):
+    assert q_a <= q_b and p_a <= p_b
+    # if (q_a == q_b) or (p_a == p_b):
+    #     print("Cigar bug")
+    return  (p_a <= q_a <= p_b) or (p_a <= q_b <= p_b) or (q_a <= p_a <= q_b) or (q_a <= p_b <= q_b)
+
+def compute_overlap_with_truth_read(true_locations, ref_id, read_id, nams, read_lengths):
+    # get overlap span coordinates on 'reference read' from genome alignment coordinates
+    ref_chr_id, ref_t_start, ref_t_end, ref_is_rc =  true_locations[ref_id]
+    query_chr_id,  query_t_start,  query_t_end, query_is_rc =  true_locations[read_id]
+    start_offset, end_offset = 0,0
+    if ref_chr_id == query_chr_id:
+        if overlap(ref_t_start,ref_t_end,query_t_start,query_t_end):
+            t_start = 0
+            t_stop = read_lengths[ref_id]
+            # if (not ref_is_rc) and (not ref_is_rc):
+            #     if query_t_start < ref_t_start:
+            #         t_start = 0
+            #     else:
+            #         start_offset = query_t_start - ref_t_start
+            #         t_start = start_offset
+            #     if ref_t_end < query_t_end:
+            #         t_stop = read_lengths[ref_id]
+            #     else:
+            #         end_offset = ref_t_end - query_t_end
+            #         t_stop = read_lengths[ref_id] - end_offset
+
+        else:
+            return 0.0
+    else:
+        return 0.0
+
+    # print(nams)
+    tot_overlap = 0
+    tot_nam_length = 0
+    for n in nams:
+        if t_start <= n.x <= n.y <= t_stop:
+            tot_overlap += n.y - n.x
+        elif t_stop < n.x:
+            pass
+        elif n.y < t_start:
+            pass
+        elif t_start <= n.x <= t_stop < n.y:
+            tot_overlap += t_stop - n.x
+        elif  n.x < t_start <= n.y <= t_stop:
+            tot_overlap += n.y - t_start
+        elif n.x < t_start <  t_stop < n.y :
+            tot_overlap += t_stop - t_start
+        else:
+            print("BUG!", true_chr_id, t_start, t_stop, n.x, n.y )
+                 
+
+        tot_nam_length += n.y - n.x
+    # print(tot_overlap, tot_nam_length)
+    # print(tot_overlap/tot_nam_length)
+    return tot_overlap/tot_nam_length
 
 
 def main(args):
     if args.reads:
         read_lengths = { acc : len(seq) for acc, (seq,qual) in readfq(open(args.reads, 'r'))}
 
+    if args.true_locations:
+        true_locations = read_sam(args.true_locations)
+
+    # if args.true_overlaps:
+    #     true_read_overlaps = read_paf(args.true_overlaps)
+
+    fraction_read_overlap_true_location = {} # fraction of all nams in collinear solution that overlaps the true location of the read
+
     read_coverage_solution = {}
     read_tot_hits = {}
     for (read_acc, nams) in get_NAM_records(args.infile, read_lengths):
         r_acc = read_acc.split()[0]
         # print(read_acc, r_acc)
-
-        for chrom in nams:
-            chrom_nams = nams[chrom]
+        if args.true_locations:
+            t_chr_id, t_start, t_end, is_rc = true_locations[r_acc]
+        # print(t_chr_id, t_start, t_end)
+        for ref_id in nams:
+            chrom_nams = nams[ref_id]
             solutions, opt_cov = colinear_solver_read_coverage(chrom_nams, 10000000)
-
+            # if ref_id == "SRR13893500.9156" or ref_id == "SRR13893500.6648":
+            #     print( "here", ref_id, opt_cov)
+            # print(solutions[0])
             # pick best from forward and reverse strand
             if r_acc in read_coverage_solution:
                 c_prev = read_coverage_solution[r_acc]
                 if c_prev < opt_cov:
+                    # print(ref_id, opt_cov)
                     read_coverage_solution[r_acc] = opt_cov
+                    if args.read_vs_read_mode:
+                            frac_overlap = compute_overlap_with_truth_read(true_locations, ref_id, r_acc, solutions[0], read_lengths)
+                            fraction_read_overlap_true_location[r_acc] = frac_overlap
+                    else: # w.r.t. genome
+                        frac_overlap = compute_overlap_with_truth_genome(t_chr_id, t_start, t_end, solutions[0])
+                        fraction_read_overlap_true_location[r_acc] = frac_overlap
+                    
             else:
+                # print(ref_id, opt_cov)
                 read_coverage_solution[r_acc] = opt_cov
+                if args.read_vs_read_mode:
+                    frac_overlap = compute_overlap_with_truth_read(true_locations, ref_id, r_acc, solutions[0], read_lengths)
+                    fraction_read_overlap_true_location[r_acc] = frac_overlap
+                else: # w.r.t. genome
+                    frac_overlap = compute_overlap_with_truth_genome(t_chr_id, t_start, t_end, solutions[0])
+                    fraction_read_overlap_true_location[r_acc] = frac_overlap
 
 
             # pick largest nr of hits
@@ -228,13 +368,14 @@ def main(args):
 
 
     out = open(args.outfile, "w")
-    out.write("method,r_acc,r_len,r_frac_cov,r_hits\n".format())
+    out.write("method,r_acc,r_len,r_frac_cov,r_hits,r_frac_true\n".format())
     for r_acc in read_coverage_solution:
         r_len = read_lengths[r_acc]
         r_cov = read_coverage_solution[r_acc]
         r_hits = read_tot_hits[r_acc]
         r_frac_cov = round(float(r_cov)/r_len, 2)
-        out.write("{0},{1},{2},{3},{4}\n".format(args.method, r_acc, r_len, r_frac_cov, r_hits))
+        r_frac_true = round(fraction_read_overlap_true_location[r_acc], 2)
+        out.write("{0},{1},{2},{3},{4},{5}\n".format(args.method, r_acc, r_len, r_frac_cov, r_hits,r_frac_true))
     out.close()
 
 
@@ -243,6 +384,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser("Parses alignments and subsamples a fastq file based on alignments.")
     parser.add_argument('infile', type=str, help='TSV ')
     parser.add_argument('--reads', type=str, help='Used for read lengths ')
+    parser.add_argument('--true_locations', type=str, help='Path to minimap2 SAM alignments to approximate ground truth.')
+    parser.add_argument('--read_vs_read_mode', action="store_true", help='Path to minimap2 genomme SAM alignments to approximate ground truth overlap with read vs read overlaps.')
     parser.add_argument('--method', type=str, help='Method ')
     parser.add_argument('--outfile', type=str, help='outfile ')
 
