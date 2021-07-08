@@ -263,19 +263,33 @@ def compute_overlap_with_truth_read(true_locations, ref_id, read_id, nams, read_
     start_offset, end_offset = 0,0
     if ref_chr_id == query_chr_id:
         if overlap(ref_t_start,ref_t_end,query_t_start,query_t_end):
-            t_start = 0
-            t_stop = read_lengths[ref_id]
-            # if (not ref_is_rc) and (not ref_is_rc):
-            #     if query_t_start < ref_t_start:
-            #         t_start = 0
-            #     else:
-            #         start_offset = query_t_start - ref_t_start
-            #         t_start = start_offset
-            #     if ref_t_end < query_t_end:
-            #         t_stop = read_lengths[ref_id]
-            #     else:
-            #         end_offset = ref_t_end - query_t_end
-            #         t_stop = read_lengths[ref_id] - end_offset
+            # t_start = 0
+            # t_stop = read_lengths[ref_id]
+            # Reference is fwd
+            if (not ref_is_rc):
+                if query_t_start < ref_t_start:
+                    t_start = 0
+                else:
+                    start_offset = query_t_start - ref_t_start
+                    t_start = start_offset
+                if ref_t_end < query_t_end:
+                    t_stop = read_lengths[ref_id]
+                else:
+                    end_offset = ref_t_end - query_t_end
+                    t_stop = read_lengths[ref_id] - end_offset
+
+            # Reference is rev comp
+            else:
+                if query_t_start < ref_t_start:
+                    t_stop = read_lengths[ref_id]
+                else:
+                    end_offset = query_t_start - ref_t_start
+                    t_stop = read_lengths[ref_id] - end_offset
+                if ref_t_end < query_t_end:
+                    t_start = 0
+                else:
+                    start_offset = ref_t_end - query_t_end
+                    t_start = start_offset
 
         else:
             return 0.0

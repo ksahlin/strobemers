@@ -16,7 +16,7 @@ from matplotlib import pyplot
 
 
 def plot(input_csv, outfolder, acc):
-
+    sns.set(font_scale=1.5)
     indata = pd.read_csv(input_csv)
 
     dashes = { "kmers" : "", 
@@ -36,7 +36,7 @@ def plot(input_csv, outfolder, acc):
     # ax = sns.lineplot(data=indata, x="k", y="unique", hue="datastructure", style="chr", palette = sns.color_palette()[:7])
     axes = g.axes
     g.set_axis_labels("k", "% unique")
-    g.set_xticklabels([18,24,30,36])
+    # g.set_xticklabels([18,24,30,36])
     # ax.set_ylabel("% unique")
     # ax.set_xlabel("k")
     # axes.set_xticks([18,24,30,36] )
@@ -44,6 +44,14 @@ def plot(input_csv, outfolder, acc):
     g.set(ylim=(80, 100), xticks=[18,24,30,36])
     # ax.set_xticks([18,24,30,36])
 
+    axes = g.axes.flatten()
+    axes[0].set_title("Chr1")
+    axes[1].set_title("Chr2")
+    axes[2].set_title("Chr3")
+    # plt.tight_layout()
+    # g.set_xticklabels()
+    # plt.xlabel(fontsize=14)
+    # plt.ylabel(fontsize=14)
     plt.savefig(os.path.join(outfolder, "uniqueness_{0}.eps".format(acc)))
     plt.savefig(os.path.join(outfolder, "uniqueness_{0}.pdf".format(acc)))
     plt.close()
