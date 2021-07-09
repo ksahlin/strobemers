@@ -18,48 +18,74 @@ import seaborn as sns
 import pandas as pd
 
 def plot_coverage(input_csv, outfolder):
-    sns.set(font_scale=1.0)
-    indata = pd.read_csv(input_csv)
+    with sns.axes_style("whitegrid"):
+        sns.set(font_scale=1.0)
+        indata = pd.read_csv(input_csv)
 
-    ax = sns.lmplot(data=indata, x="r_len", y="r_frac_cov", hue="method", legend_out = True)
+        ax = sns.lmplot(data=indata, x="r_len", y="r_frac_cov", hue="method",legend=False)
+        plt.xlabel('Read length',fontsize=14)
+        plt.ylabel('Fraction covered',fontsize=14)
 
-    plt.xlabel('Read length',fontsize=10)
-    plt.ylabel('Fraction covered',fontsize=12)
-    # plt.tick_params(rotation=90)
-    # ax.set_xticklabels(size = 10)
-    # ax.set_xticklabels(ax.get_xmajorticklabels(), fontsize = 8)
-    plt.ylim(0, 1)
-    # plt.tight_layout()
-    # plt.legend(loc='lower left', prop={'size': 6})
-    plt.savefig(os.path.join(outfolder, "plot_coverage.eps"))
-    plt.savefig(os.path.join(outfolder, "plot_coverage.pdf"))
-    plt.clf()
-    plt.close()
+        plt.tick_params(rotation=30)
+        ax.set_xticklabels(size = 12)
+        # ax.set_xticklabels(ax.get_xmajorticklabels(), fontsize = )
+        plt.ylim(0, 1)
+        plt.tight_layout()
+        plt.legend(shadow=True)
+        # plt.legend(loc='lower left', prop={'size': 10})
+        # plt.savefig(os.path.join(outfolder, "plot_coverage.eps"))
+        plt.savefig(os.path.join(outfolder, "plot_coverage.pdf"))
+        plt.clf()
+        plt.close()
 
 def plot_nr_hits(input_csv, outfolder):
-    sns.set(font_scale=1.0)
-    indata = pd.read_csv(input_csv)
+    with sns.axes_style("whitegrid"):
+        sns.set(font_scale=1.0)
+        indata = pd.read_csv(input_csv)
 
-    ax = sns.lmplot(data=indata, x="r_len", y="r_hits", hue="method", legend_out = True)
+        ax = sns.lmplot(data=indata, x="r_len", y="r_hits", hue="method", legend=False)
+        plt.xlabel('Read length',fontsize=14)
+        plt.ylabel('Number of NAMs',fontsize=14)
 
-    plt.xlabel('Read length',fontsize=10)
-    plt.ylabel('Number of NAMs',fontsize=12)
-    # plt.tight_layout()
-    plt.savefig(os.path.join(outfolder, "plot_nr_hits.eps"))
-    plt.savefig(os.path.join(outfolder, "plot_nr_hits.pdf"))
-    plt.clf()
-    plt.close()
+        plt.tick_params(rotation=30)
+        ax.set_xticklabels(size = 12)
+        plt.tight_layout()
+        plt.legend(shadow=True)
+        # plt.savefig(os.path.join(outfolder, "plot_nr_hits.eps"))
+        plt.savefig(os.path.join(outfolder, "plot_nr_hits.pdf"))
+        plt.clf()
+        plt.close()
 
 
+def plot_overlap_with_truth(input_csv, outfolder):
+    with sns.axes_style("whitegrid"):
+        sns.set(font_scale=1.0)
+        indata = pd.read_csv(input_csv)
+
+        ax = sns.lmplot(data=indata, x="r_len", y="r_frac_true", hue="method",legend=False)
+        plt.xlabel('Read length',fontsize=14)
+        plt.ylabel('NAM overlap with truth',fontsize=14)
+
+        plt.tick_params(rotation=30)
+        ax.set_xticklabels(size = 12)
+        # ax.set_xticklabels(ax.get_xmajorticklabels(), fontsize = )
+        plt.ylim(0, 1)
+        plt.tight_layout()
+        plt.legend(shadow=True)
+        # plt.legend(loc='lower left', prop={'size': 10})
+        # plt.savefig(os.path.join(outfolder, "plot_overlap_with_truth.eps"))
+        plt.savefig(os.path.join(outfolder, "plot_overlap_with_truth.pdf"))
+        plt.clf()
+        plt.close()
 
 def main(args):
     
-    sns.set(style="whitegrid")
+    # sns.set(style="whitegrid")
     flatui = ["#2ecc71", "#e74c3c"] # https://chrisalbon.com/python/data_visualization/seaborn_color_palettes/
     sns.set_palette(flatui)    # total_error_rate(args.input_csv, args.outfolder)
     plot_coverage(args.results, args.outfolder)
     plot_nr_hits(args.results, args.outfolder)
-
+    plot_overlap_with_truth(args.results, args.outfolder)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Evalueate randstrobes.")
