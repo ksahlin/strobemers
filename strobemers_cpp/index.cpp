@@ -709,7 +709,7 @@ mers_vector seq_to_hybridstrobes3(int n, int k, int w_min, int w_max, std::strin
 
         uint64_t hash_hybridstrobe2;
 //        hash_hybridstrobe2 = (bstrobe << k) ^ strobe2_val;
-        hash_hybridstrobe2 = (bstrobe/2) + (strobe2_val/3);
+        hash_hybridstrobe2 = (bstrobe/3) + (strobe2_val/4);
 
         int strobe3_pos;
         uint64_t strobe3_val;
@@ -723,18 +723,18 @@ mers_vector seq_to_hybridstrobes3(int n, int k, int w_min, int w_max, std::strin
             strobe3_pos = q5_min_pos;
         }
         else{
-            strobe3_val = q5_min_val;
-            strobe3_pos = q5_min_pos;
+            strobe3_val = q6_min_val;
+            strobe3_pos = q6_min_pos;
         }
 
         uint64_t hash_hybridstrobe3;
 //        hash_hybridstrobe2 = (bstrobe << k) ^ strobe2_val;
-        hash_hybridstrobe3 = hash_hybridstrobe2 + (strobe3_val/4);
+        hash_hybridstrobe3 = hash_hybridstrobe2 + (strobe3_val/5);
 
         unsigned int seq_pos_strobe1 = pos_to_seq_choord[i];
         unsigned int seq_pos_strobe2 = pos_to_seq_choord[strobe2_pos];
         unsigned int seq_pos_strobe3 = pos_to_seq_choord[strobe3_pos];
-        std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int> s (hash_hybridstrobe2, ref_index, seq_pos_strobe1, seq_pos_strobe2, seq_pos_strobe3);
+        std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int> s (hash_hybridstrobe3, ref_index, seq_pos_strobe1, seq_pos_strobe2, seq_pos_strobe3);
         hybridstrobes3.push_back(s);
 
 

@@ -9,6 +9,7 @@ import re
 from collections import defaultdict
 from collections import namedtuple
 
+import RMQT as RMaxQST
 
 NAM = namedtuple('NAM', ['x', 'y', 'c', 'd', 'val', 'j', "chr_id"])
 
@@ -129,8 +130,8 @@ def colinear_solver_read_coverage(mems, max_intron):
     """
     # assert mems == sorted(mems, key = lambda x: x.y )
 
-    # if len(mems) > 1000:
-    #     print('NAM',len(mems))
+    if len(mems) > 1000:
+        print('NAM',len(mems))
 
     # print("Going in to NAM chaining:", mems)
     T = [ (v.d, v.val)  for v in mems]
@@ -193,6 +194,115 @@ def colinear_solver_read_coverage(mems, max_intron):
     # print("NAM Solution:", solution[::-1])
     return solutions, C_max #, is_unique_solution(C)
     # traceback(C, best_solution_index)
+
+def make_leafs_power_of_2(mems):
+    nodes = []
+    nodes.append( RMaxQST.Node(-1, -1, -2**32, -1) ) # add an start node in case a search is smaller than any d coord in tree
+    for i, mem in enumerate(mems):
+        # if i > 3: break
+        m = RMaxQST.Node(mem.d, mem.j, -2**32, mem.j)
+        nodes.append(m)
+
+    for i in range(20):
+        if len(nodes) == 2**i or len(nodes) == 2**(i+1):
+            break
+        elif 2**i < len(nodes) < 2**(i+1):
+            remainder = 2**(i+1) - len(nodes) 
+            for i in range(remainder):
+                nodes.append( RMaxQST.Node(-1, -i - 2, -2**32, -i - 2) ) # fill up nodes to have leaves a power of 2
+            break
+
+    leafs = sorted(nodes, key= lambda x: x.d)
+    # n = len(leafs)
+    return leafs
+
+
+def n_logn_read_coverage(mems):
+    """
+        Algorithm 15.1 in Genome scale algorithmic design, Makinen et al.
+
+        Using Binary search trees for range max queries,
+        so n log n time complexity. Each mem is an Namedtuple. python object
+
+    """
+    # assert mems == sorted(mems, key=lambda x: x.y)
+
+    # if len(mems) > 1000:
+    #     print('NAM',len(mems))
+
+    T_leafs = make_leafs_power_of_2(mems)
+    I_leafs = make_leafs_power_of_2(mems)
+    n = len(T_leafs)
+    T = [0 for i in range(2 * n) ]  
+    I = [0 for i in range(2 * n) ]  
+    # T_leafs = copy.deepcopy(leafs)
+    RMaxQST.construct_tree(T, T_leafs, n)
+    # I_leafs = copy.deepcopy(leafs)
+    RMaxQST.construct_tree(I, I_leafs, n)
+
+    mem_to_leaf_index = {l.j : i for i,l in enumerate(T_leafs)}
+
+    C = [0]* (len(mems) + 1) #(len(leafs))
+    trace_vector = [None]*(len(mems) + 1)
+
+    RMaxQST.update(T, 0, 0, n) # point update 
+    RMaxQST.update(I, 0, 0, n) # point update 
+
+    for j, mem in enumerate(mems):
+        leaf_to_update = mem_to_leaf_index[j]
+        c = mem.c
+        T_max, j_prime_a, node_pos  = RMaxQST.range_query(T, -1, c-1, len(T_leafs)) 
+        # print("C_a:",  T_max +  mem.d - mem.c + 1, j_prime_a, node_pos, leaf_to_update )
+        # print("T TREE:", [(s, zz.j, zz.d, zz.Cj, zz.j_max) for s, zz in enumerate(T) if type(zz) != int])
+        C_a =  T_max +  mem.d - mem.c + 1  # add the mem_length to T since disjoint
+
+        if T_max < 0:
+            print("BUG", T_max)
+            sys.exit()
+
+        
+        d = mem.d
+        I_max, j_prime_b, node_pos  = RMaxQST.range_query(I, c, d, len(I_leafs))         
+        # print("C_b:", I_max +  mem.d, I_max, j_prime_b, node_pos, leaf_to_update )
+        # print( I_max, mem.d, mems[j_prime_b].d, mems[j_prime_b])
+        # print("I TREE:", [(s, zz.j, zz.d, zz.Cj, zz.j_max) for s, zz in enumerate(I) if type(zz) != int])
+        C_b =  I_max +  mem.d #- mems[j_prime_b].d   # add the part of the mem that is not overlapping
+
+        # if C_b < 0:
+        #     print("BUG")
+        #     sys.exit()
+
+        index, value = max_both([C_a, C_b])
+        C[j+1] = value
+        if index == 0: # Updating with C_a
+            j_prime = j_prime_a
+        else: # Updating with C_b
+            j_prime = j_prime_b
+
+
+        if j_prime < 0: # any of the additional leaf nodes (with negative index) we add to make number of leafs 2^n
+            trace_vector[j+1] = 0
+        elif value == 0: # first j (i.e. j=0) 
+            trace_vector[j+1]= 0
+        else:
+            trace_vector[j+1] = j_prime +1
+
+        RMaxQST.update(T, leaf_to_update, value, n) # point update 
+        RMaxQST.update(I, leaf_to_update, value - mem.d, n) # point update 
+
+
+    # C_max, solution = reconstruct_solution(mems, C, trace_vector)
+    # print("C", C)
+    # print(trace_vector)
+
+    solution_index = argmax(C)
+    C_max = C[solution_index]
+    all_C_max_indicies = all_solutions_c_max_indicies(C, C_max)
+    # print("number solutions with the same score:", all_solutions_c_max_indicies(C, C_max))
+    C_max, solutions = reconstruct_all_solutions(mems, all_C_max_indicies, trace_vector, C)
+
+    return solutions, C_max #, is_unique_solution(C)
+
 
 def read_sam(sam_file):
     SAM_file = pysam.AlignmentFile(sam_file, "r", check_sq=False)
@@ -325,6 +435,7 @@ def compute_overlap_with_truth_read(true_locations, ref_id, read_id, nams, read_
 
 def e_size(collinear_chain_nam_sizes, genome_size):
     sum_of_squares = sum([x**2 for x in collinear_chain_nam_sizes])
+    # print("sum_of_squares", sum_of_squares, genome_size)
     return sum_of_squares/genome_size
 
 def get_time_and_mem(runtime_file):
@@ -356,7 +467,8 @@ def main(args):
         for ref_id in nams:
             chrom_nams = nams[ref_id]
             total_disjoint_matches += len(chrom_nams)
-            solutions, opt_cov = colinear_solver_read_coverage(chrom_nams, 10000000)
+            # solutions, opt_cov = colinear_solver_read_coverage(chrom_nams, 10000000)
+            solutions, opt_cov = n_logn_read_coverage(chrom_nams)
             # pick best from forward and reverse strand
             if q_acc in read_coverage_solution:
                 c_prev, _ = read_coverage_solution[q_acc]
@@ -373,11 +485,11 @@ def main(args):
     for q_acc in read_coverage_solution:
         opt_cov, solution = read_coverage_solution[q_acc]
         total_bp_covered += opt_cov
-        for n in solutions[0]:
+        for n in solution:
             collinear_chain_nam_sizes.append(n.y - n.x)
 
     coll_esize = e_size(collinear_chain_nam_sizes, tot_genome_length)
-    print("& {0} & {1} & {2} & {3} & {4} ".format(total_disjoint_matches, round(total_bp_covered/tot_genome_length,2), round(coll_esize,1), time_in_sec, round(mem_in_mb, 1)))
+    print("{0} & {1} & {2} & {3} & {4} ".format(total_disjoint_matches, round(total_bp_covered/tot_genome_length,2), round(coll_esize,1), time_in_sec, round(mem_in_mb, 1)))
 
 if __name__ == '__main__':
 

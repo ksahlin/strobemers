@@ -20,6 +20,20 @@ typedef robin_hood::unordered_map< uint64_t, std::tuple<uint64_t, unsigned int >
 typedef std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int>> mers_vector;
 
 
+static inline std::string split_string(std::string str, std::string delimiter = " ")
+{
+    int start = 1;
+    int end = str.find(delimiter);
+//    std::cout << str.substr(start, end - start) << std::endl;
+    return str.substr(start, end - start);
+//    while (end != -1) {
+//        std::cout << str.substr(start, end - start) << std::endl;
+//        start = end + delimiter.size();
+//        end = str.find(delimiter, start);
+//    }
+//    std::cout << str.substr(start, end - start);
+
+}
 
 static void read_references(references &seqs, idx_to_acc &acc_map, std::string fn)
 {
@@ -34,7 +48,9 @@ static void read_references(references &seqs, idx_to_acc &acc_map, std::string f
 //                std::cout << ref_index - 1 << " here " << seq << " " << seq.length() << " " << seq.size() << std::endl;
 //                generate_kmers(h, k, seq, ref_index);
             }
-            acc_map[ref_index] = line.substr(1, line.length() -1); //line;
+            std::string acc = split_string(line, " ");
+            acc_map[ref_index] = acc;
+//            acc_map[ref_index] = line.substr(1, line.length() -1); //line;
             ref_index++;
             seq = "";
         }
@@ -75,6 +91,124 @@ static inline void print_diagnostics_new4(mers_vector &mers_vector, vector_index
     std::cout << "Total size of hash table index : " << (mers_index.size() * sizeof(vector_index::value_type))/1000000 << " Mb." << "\n";
 }
 
+
+static inline std::vector<nam> find_nams_unique(mers_vector &query_mers, mers_vector &mers_vector, vector_index &mers_index, int k){
+    std::cout << "ENTER FIND NAMS UNIQUE " <<  std::endl;
+    robin_hood::unordered_map< unsigned int, std::vector<hit>> hits_per_ref; // [ref_id] -> vector( struct hit)
+    uint64_t hit_count_reduced = 0;
+    uint64_t hit_count_all = 0;
+    uint64_t total_mers = 0;
+    for (auto &q : query_mers)
+    {
+        hit h;
+        h.query_s = std::get<2>(q);
+        h.query_e = std::get<4>(q) + k;
+        total_mers ++;
+//        std::cout << h.query_s << " " << h.query_e <<  std::endl;
+
+        uint64_t mer_hashv = std::get<0>(q);
+        if (mers_index.find(mer_hashv) != mers_index.end()){ //  In  index
+            std::tuple<uint64_t, unsigned int> mer;
+            mer = mers_index[mer_hashv];
+            uint64_t offset = std::get<0>(mer);
+            unsigned int count = std::get<1>(mer);
+            if (count == 1){
+                auto r = mers_vector[offset];
+                unsigned int ref_s = std::get<2>(r);
+                unsigned int ref_e = std::get<4>(r) + k;
+                unsigned int ref_id = std::get<1>(r);
+
+                h.ref_s = ref_s;
+                h.ref_e = ref_e;
+                hits_per_ref[ref_id].push_back(h);
+
+                hit_count_all ++;
+            }
+        }
+    }
+
+//    std::cout << "NUMBER OF HITS GENERATED: " << hit_count_all << std::endl;
+//    std::cout << "TOTAL STROBEMERS GENERATED: " << total_mers << std::endl;
+
+//    std::cout << "NUMBER OF REDUCED HITS GENERATED: " << hit_count_reduced << std::endl;
+    std::vector<nam> open_nams;
+    std::vector<nam> final_nams; // [ref_id] -> vector(struct nam)
+
+    for (auto &it : hits_per_ref)
+    {
+        unsigned int ref_id = it.first;
+        std::vector<hit> hits = it.second;
+        open_nams = std::vector<nam> (); // Initialize vector
+        uint64_t prev_q_start = 0;
+        for (auto &h : hits){
+            bool is_added = false;
+            for (auto & o : open_nams) {
+
+                // Extend NAM
+                if ( ( o.previous_query_start < h.query_s) && (h.query_s <= o.query_e ) && ( o.previous_ref_start <= h.ref_s) && (h.ref_s <= o.ref_e) ){ // && (o.previous_ref_start <= h.ref_s)  && (o.previous_query_start <= h.query_s) && (hit_copy_id <= o.copy_id)
+                    if (h.query_e > o.query_e) {
+                        o.query_e = h.query_e;
+                    }
+                    if (h.ref_e > o.ref_e) {
+                        o.ref_e = h.ref_e;
+                    }
+                    o.previous_query_start = h.query_s;
+                    o.previous_ref_start = h.ref_s; // keeping track so that we don't . Can be caused by interleaved repeats.
+                    is_added = true;
+                    break;
+                }
+
+            }
+
+            // Add the hit to open matches
+            if (not is_added){
+                nam n;
+                n.query_s = h.query_s;
+                n.query_e = h.query_e;
+                n.ref_s = h.ref_s;
+                n.ref_e = h.ref_e;
+                n.ref_id = ref_id;
+                n.previous_query_start = h.query_s;
+                n.previous_ref_start = h.ref_s;
+//                n.copy_id = hit_copy_id;
+                open_nams.push_back(n);
+            }
+
+
+            // Only filter if we have advanced at least k nucleotides
+            if (h.query_s > prev_q_start + k) {
+
+                // Output all NAMs from open_matches to final_nams that the current hit have passed
+                for (auto &n : open_nams) {
+                    if (n.query_e < h.query_s) {
+                        final_nams.push_back(n);
+                    }
+                }
+
+                // Remove all NAMs from open_matches that the current hit have passed
+                unsigned int c = h.query_s;
+                auto predicate = [c](decltype(open_nams)::value_type const &nam) { return nam.query_e < c; };
+                open_nams.erase(std::remove_if(open_nams.begin(), open_nams.end(), predicate), open_nams.end());
+                prev_q_start = h.query_s;
+            }
+
+
+        }
+
+        // Add all current open_matches to final NAMs
+        for (auto &n : open_nams){
+//        for (size_t i = 0; i < open_nams.size(); ++i){
+            final_nams.push_back(n);
+        }
+    }
+
+//    for (auto &n : final_nams){
+//        std::cout << n.ref_id << ": (" << n.query_s << ", " << n.query_e << ", " << n.ref_s << ", " << n.ref_e << ")" << std::endl;
+//    }
+
+
+    return final_nams;
+}
 
 
 static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &mers_vector, vector_index &mers_index, int k){
@@ -326,7 +460,7 @@ static inline void output_nams(std::vector<nam> &nams, std::ofstream &output_fil
         output_file << "> " << query_acc << "\n";
     }
     for (auto &n : nams) {
-        output_file << "  " << acc_map[n.ref_id]  << " " << n.ref_s << " " << n.query_s << " " << n.ref_e - n.ref_s << "\n";
+        output_file << "  " << acc_map[n.ref_id]  << " " << n.ref_s + 1 << " " << n.query_s + 1 << " " << n.ref_e - n.ref_s << "\n";
 //      python: outfile.write("  {0} {1} {2} {3}\n".format(ref_acc, ref_p, q_pos, k))
     }
 }
@@ -338,6 +472,7 @@ void print_usage() {
     std::cerr << "\t-k INT strobe length, limited to 32 [20]\n";
     std::cerr << "\t-v strobe w_min offset [k+1]\n";
     std::cerr << "\t-w strobe w_max offset [70]\n";
+    std::cerr << "\t-u Produce NAMs only from unique strobemers (w.r.t. reference sequences). This provides faster mapping.\n";
     std::cerr << "\t-o name of output tsv-file [output.tsv]\n";
     std::cerr << "\t-c Choice of protocol to use; kmers, minstrobes, hybridstrobes, randstrobes [randstrobes]. \n";
 }
@@ -362,7 +497,7 @@ int main (int argc, char *argv[])
     std::string output_file_name = "output.tsv";
     int w_min = 21;
     int w_max = 70;
-
+    bool unique = false;
     int opn = 1;
     while (opn < argc) {
         bool flag = false;
@@ -391,8 +526,11 @@ int main (int argc, char *argv[])
                 choice = argv[opn + 1];
                 opn += 2;
                 flag = true;
+            } else if (argv[opn][1] == 'u') {
+                unique = true;
+                opn += 1;
+                flag = true;
             }
-
             else {
                 print_usage();
             }
@@ -411,9 +549,8 @@ int main (int argc, char *argv[])
 
 //    assert(k <= (w/2)*w_min && "k should be smaller than (w/2)*w_min to avoid creating short strobemers");
     assert(k > 7 && "You should really not use too small strobe size!");
-    assert(k <= 32 && "k have to be smaller than 32!");
     int filter_nams = 0;
-    assert(k <= w_min && "k have to be smaller than w_min");
+//    assert(k <= w_min && "k have to be smaller than w_min");
     assert(k <= 32 && "k have to be smaller than 32!");
 
     // File name to reference
@@ -535,8 +672,8 @@ int main (int argc, char *argv[])
     auto finish_generating_mers = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed_mers = finish_generating_mers - start;
     float rounded = truncf(elapsed_mers.count() * 10) / 10;
-    std::cout << rounded << "s";
-//    std::cout << "Total time generating mers: " << elapsed_mers.count() << " s\n" <<  std::endl;
+//    std::cout << rounded << "s";
+    std::cout << "Total time generating mers: " << rounded << " s\n" <<  std::endl;
 //    return 0;
 
     mers_vector all_mers_vector;
@@ -614,8 +751,15 @@ int main (int argc, char *argv[])
 //                std::cout << "Processing read: " << prev_acc << " kmers generated: " << query_mers.size() << ", read length: " <<  seq.length() << std::endl;
                 std::vector<nam> nams; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
                 std::vector<nam> nams_rc; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
-                nams = find_nams(query_mers, all_mers_vector, mers_index, k);
-                nams_rc = find_nams(query_mers_rc, all_mers_vector, mers_index, k);
+
+                if (unique) {
+                    nams = find_nams_unique(query_mers, all_mers_vector, mers_index, k);
+                    nams_rc = find_nams_unique(query_mers_rc, all_mers_vector, mers_index, k);
+                }
+                else {
+                    nams = find_nams(query_mers, all_mers_vector, mers_index, k);
+                    nams_rc = find_nams(query_mers_rc, all_mers_vector, mers_index, k);
+                }
 //                std::cout <<  "NAMs generated: " << nams.size() << std::endl;
                 // Output results
                 output_nams(nams, output_file, prev_acc, acc_map, false);
@@ -628,7 +772,9 @@ int main (int argc, char *argv[])
                     std::cout << "Processed " << read_cnt << "reads. " << std::endl;
                 }
             }
-            prev_acc = line.substr(1, line.length() -1);
+
+            prev_acc = split_string(line, " ");
+//            prev_acc = line.substr(1, line.length() -1);
             seq = "";
             q_id ++;
         }
@@ -675,8 +821,14 @@ int main (int argc, char *argv[])
 //        std::cout << "Processing read: " << prev_acc << " kmers generated: " << query_mers.size() << ", read length: " <<  seq.length() << std::endl;
         std::vector<nam> nams; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
         std::vector<nam> nams_rc; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
-        nams = find_nams(query_mers, all_mers_vector, mers_index, k);
-        nams_rc = find_nams(query_mers_rc, all_mers_vector, mers_index, k);
+        if (unique) {
+            nams = find_nams_unique(query_mers, all_mers_vector, mers_index, k);
+            nams_rc = find_nams_unique(query_mers_rc, all_mers_vector, mers_index, k);
+        }
+        else {
+            nams = find_nams(query_mers, all_mers_vector, mers_index, k);
+            nams_rc = find_nams(query_mers_rc, all_mers_vector, mers_index, k);
+        }
 //                std::cout <<  "NAMs generated: " << nams.size() << std::endl;
         // Output results
         output_nams(nams, output_file, prev_acc, acc_map, false);
