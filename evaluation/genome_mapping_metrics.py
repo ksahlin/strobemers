@@ -482,11 +482,19 @@ def main(args):
 
     collinear_chain_nam_sizes = [] 
     total_bp_covered = 0
+    if args.collinear_matches_out:
+        collinear_outfile = open(args.collinear_matches_out, "w")
     for q_acc in read_coverage_solution:
         opt_cov, solution = read_coverage_solution[q_acc]
         total_bp_covered += opt_cov
         for n in solution:
             collinear_chain_nam_sizes.append(n.y - n.x)
+
+        if args.collinear_matches_out:
+            collinear_outfile.write("> {0}\n".format(q_acc))
+            for n in solution:
+                 collinear_outfile.write("  {0} {1} {2} {3}\n".format(n.chr_id, n.x, n.c, n.val))
+
 
     coll_esize = e_size(collinear_chain_nam_sizes, tot_genome_length)
     print("{0} & {1} & {2} & {3} & {4} ".format(total_disjoint_matches, round(total_bp_covered/tot_genome_length,2), round(coll_esize,1), time_in_sec, round(mem_in_mb, 1)))
@@ -497,6 +505,7 @@ if __name__ == '__main__':
     parser.add_argument('matchfile', type=str, help='TSV ')
     parser.add_argument('runtime_file', type=str, help='TSV ')
     parser.add_argument('--refs', type=str, help='Used for ref lengths ')
+    parser.add_argument('--collinear_matches_out', type=str, default= '', help='Output mummerlike TSV file with only matches present in collinear chaining solution. ')
     # parser.add_argument('--true_locations', type=str, help='Path to minimap2 SAM alignments to approximate ground truth.')
     # parser.add_argument('--read_vs_read_mode', action="store_true", help='Path to minimap2 genomme SAM alignments to approximate ground truth overlap with read vs read overlaps.')
     # parser.add_argument('--method', type=str, help='Method ')

@@ -12,31 +12,49 @@ IFS=$'\n'       # make newlines the only separator
 
 #######################################################
 
-# for k in 100 500 #30
-# do
-# 	# mummer MEM
-# 	/usr/bin/time -l mummer -F -maxmatch -l $k -b  $genome1 $genome2 > tmp.tsv 2> runtime.txt
-# 	echo -n "MUMmer & MEM & " $k " & " 
-# 	python genome_mapping_metrics.py tmp.tsv runtime.txt --refs $genome2
-# 	# # mummer MUM
-# 	/usr/bin/time -l mummer -F -l $k -mum -b $genome1 $genome2 > tmp.tsv 2> runtime.txt
-# 	echo -n "MUMmer & MUM & " $k " & " 
-# 	python genome_mapping_metrics.py tmp.tsv runtime.txt --refs $genome2
-# done
+for k in 30 #100 500
+do
+	# mummer MEM
+	/usr/bin/time -l mummer -F -maxmatch -l $k -b  $genome1 $genome2 > tmp.tsv 2> runtime.txt
+	echo -n "MUMmer & MEM & " $k " & " 
+	python genome_mapping_metrics.py tmp.tsv runtime.txt --refs $genome2 --collinear_matches_out coll_sol.tsv
+	mummerplot -postscript -p ~/tmp/STROBEMERS/ecoli_to_ecoli/GR_revision/for_dotplots/figs/mummer_mem_30_col  coll_sol.tsv
+	mummerplot -postscript -p ~/tmp/STROBEMERS/ecoli_to_ecoli/GR_revision/for_dotplots/figs/mummer_mem_30_all  tmp.tsv
 
-# # Strobemap all
-# /usr/bin/time -l StrobeMap -k 30 -v 31 -c kmers -o tmp.tsv $genome1 $genome2 2> runtime.txt 1> stdout.txt
-# echo -n "StrobeMap & all & 30 & " 
-# python genome_mapping_metrics.py tmp.tsv runtime.txt --refs $genome2
+	# # mummer MUM
+	/usr/bin/time -l mummer -F -l $k -mum -b $genome1 $genome2 > tmp.tsv 2> runtime.txt
+	echo -n "MUMmer & MUM & " $k " & " 
+	python genome_mapping_metrics.py tmp.tsv runtime.txt --refs $genome2
+	mummerplot -postscript -p ~/tmp/STROBEMERS/ecoli_to_ecoli/GR_revision/for_dotplots/figs/mummer_mum_30_col  coll_sol.tsv
+	mummerplot -postscript -p ~/tmp/STROBEMERS/ecoli_to_ecoli/GR_revision/for_dotplots/figs/mummer_mum_30_all  tmp.tsv
 
-# # Strobemap unique
-# /usr/bin/time -l StrobeMap -k 30 -v 31 -c kmers -u -o tmp.tsv $genome1 $genome2 2> runtime.txt 1> stdout.txt
-# echo -n "StrobeMap & unique & 30 & " 
-# python genome_mapping_metrics.py tmp.tsv runtime.txt --refs $genome2
+done
 
-# /usr/bin/time -l StrobeMap -n 3 -k 10 -v 11 -w 100 -c randstrobes -o tmp.tsv $genome1 $genome2 2> runtime.txt 1> stdout.txt
-# echo -n "StrobeMap & all & (3, 10, 11, 100) & " 
-# python genome_mapping_metrics.py tmp.tsv runtime.txt --refs $genome2
+# Strobemap all
+/usr/bin/time -l StrobeMap -k 30 -v 31 -c kmers -o tmp.tsv $genome1 $genome2 2> runtime.txt 1> stdout.txt
+echo -n "StrobeMap & all & 30 & " 
+python genome_mapping_metrics.py tmp.tsv runtime.txt --refs $genome2 --collinear_matches_out coll_sol.tsv
+mummerplot -postscript -p ~/tmp/STROBEMERS/ecoli_to_ecoli/GR_revision/for_dotplots/figs/kmers_30_col  coll_sol.tsv
+mummerplot -postscript -p ~/tmp/STROBEMERS/ecoli_to_ecoli/GR_revision/for_dotplots/figs/kmers_30_all  tmp.tsv
+
+/usr/bin/time -l StrobeMap -n 2 -k 15 -v 1 -w 100 -c randstrobes -o tmp.tsv $genome1 $genome2 2> runtime.txt 1> stdout.txt
+echo -n "StrobeMap & all & (2, 15, 1, 100) & " 
+python genome_mapping_metrics.py tmp.tsv runtime.txt --refs $genome2 --collinear_matches_out coll_sol.tsv
+mummerplot -postscript -p ~/tmp/STROBEMERS/ecoli_to_ecoli/GR_revision/for_dotplots/figs/randstrobes_2_15_1_100_col  coll_sol.tsv
+mummerplot -postscript -p ~/tmp/STROBEMERS/ecoli_to_ecoli/GR_revision/for_dotplots/figs/randstrobes_2_15_1_100_all  tmp.tsv
+
+/usr/bin/time -l StrobeMap -n 2 -k 15 -v 16 -w 100 -c randstrobes -o tmp.tsv $genome1 $genome2 2> runtime.txt 1> stdout.txt
+echo -n "StrobeMap & all & (2, 15, 16, 100) & " 
+python genome_mapping_metrics.py tmp.tsv runtime.txt --refs $genome2 --collinear_matches_out coll_sol.tsv
+mummerplot -postscript -p ~/tmp/STROBEMERS/ecoli_to_ecoli/GR_revision/for_dotplots/figs/randstrobes_2_15_16_100_col  coll_sol.tsv
+mummerplot -postscript -p ~/tmp/STROBEMERS/ecoli_to_ecoli/GR_revision/for_dotplots/figs/randstrobes_2_15_16_100_all  tmp.tsv
+
+/usr/bin/time -l StrobeMap -n 3 -k 10 -v 11 -w 100 -c randstrobes -o tmp.tsv $genome1 $genome2 2> runtime.txt 1> stdout.txt
+echo -n "StrobeMap & all & (3, 10, 11, 100) & " 
+python genome_mapping_metrics.py tmp.tsv runtime.txt --refs $genome2 --collinear_matches_out coll_sol.tsv
+mummerplot -postscript -p ~/tmp/STROBEMERS/ecoli_to_ecoli/GR_revision/for_dotplots/figs/randstrobes_3_10_11_100_col  coll_sol.tsv
+mummerplot -postscript -p ~/tmp/STROBEMERS/ecoli_to_ecoli/GR_revision/for_dotplots/figs/randstrobes_3_10_11_100_all  tmp.tsv
+
 
 # /usr/bin/time -l StrobeMap -u -n 3 -k 10 -v 11 -w 100 -c randstrobes -o tmp.tsv $genome1 $genome2 2> runtime.txt 1> stdout.txt
 # echo -n "StrobeMap & unique & (3, 10, 11, 100) & " 
@@ -71,9 +89,9 @@ IFS=$'\n'       # make newlines the only separator
 # python genome_mapping_metrics.py tmp.tsv runtime.txt --refs $genome2
 
 
-/usr/bin/time -l StrobeMap -n 2 -k 30 -v 500 -w 600 -c randstrobes -o tmp.tsv $genome1 $genome2 2> runtime.txt 1> stdout.txt
-echo -n "StrobeMap & all & (2, 30, 500, 600) & " 
-python genome_mapping_metrics.py tmp.tsv runtime.txt --refs $genome2
+# /usr/bin/time -l StrobeMap -n 2 -k 30 -v 500 -w 600 -c randstrobes -o tmp.tsv $genome1 $genome2 2> runtime.txt 1> stdout.txt
+# echo -n "StrobeMap & all & (2, 30, 500, 600) & " 
+# python genome_mapping_metrics.py tmp.tsv runtime.txt --refs $genome2
 
 
 #######################################################

@@ -14,6 +14,7 @@
 //typedef robin_hood::unordered_map< std::string , std::string > queries;
 typedef robin_hood::unordered_map< unsigned int , std::string > references;
 typedef robin_hood::unordered_map< unsigned int, std::string > idx_to_acc;
+typedef robin_hood::unordered_map< std::string, unsigned int > acc_to_idx;
 
 typedef robin_hood::unordered_map< uint64_t, std::tuple<uint64_t, unsigned int >> vector_index;
 
@@ -35,7 +36,7 @@ static inline std::string split_string(std::string str, std::string delimiter = 
 
 }
 
-static void read_references(references &seqs, idx_to_acc &acc_map, std::string fn)
+static void read_references(references &seqs, idx_to_acc &acc_map, acc_to_idx &acc_map_to_idx, std::string fn)
 {
     std::ifstream file(fn);
     std::string line, seq;
@@ -50,6 +51,7 @@ static void read_references(references &seqs, idx_to_acc &acc_map, std::string f
             }
             std::string acc = split_string(line, " ");
             acc_map[ref_index] = acc;
+            acc_map_to_idx[acc] = ref_index;
 //            acc_map[ref_index] = line.substr(1, line.length() -1); //line;
             ref_index++;
             seq = "";
@@ -211,7 +213,7 @@ static inline std::vector<nam> find_nams_unique(mers_vector &query_mers, mers_ve
 }
 
 
-static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &mers_vector, vector_index &mers_index, int k){
+static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &mers_vector, vector_index &mers_index, int k, acc_to_idx acc_map_to_idx,  std::string query_acc){
 //    std::cout << "ENTER FIND NAMS " <<  std::endl;
     robin_hood::unordered_map< unsigned int, std::vector<hit>> hits_per_ref; // [ref_id] -> vector( struct hit)
     uint64_t hit_count_reduced = 0;
@@ -243,7 +245,9 @@ static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &m
                 unsigned int ref_s = std::get<2>(r);
                 unsigned int ref_e = std::get<4>(r) + k;
                 unsigned int ref_id = std::get<1>(r);
-
+                if ( (acc_map_to_idx.find(query_acc) != acc_map_to_idx.end()) && ref_id ==  acc_map_to_idx[query_acc]) { // No self mappings
+                    continue;
+                }
                 h.ref_s = ref_s;
                 h.ref_e = ref_e;
                 hits_per_ref[ref_id].push_back(h);
@@ -306,56 +310,53 @@ static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &m
         std::vector<hit> hits = it.second;
         open_nams = std::vector<nam> (); // Initialize vector
         uint64_t prev_q_start = 0;
-//        uint64_t prev_q_end = 0;
-//        uint64_t hit_copy_id = -1;
         for (auto &h : hits){
             bool is_added = false;
-//            assert(prev_q_start <= h.query_s && "Not larger!");
-//            if (h.query_s % 500000 == 0 ){
-//                std::cout << h.query_s << std::endl;
-//            }
-//            if (h.query_s > 1110 ){
-//                return final_nams;
-//            }
-//            else {
-//                hit_copy_id = 0;
+//            for (auto & o : open_nams) {
+//
+//                // Extend NAM
+//                if ( ( o.previous_query_start < h.query_s) && (h.query_s <= o.query_e ) && ( o.previous_ref_start < h.ref_s) && (h.ref_s <= o.ref_e) ){
+//                    if ( (h.query_e > o.query_e) && (h.ref_e > o.ref_e) ) {
+//                        o.query_e = h.query_e;
+//                        o.ref_e = h.ref_e;
+//                        o.previous_query_start = h.query_s;
+//                        o.previous_ref_start = h.ref_s; // keeping track so that we don't . Can be caused by interleaved repeats.
+//                        is_added = true;
+//                        break;
+//                    }
+//                    else if ((h.query_e <= o.query_e) && (h.ref_e <= o.ref_e)) {
+//                        o.previous_query_start = h.query_s;
+//                        o.previous_ref_start = h.ref_s; // keeping track so that we don't . Can be caused by interleaved repeats.
+//                        is_added = true;
+//                        break;
+//                    }
+//
+//                }
+//
+//
 //            }
 
-//            std::cout << "HIT " << h.query_s <<  ", " << h.query_e << ", " << h.ref_s <<  ", " << h.ref_e << std::endl;
-            for (auto & o : open_nams) {
+                for (auto & o : open_nams) {
 
-                // Extend NAM
-                if ( ( o.previous_query_start < h.query_s) && (h.query_s <= o.query_e ) && ( o.previous_ref_start <= h.ref_s) && (h.ref_s <= o.ref_e) ){ // && (o.previous_ref_start <= h.ref_s)  && (o.previous_query_start <= h.query_s) && (hit_copy_id <= o.copy_id)
-//                    if (o.previous_ref_start <= h.ref_s) {
-//                    std::cout << "In " << o.query_s <<  ", " << o.query_e <<  ", " << o.ref_s <<  ", " << o.ref_e << std::endl;
+                    // Extend NAM
+                    if ( ( o.previous_query_start < h.query_s) && (h.query_s <= o.query_e ) && ( o.previous_ref_start <= h.ref_s) && (h.ref_s <= o.ref_e) ){ // && (o.previous_ref_start <= h.ref_s)  && (o.previous_query_start <= h.query_s) && (hit_copy_id <= o.copy_id)
+
                         if (h.query_e > o.query_e) {
-//                        std::cout << "Changing query " << o.query_e <<  " to " << h.query_e << std::endl;
                             o.query_e = h.query_e;
-//                        std::cout << o.query_e << std::endl;
                         }
                         if (h.ref_e > o.ref_e) {
-//                        std::cout << "Changing ref " << o.ref_e <<  " to " << h.ref_e << std::endl;
                             o.ref_e = h.ref_e;
                         }
-//                    if (o.previous_ref_start <)
-//                    }
-                    o.previous_query_start = h.query_s;
-                    o.previous_ref_start = h.ref_s; // keeping track so that we don't . Can be caused by interleaved repeats.
-                    is_added = true;
-//                    o.copy_id = hit_copy_id;
-                    break;
+                        o.previous_query_start = h.query_s;
+                        o.previous_ref_start = h.ref_s; // keeping track so that we don't . Can be caused by interleaved repeats.
+                        is_added = true;
+                        break;
+                    }
+
                 }
-//                //Output local match
-//                else if (( o.query_s <= h.query_s) && (h.query_s <= o.query_e ) && ( o.ref_s <= h.ref_s) && (h.ref_s <= o.ref_e)){
-//                    std::cout << "Output local match " << o.query_s <<  " to " << o.query_e  << " " << o.ref_s <<  " to " << o.ref_e  << "     " << o.previous_ref_start << " " << h.ref_s << std::endl;
-//                }
 
-            }
-//            prev_q_start = h.query_s;
-//            prev_q_end = h.query_e;
 
-//            std::cout << is_added << std::endl;
-//            std::cout << " " << std::endl;
+
             // Add the hit to open matches
             if (not is_added){
                 nam n;
@@ -603,7 +604,8 @@ int main (int argc, char *argv[])
 
     references ref_seqs;
     idx_to_acc acc_map;
-    read_references(ref_seqs, acc_map, filename);
+    acc_to_idx acc_map_to_idx;
+    read_references(ref_seqs, acc_map, acc_map_to_idx, filename);
 
     //////////////////////////////////////////////////////
 
@@ -757,8 +759,8 @@ int main (int argc, char *argv[])
                     nams_rc = find_nams_unique(query_mers_rc, all_mers_vector, mers_index, k);
                 }
                 else {
-                    nams = find_nams(query_mers, all_mers_vector, mers_index, k);
-                    nams_rc = find_nams(query_mers_rc, all_mers_vector, mers_index, k);
+                    nams = find_nams(query_mers, all_mers_vector, mers_index, k, acc_map_to_idx, prev_acc);
+                    nams_rc = find_nams(query_mers_rc, all_mers_vector, mers_index, k, acc_map_to_idx, prev_acc);
                 }
 //                std::cout <<  "NAMs generated: " << nams.size() << std::endl;
                 // Output results
@@ -826,8 +828,8 @@ int main (int argc, char *argv[])
             nams_rc = find_nams_unique(query_mers_rc, all_mers_vector, mers_index, k);
         }
         else {
-            nams = find_nams(query_mers, all_mers_vector, mers_index, k);
-            nams_rc = find_nams(query_mers_rc, all_mers_vector, mers_index, k);
+            nams = find_nams(query_mers, all_mers_vector, mers_index, k, acc_map_to_idx, prev_acc);
+            nams_rc = find_nams(query_mers_rc, all_mers_vector, mers_index, k, acc_map_to_idx, prev_acc);
         }
 //                std::cout <<  "NAMs generated: " << nams.size() << std::endl;
         // Output results

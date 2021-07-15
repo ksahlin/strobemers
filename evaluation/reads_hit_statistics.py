@@ -372,11 +372,12 @@ def main(args):
                     fraction_read_overlap_true_location[r_acc] = frac_overlap
 
 
-            # pick largest nr of hits
+            # add to total number of hits
             if r_acc in read_tot_hits:
-                hits_prev = read_tot_hits[r_acc]
-                if hits_prev < len(chrom_nams):
-                    read_tot_hits[r_acc] = len(chrom_nams)
+                read_tot_hits[r_acc] += len(chrom_nams)
+                # hits_prev = read_tot_hits[r_acc]
+                # if hits_prev < len(chrom_nams):
+                #     read_tot_hits[r_acc] = len(chrom_nams)
             else:
                 read_tot_hits[r_acc] = len(chrom_nams)
 
