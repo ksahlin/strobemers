@@ -285,14 +285,14 @@ mers_vector seq_to_randstrobes2(int n, int k, int w_min, int w_max, std::string 
         unsigned int strobe_pos_next;
         uint64_t strobe_hashval_next;
 
-        if (i + w_max <= seq_length){
+        if (i + w_max <= seq_length - 1){
             unsigned int w_start = i+w_min;
             unsigned int w_end = i+w_max;
             uint64_t strobe_hash;
             strobe_hash = string_hashes[i];
             get_next_strobe(string_hashes, strobe_hash, strobe_pos_next, strobe_hashval_next, w_start, w_end, q);
         }
-        else if ((i + w_min + 1 < seq_length) && (seq_length < i + w_max) ){
+        else if ((i + w_min + 1 < seq_length) && (seq_length <= i + w_max) ){
             unsigned int w_start = i+w_min;
             unsigned int w_end = seq_length -1;
             uint64_t strobe_hash;
@@ -355,7 +355,7 @@ mers_vector seq_to_randstrobes3(int n, int k, int w_min, int w_max, std::string 
         unsigned int strobe_pos_next2;
         uint64_t strobe_hashval_next2;
 
-        if (i + 2*w_max <= seq_length){
+        if (i + 2*w_max <= seq_length - 1){
             unsigned int w1_start = i+w_min;
             unsigned int w1_end = i+w_max;
             get_next_strobe(string_hashes, strobe_hash, strobe_pos_next1, strobe_hashval_next1, w1_start, w1_end, q);
@@ -365,16 +365,7 @@ mers_vector seq_to_randstrobes3(int n, int k, int w_min, int w_max, std::string 
 //            uint64_t conditional_next = strobe_hash ^ strobe_hashval_next1;
             get_next_strobe(string_hashes, strobe_hashval_next1, strobe_pos_next2, strobe_hashval_next2, w2_start, w2_end, q);
         }
-//        else if (i + w_max <= seq_length){
-//            unsigned int w1_start = i+w_min;
-//            unsigned int w1_end = i+w_max;
-//            get_next_strobe(string_hashes, strobe_hash, strobe_pos_next1, strobe_hashval_next1, w1_start, w1_end, q);
-//
-//            unsigned int w2_start = i+w_max + w_min;
-//            unsigned int w2_end = i+2*w_max;
-//            get_next_strobe(string_hashes, strobe_pos_next1, strobe_pos_next2, strobe_hashval_next2, w2_start, w2_end, q);
-//        }
-        else if ((i + 2*w_min + 1 < seq_length) && (seq_length < i + 2*w_max) ){
+        else if ((i + 2*w_min + 1 < seq_length) && (seq_length <= i + 2*w_max) ){
 //            unsigned int w_start = i+w_min;
 //            unsigned int w_end = seq_length -1;
 //            uint64_t strobe_hash;

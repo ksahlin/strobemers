@@ -479,7 +479,7 @@ def main(args):
                 # print(ref_id, opt_cov)
                 read_coverage_solution[q_acc] = (opt_cov, solutions[0])  
 
-
+    tot_genome_length = tot_genome_length/2 # remove double counting of reverse complements
     collinear_chain_nam_sizes = [] 
     total_bp_covered = 0
     if args.collinear_matches_out:

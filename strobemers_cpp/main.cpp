@@ -479,6 +479,8 @@ void print_usage() {
 }
 
 
+// g++ -std=c++11 main.cpp index.cpp -o StrobeMap -O3 -mavx2
+
 int main (int argc, char *argv[])
 {
 
@@ -592,8 +594,8 @@ int main (int argc, char *argv[])
 //    std::string filename  = "/Users/kxs624//Documents/data/genomes/human/chm13_chr21.fa";
 //    std::string reads_filename  = "/Users/kxs624/Documents/data/genomes/human/HG_38/GRCh38_chr21.fa";
 
-//    std::string filename  = "hg21_bug.txt";
-//    std::string reads_filename  = "hg21_bug.txt";
+//    std::string filename  = "/Users/kxs624/tmp/STROBEMERS/data/ecoli1/GCF_003018135.1_ASM301813v1_genomic.fna";
+//    std::string reads_filename  = "/Users/kxs624/tmp/STROBEMERS/data/SRR13893500.fasta";
 
 //    std::string choice = "kmers";
 //    std::string choice = "minstrobes";
