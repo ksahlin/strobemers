@@ -1,32 +1,39 @@
 Strobemers
 ===========
 
-A repository for generating strobemers and evaluation.  
+A repository for generating strobemers and evaluation. A preprint of strobemers is found [here](https://doi.org/10.1101/2021.01.28.428549).
 
 # This repository
 
-The repository consists of a python library, a C++ library (work in progress) and a tool `StrobeMap` implemented in both Python and C++. 
+The repository consists of 
 
-The C++ library `strobemers_cpp/index.[cpp/hpp]` contains functions for creating the randstobes (order 2 and 3), hybridstrobes (order 2 and 3) and minstrobes (order 2).
+- a C++ library
+- a python library
+- a tool `StrobeMap` implemented in both Python and C++. 
 
-The python library `indexing.py` contains functions and generators for creating the datastructures used in the evaluation of the [preprint](https://doi.org/10.1101/2021.01.28.428549). 
+The C++ library `strobemers_cpp/index.[cpp/hpp]` contains functions for creating randstobes (order 2 and 3), hybridstrobes (order 2 and 3) and minstrobes (order 2). The python library `indexing.py` contains functions and generators for creating all strobemers of order 2 and 3.
+
 
 The tool `StrobeMap` is a program which roughly has the same interface as `MUMmer`. `StrobeMap` takes a reference and queries file in fasta or fastq format. It produces NAMs (Non-overlapping Approximate Matches) between the queries and references and outputs them in a format simular to nucmer/MUMmer. See [preprint](https://doi.org/10.1101/2021.01.28.428549) for definition of NAMs.
 
 
-<!-- First off, this is a prototype implementation created for the analysis in the [preprint](https://doi.org/10.1101/2021.01.28.428549) describing strobemers. As Python is inefficient with string manipulation, any real implementation and usage of strobemers should probably happen in a low level language. However, the Python code is sufficient as proof of concept.  -->
-
 ### Other implementations of strobemers 
 
-Strobemers are implemented in
+Other strobemer implementations are found here
 - [C++](https://github.com/BGI-Qingdao/strobemer_cpptest)
 - [Go](https://github.com/shenwei356/strobemers)
 
+The construction time is dependent on the implementation. The times reported in the preprint are for the C++/Python implementations in this repository.
+
 # C++ implementation in this repository
 
-I have also implemented randstrobes (order 2 and 3), hybridstrobes (order 2), and minstrobes (order 2). They can be used by copying `index.cpp` and `index.hpp` in the `strobemers_cpp` folder in this repository. The implementation of these functions uses bitpacking and some other clever tricks (inspired by [this repo](https://github.com/lh3/kmer-cnt)) to be fast. The functions be used as follows:
+You can copy the `index.cpp` and `index.hpp` files in the `strobemers_cpp` folder in this repository if you want to use either randstrobes (order 2 and 3), hybridstrobes (order 2), or minstrobes (order 2) in your project. The implementation of these functions uses bitpacking and some other clever tricks (inspired by [this repo](https://github.com/lh3/kmer-cnt)) to be fast. Because of bitpacking, the limitation is that any single strobe cannot be lager than 32, which means that the **maximum strobemer length allowed in this implementation** is `3*32 = 96` for strobemers of order 3, and `2*32 = 64` for order 2. This should be large enough for most applications. 
+
+The functions in the `index.cpp` file can be used as follows:
 
 ```
+#include "index.hpp"
+
 typedef std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int>> strobes_vector;
 strobes_vector randstrobes3; // (kmer hash value, seq_id, strobe1_pos, strobe2_pos, strobe3_pos)
 seq = "ACGCGTACGAATCACGCCGGGTGTGTGTGATCGGGGCTATCAGCTACGTACTATGCTAGCTACGGACGGCGATTTTTTTTCATATCGTACGCTAGCTAGCTAGCTGCGATCGATTCG";
@@ -48,18 +55,13 @@ randstrobe = seq.substr(strobe1_pos, k) + seq.substr(strobe2_pos, k)+ seq.substr
 }
 ```
 
-If you are using some of `seq_to_randstrobes2`, `seq_to_hybridstrobes2`, or `seq_to_minstrobes3` they return the same vector tuples but position of strobe 2 copied twice, i.e., `(kmer hash value, seq_id, strobe1_pos, strobe2_pos, strobe2_pos)`. 
+If you are using some of `seq_to_randstrobes2`, `seq_to_hybridstrobes2`, or `seq_to_minstrobes3` they return the same vector tuples but position of strobe 2 copied twice, i.e., `(kmer hash value, seq_id, strobe1_pos, strobe2_pos, strobe2_pos)`. There is no reason for this besides it helped me call the functions in the same way.
 
-My benchmarking is saying that randstrobes is roughly as fast as hybridstrobes and minstrobes, and that randstrobes is unexpectedly fast in this implementation in general, about 2-3 times slower than generating k-mers for randstrobes of (n=2, s=15, w_min=16,w_max=70). What takes time is pushing the tuples to vector and not computing the strobemers. But more detailed investigation will follow.
+My benchmarking is saying that randstrobes is roughly as fast as hybridstrobes and minstrobes, and that randstrobes is unexpectedly fast in this implementation in general, about 1.5-3 times slower than generating k-mers for randstrobes of (n=2, s=15, w_min=16,w_max=70). What takes time is pushing the tuples to vector and not computing the strobemers. But more detailed investigation will follow.
 
-#### Notes, limitations and constraints
+#### Notes for sequence mapping
 
-Because of bitpacking, the limitation is that any single strobe cannot be lager than 32, which means that the maximum strobemer length for randstrobes of order 3 is `3*32 = 96`, and `2*32 = 64` for order 2. This should be large enough for most applications. 
-
-Another constraint is that `w_min > k`. I don't see the immediate use case of setting `w_min<=k` (which would not guarantee to yield disjoint strobes and therefore could give shorter strobemers than `n*k`).  
-
-At ends of sequences (e.g., reads), there is no need to shrink windows to assure that the number of strobemers generated is the same as the number of k-mers. This is because if we modify windows at the ends, they are not guaranteed to match the reference, as first described in [this issue](https://github.com/ksahlin/strobemers/issues/2). Therefore, in my implementation, there will be `n - (k + w_min) +1` strobemers of order 2 generated form a sequence of length `n`, and `n - (k + w_max + w_min) +1` strobemers of order 3. In other words, we will only slide last strobe's window outside the sequence. Once it is fully outside the sequence we stop (illistrated in approach B for order 2 in [here](https://github.com/ksahlin/strobemers/issues/2).
-
+The preprint describes shrinking the windows at ends of sequences to assure similar number of strobemers and k-mers created. For, e.g., read mapping, there is little to no need to shrink windows. This is because if we modify windows at the ends, the windows used to extract the strobemer from the read and the reference will be different. Therefore, the strobemers at the ends are not guaranteed to match the reference, as first described in [this issue](https://github.com/ksahlin/strobemers/issues/2). Therefore, in my implementation, there will be `n - (k + w_min) +1` strobemers of order 2 generated form a sequence of length `n`, and `n - (k + w_max + w_min) +1` strobemers of order 3. In other words, we will only slide last strobe's window outside the sequence. Once it is fully outside the sequence we stop (illistrated in approach B for order 2 in [here](https://github.com/ksahlin/strobemers/issues/2).
 
 
 # Python implementation in this repository
@@ -85,6 +87,35 @@ for (p1,p2), s in indexing.randstrobes_iter(seq, k_size, w_min, w_max, order = 2
     all_mers[s].append( (p1,p2) )  
 ```
 Functions `minstrobes_iter` and `hybridstrobes_iter` have the same interface.
+
+# Using StrobeMap (C++)
+
+## Installation
+
+```
+git clone https://github.com/ksahlin/strobemers
+cd strobemers/strobemers_cpp/
+g++ -std=c++11 main.cpp index.cpp -o StrobeMap -O3 -mavx2
+```
+
+## Usage
+
+```
+ StrobeMap
+strobealign [options] <references.fa> <queries.fasta>
+options:
+  -n INT number of strobes [2]
+  -k INT strobe length, limited to 32 [20]
+  -v strobe w_min offset [k+1]
+  -w strobe w_max offset [70]
+  -o name of output tsv-file [output.tsv]
+  -c Choice of protocol to use; kmers, minstrobes, hybridstrobes, randstrobes [randstrobes]. 
+```
+
+```
+# randstrobes (3,30,31,60)
+StrobeMap -k 30 -n 3 -v 31 -w 60 -c randstrobes -o mapped.tsv  ref.fa query.fa
+```
 
 
 # Using StrobeMap (Python)
@@ -120,34 +151,6 @@ Here are some example uses:
 
 Minstrobes has the same parameters as hybridstrobes and randstrobes but are invoked with parameter `--minstrobe_index`
 
-# Using StrobeMap (C++)
-
-## Installation
-
-```
-git clone https://github.com/ksahlin/strobemers
-cd strobemers/strobemers_cpp/
-g++ -std=c++11 main.cpp index.cpp -o StrobeMap -O3 -mavx2
-```
-
-## Usage
-
-```
- StrobeMap
-strobealign [options] <references.fa> <queries.fasta>
-options:
-  -n INT number of strobes [2]
-  -k INT strobe length, limited to 32 [20]
-  -v strobe w_min offset [k+1]
-  -w strobe w_max offset [70]
-  -o name of output tsv-file [output.tsv]
-  -c Choice of protocol to use; kmers, minstrobes, hybridstrobes, randstrobes [randstrobes]. 
-```
-
-```
-# randstrobes (3,30,31,60)
-StrobeMap -k 30 -n 3 -v 31 -w 60 -c randstrobes -o mapped.tsv  ref.fa query.fa
-```
 
 ## Output
 
