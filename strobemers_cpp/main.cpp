@@ -5,10 +5,13 @@
 #include <vector>
 #include <string>
 #include <chrono>  // for high_resolution_clock
+#include <cassert>
+#include <math.h>
+//#include <omp.h>
 
 #include "index.hpp"
 
-
+//#define THREAD_NUM 4
 
 
 //typedef robin_hood::unordered_map< std::string , std::string > queries;
@@ -657,6 +660,7 @@ int main (int argc, char *argv[])
         if (n == 2 ){
             for (auto x : ref_seqs){
                 mers_vector randstrobes2; // pos, chr_id, kmer hash value
+//                #pragma omp parallel for
                 randstrobes2 = seq_to_randstrobes2(n, k, w_min, w_max, x.second, x.first);
                 tmp_index[x.first] = randstrobes2;
             }
@@ -711,6 +715,7 @@ int main (int argc, char *argv[])
     unsigned int read_cnt = 0;
     mers_vector query_mers; // pos, chr_id, kmer hash value
     mers_vector query_mers_rc; // pos, chr_id, kmer hash value
+//    #pragma omp parallel for
     while (getline(query_file, line)) {
         if (line[0] == '>') {
             read_cnt ++;

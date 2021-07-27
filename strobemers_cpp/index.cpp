@@ -531,7 +531,7 @@ mers_vector seq_to_hybridstrobes2(int n, int k, int w_min, int w_max, std::strin
 
         int strobe2_pos;
         uint64_t strobe2_val;
-        uint r =  bstrobe % 3;
+        unsigned int r =  bstrobe % 3;
         if (r == 0){
             strobe2_val = q1_min_val;
             strobe2_pos = q1_min_pos;
@@ -684,7 +684,7 @@ mers_vector seq_to_hybridstrobes3(int n, int k, int w_min, int w_max, std::strin
 
         int strobe2_pos;
         uint64_t strobe2_val;
-        uint r =  bstrobe % 3;
+        unsigned int r =  bstrobe % 3;
         if (r == 0){
             strobe2_val = q1_min_val;
             strobe2_pos = q1_min_pos;
@@ -704,7 +704,7 @@ mers_vector seq_to_hybridstrobes3(int n, int k, int w_min, int w_max, std::strin
 
         int strobe3_pos;
         uint64_t strobe3_val;
-        uint r2 =  hash_hybridstrobe2 % 3;
+        unsigned int r2 =  hash_hybridstrobe2 % 3;
         if (r2 == 0){
             strobe3_val = q4_min_val;
             strobe3_pos = q4_min_pos;
