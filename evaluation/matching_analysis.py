@@ -453,7 +453,7 @@ def main(args):
     L = 10000
     k_size = 30
     nr_exp = 1000
-    w = 20 # thinning, w = 1  means no thinning
+    w = 1 # thinning, w = 1  means no thinning. w =1, 10, 20 was used in the evaluations.
     mut_freqs = [0.01, 0.05, 0.1] #[0.1] 
     w_2low = 25
     w_3low = 25
