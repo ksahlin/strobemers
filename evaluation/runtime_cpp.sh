@@ -1,18 +1,31 @@
 #!/bin/bash
 
+
+#######################################################
+#######################################################
+########## INFORMATION ABOUT THE SCRIPT ###############
+#######################################################
+#######################################################
+
 # RUN scripts e.g. as:   ./runtime_cpp.sh /Users/kxs624/Documents/data/genomes/human/HG_38/GRCh38_chr21.fa
+
+# StrobeMap_indextime called belo is a modified version where
+# line 681 and 683 has been uncommented and then compiled. 
+# This assures that only the construction time of strobemers/k-mers is 
+# counted and the only output produced is the total time in seconds.
+
+
 
 genome1=$1
 genome2=$2
 genome3=$3
-# alias pypy_run="/Users/kxs624/Downloads/pypy3.7-v7.3.3-osx64/bin/./pypy3"
+
 
 IFS=$'\n'       # make newlines the only separator
 # set -f          # disable globbing
 
 
-########### READS TO REFERENCES #######################
-#######################################################
+
 
 let "k= 30"
 let "v= k+1"
