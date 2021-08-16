@@ -10,7 +10,7 @@
 # RUN scripts e.g. as:   ./runtime_cpp.sh /Users/kxs624/Documents/data/genomes/human/HG_38/GRCh38_chr21.fa
 
 # StrobeMap_indextime called belo is a modified version where
-# line 681 and 683 has been uncommented and then compiled. 
+# line 681 and 683 in main.cpp has been uncommented and then compiled. 
 # This assures that only the construction time of strobemers/k-mers is 
 # counted and the only output produced is the total time in seconds.
 
