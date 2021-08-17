@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# RUN scripts e.g. as:   ./sirv_match_lengths.sh /Users/kxs624/Documents/workspace/strobemers/  /Users/kxs624/tmp/STROBEMERS/sirv_match_lengths/  /Users/kxs624/Documents/data/ont/lc19_pcs109_subsample_full_length_pychopper2_phmmer.fq  100
+# RUN scripts e.g. as:  ./sirv_read_analysis.sh /Users/kxs624/Documents/workspace/strobemers/  /Users/kxs624/tmp/STROBEMERS/GR_editorial_revision/fig3/  /Users/kxs624/Documents/data/ont/sirv/cDNA/lc19_pcs109_subsample_full_length_pychopper2_phmmer.fq  100
 
 inbase=$1
 outbase=$2
@@ -20,9 +20,9 @@ IFS=$'\n'       # make newlines the only separator
 # ########### READS TO REFERENCES #######################
 # #######################################################
 
-# normalized_hit_length_file=$outbase/"normalized_hit_length.csv"
-# nr_hits_file=$outbase/"nr_hits.csv"
-# coverage_file=$outbase/"coverage.csv"
+normalized_hit_length_file=$outbase/"normalized_hit_length.csv"
+nr_hits_file=$outbase/"nr_hits.csv"
+coverage_file=$outbase/"coverage.csv"
 
 
 # # results_file has format: method,read_acc,ref_id,ref_len,match_length,normalized_match_length,
@@ -82,7 +82,7 @@ IFS=$'\n'       # make newlines the only separator
 # # # Plot2: Plot total coverage of hits  covarage.csv
 # # # Plot3 number of hits per read nr_hits.csv
 
-# python $experiment_dir/plots.py $coverage_file $nr_hits_file $normalized_hit_length_file  $outbase
+python $experiment_dir/plots.py $coverage_file $nr_hits_file $normalized_hit_length_file  $outbase
 
 # #######################################################
 # #######################################################
