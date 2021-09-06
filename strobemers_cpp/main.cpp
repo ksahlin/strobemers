@@ -7,12 +7,15 @@
 #include <chrono>  // for high_resolution_clock
 #include <cassert>
 #include <math.h>
-//#include <omp.h>
+#include <omp.h>
 
+#include <zlib.h>
+#include "kseq++.hpp"
 #include "index.hpp"
 
 //#define THREAD_NUM 4
 
+using namespace klibpp;
 
 //typedef robin_hood::unordered_map< std::string , std::string > queries;
 typedef robin_hood::unordered_map< unsigned int , std::string > references;
@@ -26,7 +29,7 @@ typedef std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned i
 
 static inline std::string split_string(std::string str, std::string delimiter = " ")
 {
-    int start = 1;
+    int start = 0;
     int end = str.find(delimiter);
 //    std::cout << str.substr(start, end - start) << std::endl;
     return str.substr(start, end - start);
@@ -52,7 +55,8 @@ static void read_references(references &seqs, idx_to_acc &acc_map, acc_to_idx &a
 //                std::cout << ref_index - 1 << " here " << seq << " " << seq.length() << " " << seq.size() << std::endl;
 //                generate_kmers(h, k, seq, ref_index);
             }
-            std::string acc = split_string(line, " ");
+            std::string tmp = line.substr(1, line.length() -1);
+            std::string acc = split_string(tmp, " ");
             acc_map[ref_index] = acc;
             acc_map_to_idx[acc] = ref_index;
 //            acc_map[ref_index] = line.substr(1, line.length() -1); //line;
@@ -474,9 +478,10 @@ void print_usage() {
     std::cerr << "options:\n";
     std::cerr << "\t-n INT number of strobes [2]\n";
     std::cerr << "\t-k INT strobe length, limited to 32 [20]\n";
-    std::cerr << "\t-v strobe w_min offset [k+1]\n";
-    std::cerr << "\t-w strobe w_max offset [70]\n";
-    std::cerr << "\t-u Produce NAMs only from unique strobemers (w.r.t. reference sequences). This provides faster mapping.\n";
+    std::cerr << "\t-v INT strobe w_min offset [k+1]\n";
+    std::cerr << "\t-w INT strobe w_max offset [70]\n";
+    std::cerr << "\t-t INT number of threads [3]\n";
+//    std::cerr << "\t-u Produce NAMs only from unique strobemers (w.r.t. reference sequences). This provides faster mapping.\n";
     std::cerr << "\t-o name of output tsv-file [output.tsv]\n";
     std::cerr << "\t-c Choice of protocol to use; kmers, minstrobes, hybridstrobes, randstrobes [randstrobes]. \n";
 }
@@ -503,6 +508,7 @@ int main (int argc, char *argv[])
     std::string output_file_name = "output.tsv";
     int w_min = 21;
     int w_max = 70;
+    int n_threads = 3;
     bool unique = false;
     int opn = 1;
     while (opn < argc) {
@@ -536,6 +542,10 @@ int main (int argc, char *argv[])
                 unique = true;
                 opn += 1;
                 flag = true;
+            } else if (argv[opn][1] == 't') {
+                n_threads = std::stoi(argv[opn + 1]);
+                opn += 2;
+                flag = true;
             }
             else {
                 print_usage();
@@ -545,13 +555,14 @@ int main (int argc, char *argv[])
             break;
     }
 
-
-//    std::cout << "Using" << std::endl;
-//    std::cout << "n: " << n << std::endl;
-//    std::cout << "k: " << k << std::endl;
-//    std::cout << "s: " << s << std::endl;
-//    std::cout << "w_min: " << w_min << std::endl;
-//    std::cout << "w_max: " << w_max << std::endl;
+    omp_set_num_threads(n_threads); // set number of threads in "parallel" blocks
+    std::cout << "Using" << std::endl;
+    std::cout << "n: " << n << std::endl;
+    std::cout << "k: " << k << std::endl;
+    std::cout << "s: " << s << std::endl;
+    std::cout << "w_min: " << w_min << std::endl;
+    std::cout << "w_max: " << w_max << std::endl;
+    std::cout << "t: " << n_threads << std::endl;
 
 //    assert(k <= (w/2)*w_min && "k should be smaller than (w/2)*w_min to avoid creating short strobemers");
     assert(k > 7 && "You should really not use too small strobe size!");
@@ -562,7 +573,7 @@ int main (int argc, char *argv[])
     // File name to reference
     std::string filename = argv[opn];
     opn++;
-    std::string reads_filename = argv[opn];
+    const char *reads_filename = argv[opn];
 
 
     ///////////////////// INPUT /////////////////////////
@@ -705,146 +716,97 @@ int main (int argc, char *argv[])
     // Record matching time
     auto start_map = std::chrono::high_resolution_clock::now();
 
-    std::ifstream query_file(reads_filename);
+    //    std::ifstream query_file(reads_filename);
+//    KSeq record;
+    gzFile fp = gzopen(reads_filename, "r");
+//    auto ks = make_kstream(fp, gzread, mode::in);
+    auto ks = make_ikstream(fp, gzread);
     std::ofstream output_file;
-    output_file.open (output_file_name);
+    output_file.open(output_file_name);
 
-    std::string line, seq, prev_acc;
+//    std::string line, seq, prev_acc;
     std::string seq_rc;
+    std::string acc = "";
     unsigned int q_id = 0;
     unsigned int read_cnt = 0;
     mers_vector query_mers; // pos, chr_id, kmer hash value
     mers_vector query_mers_rc; // pos, chr_id, kmer hash value
-//    #pragma omp parallel for
-    while (getline(query_file, line)) {
-        if (line[0] == '>') {
+
+    while (ks ) {
+//        ks >> record;
+         auto records = ks.read(500000);  // read a chunk of 500000 records
+         std::cout << "Mapping " << records.size() << " reads. " << std::endl;
+
+        #pragma omp parallel for num_threads(n_threads) shared(read_cnt, output_file, q_id) private(acc,seq_rc, query_mers,query_mers_rc)
+        for (auto & record : records){
             read_cnt ++;
-            if (seq.length() > 0){
-                // generate mers here
-                if (choice == "kmers" ){
-                    query_mers = seq_to_kmers(k, seq, q_id);
-                    seq_rc = reverse_complement(seq);
-                    query_mers_rc = seq_to_kmers(k, seq_rc, q_id);
+            acc = split_string(record.name);
+    //        std::cout << acc << std::endl;
+    //        if (!record.comment.empty()) std::cout << record.comment << std::endl;
+    //        std::cout << record.seq << std::endl;
+    //        if (!record.qual.empty()) std::cout << record.qual << std::endl;
+            if (choice == "kmers" ){
+                query_mers = seq_to_kmers(k, record.seq, q_id);
+                seq_rc = reverse_complement(record.seq);
+                query_mers_rc = seq_to_kmers(k, seq_rc, q_id);
+            }
+            else if (choice == "randstrobes" ){
+                if (n == 2 ){
+                    query_mers = seq_to_randstrobes2(n, k, w_min, w_max, record.seq, q_id);
+                    seq_rc = reverse_complement(record.seq);
+                    query_mers_rc = seq_to_randstrobes2(n, k, w_min, w_max, seq_rc, q_id);
                 }
-                else if (choice == "randstrobes" ){
-                    if (n == 2 ){
-                        query_mers = seq_to_randstrobes2(n, k, w_min, w_max, seq, q_id);
-                        seq_rc = reverse_complement(seq);
-                        query_mers_rc = seq_to_randstrobes2(n, k, w_min, w_max, seq_rc, q_id);
-                        }
 
-                    else if (n == 3){
-                        query_mers = seq_to_randstrobes3(n, k, w_min, w_max, seq, q_id);
-                        seq_rc = reverse_complement(seq);
-                        query_mers_rc = seq_to_randstrobes3(n, k, w_min, w_max, seq_rc, q_id);
-                    }
-                }
-                else if (choice == "hybridstrobes" ){
-                    if (n == 2 ){
-                        for (auto x : ref_seqs){
-                            query_mers = seq_to_hybridstrobes2(n, k, w_min, w_max, seq, q_id);
-                            seq_rc = reverse_complement(seq);
-                            query_mers_rc = seq_to_hybridstrobes2(n, k, w_min, w_max, seq_rc, q_id);
-                        }
-                    }
-                      else if (n == 3){
-                        for (auto x : ref_seqs){
-                            query_mers = seq_to_hybridstrobes3(n, k, w_min, w_max, seq, q_id);
-                            seq_rc = reverse_complement(seq);
-                            query_mers_rc = seq_to_hybridstrobes3(n, k, w_min, w_max, seq_rc, q_id);
-                        }
-                      }
-                }
-//                std::cout << "HERE " << line << std::endl;
-                // Find NAMs
-//                std::cout << "Processing read: " << prev_acc << " kmers generated: " << query_mers.size() << ", read length: " <<  seq.length() << std::endl;
-                std::vector<nam> nams; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
-                std::vector<nam> nams_rc; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
-
-                if (unique) {
-                    nams = find_nams_unique(query_mers, all_mers_vector, mers_index, k);
-                    nams_rc = find_nams_unique(query_mers_rc, all_mers_vector, mers_index, k);
-                }
-                else {
-                    nams = find_nams(query_mers, all_mers_vector, mers_index, k, acc_map_to_idx, prev_acc);
-                    nams_rc = find_nams(query_mers_rc, all_mers_vector, mers_index, k, acc_map_to_idx, prev_acc);
-                }
-//                std::cout <<  "NAMs generated: " << nams.size() << std::endl;
-                // Output results
-                output_nams(nams, output_file, prev_acc, acc_map, false);
-                output_nams(nams_rc, output_file, prev_acc, acc_map, true);
-
-//              output_file << "> " <<  prev_acc << "\n";
-//              output_file << "  " << ref_acc << " " << ref_p << " " << q_pos << " " << "\n";
-//              outfile.write("  {0} {1} {2} {3}\n".format(ref_acc, ref_p, q_pos, k))
-                if (read_cnt % 10000 == 0){
-                    std::cout << "Processed " << read_cnt << "reads. " << std::endl;
+                else if (n == 3){
+                    query_mers = seq_to_randstrobes3(n, k, w_min, w_max, record.seq, q_id);
+                    seq_rc = reverse_complement(record.seq);
+                    query_mers_rc = seq_to_randstrobes3(n, k, w_min, w_max, seq_rc, q_id);
                 }
             }
+            else if (choice == "hybridstrobes" ){
+                if (n == 2 ){
+                    for (auto x : ref_seqs){
+                        query_mers = seq_to_hybridstrobes2(n, k, w_min, w_max, record.seq, q_id);
+                        seq_rc = reverse_complement(record.seq);
+                        query_mers_rc = seq_to_hybridstrobes2(n, k, w_min, w_max, seq_rc, q_id);
+                    }
+                }
+                else if (n == 3){
+                    for (auto x : ref_seqs){
+                        query_mers = seq_to_hybridstrobes3(n, k, w_min, w_max, record.seq, q_id);
+                        seq_rc = reverse_complement(record.seq);
+                        query_mers_rc = seq_to_hybridstrobes3(n, k, w_min, w_max, seq_rc, q_id);
+                    }
+                }
+            }
+            // Find NAMs
+            std::vector<nam> nams; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
+            std::vector<nam> nams_rc; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
 
-            prev_acc = split_string(line, " ");
-//            prev_acc = line.substr(1, line.length() -1);
-            seq = "";
+            if (unique) {
+                nams = find_nams_unique(query_mers, all_mers_vector, mers_index, k);
+                nams_rc = find_nams_unique(query_mers_rc, all_mers_vector, mers_index, k);
+            }
+            else {
+                nams = find_nams(query_mers, all_mers_vector, mers_index, k, acc_map_to_idx, acc);
+                nams_rc = find_nams(query_mers_rc, all_mers_vector, mers_index, k, acc_map_to_idx, acc);
+            }
+            // Output results
+            #pragma omp critical (datawrite)
+            {
+                output_nams(nams, output_file, acc, acc_map, false);
+                output_nams(nams_rc, output_file, acc, acc_map, true);
+            };
+    //        std::cout << "Processed " << read_cnt << "reads. " << std::endl;
+
+//            if (read_cnt % 10000 == 0){
+//                std::cout << "Processed " << read_cnt << "reads. " << std::endl;
+//            }
             q_id ++;
         }
-        else {
-            seq += line;
-        }
-    }
-    if (seq.length() > 0){
-        if (choice == "kmers" ){
-            query_mers = seq_to_kmers(k, seq, q_id);
-            seq_rc = reverse_complement(seq);
-            query_mers_rc = seq_to_kmers(k, seq_rc, q_id);
-        }
-        else if (choice == "randstrobes" ){
-            if (n == 2 ){
-                query_mers = seq_to_randstrobes2(n, k, w_min, w_max, seq, q_id);
-                seq_rc = reverse_complement(seq);
-                query_mers_rc = seq_to_randstrobes2(n, k, w_min, w_max, seq_rc, q_id);
-            }
-
-            else if (n == 3){
-                query_mers = seq_to_randstrobes3(n, k, w_min, w_max, seq, q_id);
-                seq_rc = reverse_complement(seq);
-                query_mers_rc = seq_to_randstrobes3(n, k, w_min, w_max, seq_rc, q_id);
-            }
-        }
-        else if (choice == "hybridstrobes" ){
-            if (n == 2 ){
-                for (auto x : ref_seqs){
-                    query_mers = seq_to_hybridstrobes2(n, k, w_min, w_max, seq, q_id);
-                    seq_rc = reverse_complement(seq);
-                    query_mers_rc = seq_to_hybridstrobes2(n, k, w_min, w_max, seq_rc, q_id);
-                }
-            }
-            else if (n == 3){
-                for (auto x : ref_seqs){
-                    query_mers = seq_to_hybridstrobes3(n, k, w_min, w_max, seq, q_id);
-                    seq_rc = reverse_complement(seq);
-                    query_mers_rc = seq_to_hybridstrobes3(n, k, w_min, w_max, seq_rc, q_id);
-                }
-            }
-        }
-        // Find NAMs
-//        std::cout << "Processing read: " << prev_acc << " kmers generated: " << query_mers.size() << ", read length: " <<  seq.length() << std::endl;
-        std::vector<nam> nams; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
-        std::vector<nam> nams_rc; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
-        if (unique) {
-            nams = find_nams_unique(query_mers, all_mers_vector, mers_index, k);
-            nams_rc = find_nams_unique(query_mers_rc, all_mers_vector, mers_index, k);
-        }
-        else {
-            nams = find_nams(query_mers, all_mers_vector, mers_index, k, acc_map_to_idx, prev_acc);
-            nams_rc = find_nams(query_mers_rc, all_mers_vector, mers_index, k, acc_map_to_idx, prev_acc);
-        }
-//                std::cout <<  "NAMs generated: " << nams.size() << std::endl;
-        // Output results
-        output_nams(nams, output_file, prev_acc, acc_map, false);
-        output_nams(nams_rc, output_file, prev_acc, acc_map, true);
     }
 
-    query_file.close();
+    gzclose(fp);
     output_file.close();
 
 
@@ -852,16 +814,6 @@ int main (int argc, char *argv[])
     auto finish_map = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed_map = finish_map - start_map;
     std::cout << "Total time mapping: " << elapsed_map.count() << " s\n" <<  std::endl;
-
-
-    //////////////////////////////////////////////////////////////////////////
-
-
-    /////////////////////// FIND AND OUTPUT NAMs ///////////////////////////////
-
-
-
-
 
 }
 
