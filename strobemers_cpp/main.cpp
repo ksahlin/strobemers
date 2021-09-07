@@ -53,7 +53,6 @@ static void read_references(references &seqs, idx_to_acc &acc_map, acc_to_idx &a
             if (seq.length() > 0){
                 seqs[ref_index -1] = seq;
 //                std::cout << ref_index - 1 << " here " << seq << " " << seq.length() << " " << seq.size() << std::endl;
-//                generate_kmers(h, k, seq, ref_index);
             }
             std::string tmp = line.substr(1, line.length() -1);
             std::string acc = split_string(tmp, " ");
@@ -70,7 +69,6 @@ static void read_references(references &seqs, idx_to_acc &acc_map, acc_to_idx &a
     if (seq.length() > 0){
         seqs[ref_index -1] = seq;
 //        std::cout << ref_index -1 << " here2 " << seq << std::endl;
-//        generate_kmers(h, k, seq, ref_index);
     }
     file.close();
 }
@@ -220,7 +218,7 @@ static inline std::vector<nam> find_nams_unique(mers_vector &query_mers, mers_ve
 }
 
 
-static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &mers_vector, vector_index &mers_index, int k, acc_to_idx acc_map_to_idx,  std::string query_acc){
+static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &mers_vector, vector_index &mers_index, int k, acc_to_idx &acc_map_to_idx,  std::string query_acc){
 //    std::cout << "ENTER FIND NAMS " <<  std::endl;
     robin_hood::unordered_map< unsigned int, std::vector<hit>> hits_per_ref; // [ref_id] -> vector( struct hit)
     uint64_t hit_count_reduced = 0;
@@ -242,9 +240,6 @@ static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &m
             mer = mers_index[mer_hashv];
             uint64_t offset = std::get<0>(mer);
             unsigned int count = std::get<1>(mer);
-            unsigned int prev_ref_s = 0;
-            unsigned int prev_ref_e = 0;
-            unsigned int prev_ref_id = 0;
             for(size_t j = offset; j < offset+count; ++j)
             {
 
@@ -259,52 +254,14 @@ static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &m
                 h.ref_e = ref_e;
                 hits_per_ref[ref_id].push_back(h);
 
-//                if (j== offset){
-////                    std::cout << "INITIALZING! " << std::endl;
-//                    prev_ref_s = ref_s;
-//                    prev_ref_e = ref_e;
-//                    prev_ref_id = ref_id;
-//                }
-//                else if ( (prev_ref_s < ref_s) && (ref_s < prev_ref_e) && (ref_id == prev_ref_id)  ){
-//                    if (ref_e > prev_ref_e){
-//                        prev_ref_e = ref_e;
-//                    }
-//
-//                }
-//                else{
-//                    h.ref_s = prev_ref_s;
-//                    h.ref_e = prev_ref_e;
-//                    hits_per_ref[prev_ref_id].push_back(h);
-//                    hit_count_reduced ++;
-//                    prev_ref_s = ref_s;
-//                    prev_ref_e = ref_e;
-//                    prev_ref_id = ref_id;
-////                    std::cout << "REDUCED Hit! " << h.query_s << ", " << h.query_e << ", " << h.ref_s << ", " << h.ref_e << ", " << std::endl;
-////                    if ( (h.query_e - h.query_s) < (h.ref_e - h.ref_s) ){
-////                        ;
-////                        std::cout << "REDUCED Hit! " << h.query_s << ", " << h.query_e << ", " << h.ref_s << ", " << h.ref_e << ", " << std::endl;
-////                    }
-//                }
-
-
                 hit_count_all ++;
-//                std::cout << "Hit! " << h.query_s << ", " << h.query_e << ", " << ref_s << ", " << ref_e << ", " << std::endl;
 
             }
-//            h.ref_s = prev_ref_s;
-//            h.ref_e = prev_ref_e;
-//            hits_per_ref[prev_ref_id].push_back(h);
-//            hit_count_reduced ++;
-//            std::cout << "REDUCED Hit! " << h.query_s << ", " << h.query_e << ", " << h.ref_s << ", " << h.ref_e << ", " << std::endl;
-//            if ( (h.query_e - h.query_s) < (h.ref_e - h.ref_s) ){
-//                ;
-//                std::cout << "REDUCED Hit! " << h.query_s << ", " << h.query_e << ", " << h.ref_s << ", " << h.ref_e << ", " << std::endl;
-//            }
 
         }
     }
 
-//    std::cout << "NUMBER OF HITS GENERATED: " << hit_count_all << std::endl;
+//    std::cout << "NUMBER OF HITS GENERATED: " << hit_count_all << " , unique refs: " << hits_per_ref.size() << std::endl;
 //    std::cout << "TOTAL STROBEMERS GENERATED: " << total_mers << std::endl;
 
 //    std::cout << "NUMBER OF REDUCED HITS GENERATED: " << hit_count_reduced << std::endl;
@@ -319,30 +276,6 @@ static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &m
         uint64_t prev_q_start = 0;
         for (auto &h : hits){
             bool is_added = false;
-//            for (auto & o : open_nams) {
-//
-//                // Extend NAM
-//                if ( ( o.previous_query_start < h.query_s) && (h.query_s <= o.query_e ) && ( o.previous_ref_start < h.ref_s) && (h.ref_s <= o.ref_e) ){
-//                    if ( (h.query_e > o.query_e) && (h.ref_e > o.ref_e) ) {
-//                        o.query_e = h.query_e;
-//                        o.ref_e = h.ref_e;
-//                        o.previous_query_start = h.query_s;
-//                        o.previous_ref_start = h.ref_s; // keeping track so that we don't . Can be caused by interleaved repeats.
-//                        is_added = true;
-//                        break;
-//                    }
-//                    else if ((h.query_e <= o.query_e) && (h.ref_e <= o.ref_e)) {
-//                        o.previous_query_start = h.query_s;
-//                        o.previous_ref_start = h.ref_s; // keeping track so that we don't . Can be caused by interleaved repeats.
-//                        is_added = true;
-//                        break;
-//                    }
-//
-//                }
-//
-//
-//            }
-
                 for (auto & o : open_nams) {
 
                     // Extend NAM
@@ -362,8 +295,6 @@ static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &m
 
                 }
 
-
-
             // Add the hit to open matches
             if (not is_added){
                 nam n;
@@ -377,24 +308,6 @@ static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &m
 //                n.copy_id = hit_copy_id;
                 open_nams.push_back(n);
             }
-
-
-//            // Output matches with identical query and reference end coordinates to a longer match. This means that the match is a submatch to another match
-//            int before = open_nams.size();
-//            // TODO: Also output the matches,, not just remove them as is currently done..
-//            // This may happen because of interleaved repeats. Example of an interleaved repeat (with k<= 30) from ecoli with identical strings [0-126] and from [96-222]: CTGTTGCTGTTCCAGCTTGCGCGCTTTGGCACGGGCAATAGCGGCTTCGACGGCGGCTTTGCGCGGATCGACCTGTTCTTCTGGTTCCGCATTAGCCTGTTGCTGTTCCAGCTTGCGCGCTTTGGCACGGGCAATAGCGGCTTCGACGGCGGCTTTGCGCGGATCGACCTGTTCTTCTGGTTCCGCATTAGCCTGTTGCTGTTCCAGCTTGCGCGCTTTGGCGCGGGCGATAGCTGCTTCAACGGCAGTTTTACGTGGATCAGCAACGGTTGCTGCGTCGTTAGTTTGCTGCA
-//            auto comp = [] ( const nam& n1, const nam& n2 ) {return (n1.query_e == n2.query_e) && (n1.ref_e == n2.ref_e);};
-//            auto pred = []( const nam& n1, const nam& n2 ) {return (n1.ref_e < n2.ref_e) || ((n1.ref_e == n2.ref_e ) && (n1.query_s < n2.query_s)) ;};
-//            std::sort(open_nams.begin(),open_nams.end(), pred);
-//            auto last = std::unique(open_nams.begin(), open_nams.end(),comp);
-//            for (auto &r : open_nams){
-//                std::cout << "Deleting: " << r.ref_id << ": (" << r.copy_id << ", " << r.query_s << ", " << r.query_e << ", " << r.ref_s << ", " << r.ref_e << ")" << std::endl;
-//            }
-//            open_nams.erase(last, open_nams.end());
-//            int after = open_nams.size();
-//            if (before > after){
-//                std::cout << "Removed " << before - after <<  " matches." <<  std::endl;
-//            }
 
             // Only filter if we have advanced at least k nucleotides
             if (h.query_s > prev_q_start + k) {
@@ -458,8 +371,6 @@ static inline bool compareByQueryLength(const nam &a, const nam &b)
 }
 
 static inline void output_nams(std::vector<nam> &nams, std::ofstream &output_file, std::string query_acc, idx_to_acc &acc_map, bool is_rc) {
-    //Sort hits based on start choordinate on query sequence
-    std::sort(nams.begin(), nams.end(), compareByQueryCoord);
     // Output results
     if (is_rc) {
         output_file << "> " << query_acc << " Reverse\n";
@@ -672,6 +583,7 @@ int main (int argc, char *argv[])
             for (auto x : ref_seqs){
                 mers_vector randstrobes2; // pos, chr_id, kmer hash value
 //                #pragma omp parallel for
+//                std::cout << x.first << " : " << acc_map[x.first] << std::endl;
                 randstrobes2 = seq_to_randstrobes2(n, k, w_min, w_max, x.second, x.first);
                 tmp_index[x.first] = randstrobes2;
             }
@@ -735,7 +647,7 @@ int main (int argc, char *argv[])
     while (ks ) {
 //        ks >> record;
          auto records = ks.read(500000);  // read a chunk of 500000 records
-         std::cout << "Mapping " << records.size() << " reads. " << std::endl;
+         std::cout << "Mapping chunk of " << records.size() << " query sequences... " << std::endl;
 
         #pragma omp parallel for num_threads(n_threads) shared(read_cnt, output_file, q_id) private(acc,seq_rc, query_mers,query_mers_rc)
         for (auto & record : records){
@@ -791,6 +703,9 @@ int main (int argc, char *argv[])
                 nams = find_nams(query_mers, all_mers_vector, mers_index, k, acc_map_to_idx, acc);
                 nams_rc = find_nams(query_mers_rc, all_mers_vector, mers_index, k, acc_map_to_idx, acc);
             }
+            //Sort hits based on start choordinate on query sequence
+            std::sort(nams.begin(), nams.end(), compareByQueryCoord);
+            std::sort(nams_rc.begin(), nams_rc.end(), compareByQueryCoord);
             // Output results
             #pragma omp critical (datawrite)
             {

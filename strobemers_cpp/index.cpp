@@ -274,6 +274,9 @@ mers_vector seq_to_randstrobes2(int n, int k, int w_min, int w_max, std::string 
     make_string_to_hashvalues2(seq, string_hashes, pos_to_seq_choord, k, kmask);
     unsigned int seq_length = string_hashes.size();
 
+    if (string_hashes.size() == 0) {
+        return randstrobes2;
+    }
 //    std::cout << seq << std::endl;
 
     // create the randstrobes
@@ -339,6 +342,9 @@ mers_vector seq_to_randstrobes3(int n, int k, int w_min, int w_max, std::string 
     make_string_to_hashvalues2(seq, string_hashes, pos_to_seq_choord, k, kmask);
     unsigned int seq_length = string_hashes.size();
 
+    if (string_hashes.size() == 0) {
+        return randstrobes3;
+    }
 //    std::cout << seq << std::endl;
 
     // create the randstrobes
