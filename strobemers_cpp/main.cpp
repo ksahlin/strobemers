@@ -417,7 +417,7 @@ int main (int argc, char *argv[])
     int s = k - 4;
     float f = 0.0002;
     std::string output_file_name = "output.tsv";
-    int w_min = 21;
+    int w_min = k+1;
     int w_max = 70;
     int n_threads = 3;
     bool unique = false;
@@ -466,6 +466,7 @@ int main (int argc, char *argv[])
             break;
     }
 
+    w_min = k+1; // Update if user has specified non-default k
     omp_set_num_threads(n_threads); // set number of threads in "parallel" blocks
     std::cout << "Using" << std::endl;
     std::cout << "n: " << n << std::endl;
