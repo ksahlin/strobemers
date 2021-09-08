@@ -101,15 +101,22 @@ g++ -std=c++14 main.cpp index.cpp -lz -fopenmp -o StrobeMap -O3 -mavx2
 ## Usage
 
 ```
- StrobeMap
-strobealign [options] <references.fa> <queries.fasta>
+$ ./StrobeMap 
+
+StrobeMap VERSION 0.0.2
+
+StrobeMap [options] <references.fasta> <queries.fast[a/q]>
 options:
   -n INT number of strobes [2]
   -k INT strobe length, limited to 32 [20]
-  -v strobe w_min offset [k+1]
-  -w strobe w_max offset [70]
+  -v INT strobe w_min offset [k+1]
+  -w INT strobe w_max offset [70]
+  -t INT number of threads [3]
   -o name of output tsv-file [output.tsv]
   -c Choice of protocol to use; kmers, minstrobes, hybridstrobes, randstrobes [randstrobes]. 
+  -s Split output into one file per thread and forward/reverse complement mappings. 
+     This option is used to generate format compatible with uLTRA long-read RNA aligner and requires 
+     option -o to be specified as a folder path to uLTRA output directory, e.g., -o /my/path/to/uLTRA_output/  
 ```
 
 ```
