@@ -385,13 +385,14 @@ static inline void output_nams(std::vector<nam> &nams, std::ofstream &output_fil
 }
 
 void print_usage() {
-    std::cerr << "strobealign [options] <references.fa> <queries.fasta>\n";
+    std::cerr << "strobealign [options] <references.fasta> <queries.fast[a/q]>\n";
     std::cerr << "options:\n";
     std::cerr << "\t-n INT number of strobes [2]\n";
     std::cerr << "\t-k INT strobe length, limited to 32 [20]\n";
     std::cerr << "\t-v INT strobe w_min offset [k+1]\n";
     std::cerr << "\t-w INT strobe w_max offset [70]\n";
     std::cerr << "\t-t INT number of threads [3]\n";
+    std::cerr << "\t-s Split output into one file per thread and forward/reverse complement mappings. \n\t   This option is used to generate format compatible with uLTRA long-read RNA aligner and requires \n\t   option -o to be specified as a folder path to uLTRA output directory, e.g., -o /my/path/to/uLTRA_output/ \n";
 //    std::cerr << "\t-u Produce NAMs only from unique strobemers (w.r.t. reference sequences). This provides faster mapping.\n";
     std::cerr << "\t-o name of output tsv-file [output.tsv]\n";
     std::cerr << "\t-c Choice of protocol to use; kmers, minstrobes, hybridstrobes, randstrobes [randstrobes]. \n";
@@ -421,6 +422,8 @@ int main (int argc, char *argv[])
     int w_max = 70;
     int n_threads = 3;
     bool unique = false;
+    bool output_specified = false;
+    bool ultra_output = false;
     int opn = 1;
     while (opn < argc) {
         bool flag = false;
@@ -437,6 +440,7 @@ int main (int argc, char *argv[])
                 output_file_name = argv[opn + 1];
                 opn += 2;
                 flag = true;
+                output_specified = true;
             } else if (argv[opn][1] == 'v') {
                 w_min = std::stoi(argv[opn + 1]);
                 opn += 2;
@@ -451,6 +455,10 @@ int main (int argc, char *argv[])
                 flag = true;
             } else if (argv[opn][1] == 'u') {
                 unique = true;
+                opn += 1;
+                flag = true;
+            } else if (argv[opn][1] == 's') {
+                ultra_output = true;
                 opn += 1;
                 flag = true;
             } else if (argv[opn][1] == 't') {
@@ -481,7 +489,9 @@ int main (int argc, char *argv[])
     int filter_nams = 0;
 //    assert(k <= w_min && "k have to be smaller than w_min");
     assert(k <= 32 && "k have to be smaller than 32!");
-
+    if (ultra_output){
+        assert(output_specified && "If -s is specified -o needs to be specified on format: /my/path/to/uLTRA_output/ ");
+    }
     // File name to reference
     std::string filename = argv[opn];
     opn++;
@@ -648,8 +658,7 @@ int main (int argc, char *argv[])
     gzFile fp = gzopen(reads_filename, "r");
 //    auto ks = make_kstream(fp, gzread, mode::in);
     auto ks = make_ikstream(fp, gzread);
-    std::ofstream output_file;
-    output_file.open(output_file_name);
+
 
 //    std::string line, seq, prev_acc;
     std::string seq_rc;
@@ -658,86 +667,184 @@ int main (int argc, char *argv[])
     unsigned int read_cnt = 0;
     mers_vector query_mers; // pos, chr_id, kmer hash value
     mers_vector query_mers_rc; // pos, chr_id, kmer hash value
+    if (ultra_output){
+        std::vector<std::ofstream> output_files(2*n_threads);
+        std::ofstream output_file;
+        if (n_threads == 1){
+            std::string output_file_name_thread = output_file_name + "/mummer_mems_batch_-1.txt";
+            output_files[0].open(output_file_name_thread);
 
-    while (ks ) {
-//        ks >> record;
-         auto records = ks.read(500000);  // read a chunk of 500000 records
-         std::cout << "Mapping chunk of " << records.size() << " query sequences... " << std::endl;
+            std::string output_file_name_thread_rc = output_file_name + "mummer_mems_batch_-1_rc.txt";
+            output_files[1].open(output_file_name_thread_rc);
+        }
+        else {
+            for (int i = 0; i < n_threads; ++i) {
 
-        #pragma omp parallel for num_threads(n_threads) shared(read_cnt, output_file, q_id) private(acc,seq_rc, query_mers,query_mers_rc)
-        for (auto & record : records){
-            read_cnt ++;
-            acc = split_string(record.name);
-    //        std::cout << acc << std::endl;
-    //        if (!record.comment.empty()) std::cout << record.comment << std::endl;
-    //        std::cout << record.seq << std::endl;
-    //        if (!record.qual.empty()) std::cout << record.qual << std::endl;
-            if (choice == "kmers" ){
-                query_mers = seq_to_kmers(k, record.seq, q_id);
-                seq_rc = reverse_complement(record.seq);
-                query_mers_rc = seq_to_kmers(k, seq_rc, q_id);
+                std::string output_file_name_thread = output_file_name + "/mummer_mems_batch_" + std::to_string(i) + ".txt";
+                output_files[i].open(output_file_name_thread);
+
+                std::string output_file_name_thread_rc = output_file_name + "/mummer_mems_batch_" + std::to_string(i) + "_rc.txt";
+                output_files[n_threads + i].open(output_file_name_thread_rc);
             }
-            else if (choice == "randstrobes" ){
-                if (n == 2 ){
-                    query_mers = seq_to_randstrobes2(n, k, w_min, w_max, record.seq, q_id);
-                    seq_rc = reverse_complement(record.seq);
-                    query_mers_rc = seq_to_randstrobes2(n, k, w_min, w_max, seq_rc, q_id);
-                }
+        }
 
-                else if (n == 3){
-                    query_mers = seq_to_randstrobes3(n, k, w_min, w_max, record.seq, q_id);
+        while (ks ) {
+            auto records = ks.read(500000);  // read a chunk of 500000 records
+            std::cout << "Mapping chunk of " << records.size() << " query sequences... " << std::endl;
+            #pragma omp parallel for num_threads(n_threads) shared(output_files, read_cnt, q_id) private(acc,seq_rc, query_mers, query_mers_rc)
+            for (auto & record : records){
+                read_cnt ++;
+                acc = split_string(record.name);
+                //        std::cout << acc << std::endl;
+                //        if (!record.comment.empty()) std::cout << record.comment << std::endl;
+                //        std::cout << record.seq << std::endl;
+                //        if (!record.qual.empty()) std::cout << record.qual << std::endl;
+                if (choice == "kmers" ){
+                    query_mers = seq_to_kmers(k, record.seq, q_id);
                     seq_rc = reverse_complement(record.seq);
-                    query_mers_rc = seq_to_randstrobes3(n, k, w_min, w_max, seq_rc, q_id);
+                    query_mers_rc = seq_to_kmers(k, seq_rc, q_id);
                 }
-            }
-            else if (choice == "hybridstrobes" ){
-                if (n == 2 ){
-                    for (auto x : ref_seqs){
-                        query_mers = seq_to_hybridstrobes2(n, k, w_min, w_max, record.seq, q_id);
+                else if (choice == "randstrobes" ){
+                    if (n == 2 ){
+                        query_mers = seq_to_randstrobes2(n, k, w_min, w_max, record.seq, q_id);
                         seq_rc = reverse_complement(record.seq);
-                        query_mers_rc = seq_to_hybridstrobes2(n, k, w_min, w_max, seq_rc, q_id);
+                        query_mers_rc = seq_to_randstrobes2(n, k, w_min, w_max, seq_rc, q_id);
+                    }
+
+                    else if (n == 3){
+                        query_mers = seq_to_randstrobes3(n, k, w_min, w_max, record.seq, q_id);
+                        seq_rc = reverse_complement(record.seq);
+                        query_mers_rc = seq_to_randstrobes3(n, k, w_min, w_max, seq_rc, q_id);
                     }
                 }
-                else if (n == 3){
-                    for (auto x : ref_seqs){
-                        query_mers = seq_to_hybridstrobes3(n, k, w_min, w_max, record.seq, q_id);
-                        seq_rc = reverse_complement(record.seq);
-                        query_mers_rc = seq_to_hybridstrobes3(n, k, w_min, w_max, seq_rc, q_id);
+                else if (choice == "hybridstrobes" ){
+                    if (n == 2 ){
+                        for (auto x : ref_seqs){
+                            query_mers = seq_to_hybridstrobes2(n, k, w_min, w_max, record.seq, q_id);
+                            seq_rc = reverse_complement(record.seq);
+                            query_mers_rc = seq_to_hybridstrobes2(n, k, w_min, w_max, seq_rc, q_id);
+                        }
+                    }
+                    else if (n == 3){
+                        for (auto x : ref_seqs){
+                            query_mers = seq_to_hybridstrobes3(n, k, w_min, w_max, record.seq, q_id);
+                            seq_rc = reverse_complement(record.seq);
+                            query_mers_rc = seq_to_hybridstrobes3(n, k, w_min, w_max, seq_rc, q_id);
+                        }
                     }
                 }
-            }
-            // Find NAMs
-            std::vector<nam> nams; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
-            std::vector<nam> nams_rc; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
+                // Find NAMs
+                std::vector<nam> nams; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
+                std::vector<nam> nams_rc; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
 
-            if (unique) {
-                nams = find_nams_unique(query_mers, all_mers_vector, mers_index, k);
-                nams_rc = find_nams_unique(query_mers_rc, all_mers_vector, mers_index, k);
+                if (unique) {
+                    nams = find_nams_unique(query_mers, all_mers_vector, mers_index, k);
+                    nams_rc = find_nams_unique(query_mers_rc, all_mers_vector, mers_index, k);
+                }
+                else {
+                    nams = find_nams(query_mers, all_mers_vector, mers_index, k, acc_map_to_idx, acc);
+                    nams_rc = find_nams(query_mers_rc, all_mers_vector, mers_index, k, acc_map_to_idx, acc);
+                }
+                //Sort hits based on start choordinate on query sequence
+                std::sort(nams.begin(), nams.end(), compareByQueryCoord);
+                std::sort(nams_rc.begin(), nams_rc.end(), compareByQueryCoord);
+                // Output results
+                #pragma omp critical (datawrite)
+                {
+//                    std::cout << omp_get_thread_num() << " " << output_files.size() << " " <<  n_threads + omp_get_thread_num() << std::endl;
+                    output_nams(nams, output_files[omp_get_thread_num()], acc, acc_map, false);
+                    output_nams(nams_rc, output_files[n_threads + omp_get_thread_num()], acc, acc_map, true);
+                }
+                q_id ++;
             }
-            else {
-                nams = find_nams(query_mers, all_mers_vector, mers_index, k, acc_map_to_idx, acc);
-                nams_rc = find_nams(query_mers_rc, all_mers_vector, mers_index, k, acc_map_to_idx, acc);
-            }
-            //Sort hits based on start choordinate on query sequence
-            std::sort(nams.begin(), nams.end(), compareByQueryCoord);
-            std::sort(nams_rc.begin(), nams_rc.end(), compareByQueryCoord);
-            // Output results
-            #pragma omp critical (datawrite)
-            {
-                output_nams(nams, output_file, acc, acc_map, false);
-                output_nams(nams_rc, output_file, acc, acc_map, true);
-            };
-    //        std::cout << "Processed " << read_cnt << "reads. " << std::endl;
-
-//            if (read_cnt % 10000 == 0){
-//                std::cout << "Processed " << read_cnt << "reads. " << std::endl;
-//            }
-            q_id ++;
+        }
+        for (int i = 0; i < 2*n_threads; ++i) {
+            output_files[i].close();
         }
     }
+    else{
+        std::ofstream output_file;
+        output_file.open(output_file_name);
+        while (ks ) {
+    //        ks >> record;
+             auto records = ks.read(500000);  // read a chunk of 500000 records
+             std::cout << "Mapping chunk of " << records.size() << " query sequences... " << std::endl;
 
+            #pragma omp parallel for num_threads(n_threads) shared(read_cnt, output_file, q_id) private(acc,seq_rc, query_mers,query_mers_rc)
+            for (auto & record : records){
+                read_cnt ++;
+                acc = split_string(record.name);
+        //        std::cout << acc << std::endl;
+        //        if (!record.comment.empty()) std::cout << record.comment << std::endl;
+        //        std::cout << record.seq << std::endl;
+        //        if (!record.qual.empty()) std::cout << record.qual << std::endl;
+                if (choice == "kmers" ){
+                    query_mers = seq_to_kmers(k, record.seq, q_id);
+                    seq_rc = reverse_complement(record.seq);
+                    query_mers_rc = seq_to_kmers(k, seq_rc, q_id);
+                }
+                else if (choice == "randstrobes" ){
+                    if (n == 2 ){
+                        query_mers = seq_to_randstrobes2(n, k, w_min, w_max, record.seq, q_id);
+                        seq_rc = reverse_complement(record.seq);
+                        query_mers_rc = seq_to_randstrobes2(n, k, w_min, w_max, seq_rc, q_id);
+                    }
+
+                    else if (n == 3){
+                        query_mers = seq_to_randstrobes3(n, k, w_min, w_max, record.seq, q_id);
+                        seq_rc = reverse_complement(record.seq);
+                        query_mers_rc = seq_to_randstrobes3(n, k, w_min, w_max, seq_rc, q_id);
+                    }
+                }
+                else if (choice == "hybridstrobes" ){
+                    if (n == 2 ){
+                        for (auto x : ref_seqs){
+                            query_mers = seq_to_hybridstrobes2(n, k, w_min, w_max, record.seq, q_id);
+                            seq_rc = reverse_complement(record.seq);
+                            query_mers_rc = seq_to_hybridstrobes2(n, k, w_min, w_max, seq_rc, q_id);
+                        }
+                    }
+                    else if (n == 3){
+                        for (auto x : ref_seqs){
+                            query_mers = seq_to_hybridstrobes3(n, k, w_min, w_max, record.seq, q_id);
+                            seq_rc = reverse_complement(record.seq);
+                            query_mers_rc = seq_to_hybridstrobes3(n, k, w_min, w_max, seq_rc, q_id);
+                        }
+                    }
+                }
+                // Find NAMs
+                std::vector<nam> nams; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
+                std::vector<nam> nams_rc; // (r_id, r_pos_start, r_pos_end, q_pos_start, q_pos_end)
+
+                if (unique) {
+                    nams = find_nams_unique(query_mers, all_mers_vector, mers_index, k);
+                    nams_rc = find_nams_unique(query_mers_rc, all_mers_vector, mers_index, k);
+                }
+                else {
+                    nams = find_nams(query_mers, all_mers_vector, mers_index, k, acc_map_to_idx, acc);
+                    nams_rc = find_nams(query_mers_rc, all_mers_vector, mers_index, k, acc_map_to_idx, acc);
+                }
+                //Sort hits based on start choordinate on query sequence
+                std::sort(nams.begin(), nams.end(), compareByQueryCoord);
+                std::sort(nams_rc.begin(), nams_rc.end(), compareByQueryCoord);
+                // Output results
+                #pragma omp critical (datawrite)
+                {
+                    output_nams(nams, output_file, acc, acc_map, false);
+                    output_nams(nams_rc, output_file, acc, acc_map, true);
+                };
+        //        std::cout << "Processed " << read_cnt << "reads. " << std::endl;
+
+    //            if (read_cnt % 10000 == 0){
+    //                std::cout << "Processed " << read_cnt << "reads. " << std::endl;
+    //            }
+                q_id ++;
+            }
+        }
+        output_file.close();
+    }
     gzclose(fp);
-    output_file.close();
+
 
 
     // Record mapping end time
