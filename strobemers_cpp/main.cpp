@@ -608,11 +608,25 @@ int main (int argc, char *argv[])
     std::cout << "Total time generating mers: " << rounded << " s\n" <<  std::endl;
 //    return 0;
 
+    auto start_index_vector = std::chrono::high_resolution_clock::now();
     mers_vector all_mers_vector;
-    all_mers_vector = construct_flat_vector_three_pos(tmp_index);
+    uint64_t unique_mers = 0;
+    all_mers_vector = construct_flat_vector_three_pos(tmp_index, unique_mers);
+    auto stop_index_vector = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed_index_vector = stop_index_vector - start_index_vector;
+    float rounded_elapsed_index_vector = truncf(elapsed_index_vector.count() * 10) / 10;
+    std::cout << "Total time generating flat index vector: " << rounded_elapsed_index_vector << " s\n" <<  std::endl;
+
+    auto start_hash = std::chrono::high_resolution_clock::now();
     robin_hood::unordered_map< uint64_t, std::tuple<uint64_t, unsigned int >> mers_index; // k-mer -> (offset in flat_vector, occurence count )
-    mers_index = index_vector_three_pos(all_mers_vector); // construct index over flat array
+    mers_index.reserve(unique_mers);
+    index_vector_three_pos(all_mers_vector, mers_index); // construct index over flat array
     tmp_index.clear();
+    auto stop_hash = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed_hash = stop_hash - start_hash;
+    float rounded_elapsed_hash = truncf(elapsed_hash.count() * 10) / 10;
+    std::cout << "Total time generating hash table: " << rounded_elapsed_hash << " s\n" <<  std::endl;
+
     print_diagnostics_new4(all_mers_vector, mers_index);
 
     //////////////////////////////////////////////////////////////////////////

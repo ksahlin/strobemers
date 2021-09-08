@@ -95,7 +95,7 @@ Functions `minstrobes_iter` and `hybridstrobes_iter` have the same interface.
 ```
 git clone https://github.com/ksahlin/strobemers
 cd strobemers/strobemers_cpp/
-g++ -std=c++11 main.cpp index.cpp -o StrobeMap -O3 -mavx2
+g++ -std=c++14 main.cpp index.cpp -lz -fopenmp -o StrobeMap -O3 -mavx2
 ```
 
 ## Usage
