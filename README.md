@@ -9,7 +9,7 @@ The repository consists of
 
 - a C++ library
 - a python library
-- a tool `StrobeMap` implemented in both Python and C++. 
+- a tool `StrobeMap` implemented in both C++ and Python. 
 
 The C++ library `strobemers_cpp/index.[cpp/hpp]` contains functions for creating randstobes (order 2 and 3), hybridstrobes (order 2 and 3) and minstrobes (order 2). The python library `indexing.py` contains functions and generators for creating all strobemers of order 2 and 3.
 
@@ -92,11 +92,18 @@ Functions `minstrobes_iter` and `hybridstrobes_iter` have the same interface.
 
 ## Installation
 
+
 ```
 git clone https://github.com/ksahlin/strobemers
 cd strobemers/strobemers_cpp/
+
+# Newer gcc versions (at least >4.9)
 g++ -std=c++14 main.cpp index.cpp -lz -fopenmp -o StrobeMap -O3 -mavx2
-```
+
+# Older gcc versions
+g++ -std=c++1y main.cpp index.cpp -lz -fopenmp -o StrobeMap -O3 -mavx2
+``` 
+
 
 ## Usage
 
