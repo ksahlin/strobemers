@@ -661,7 +661,7 @@ int main (int argc, char *argv[])
     gzFile fp = gzopen(reads_filename, "r");
 //    auto ks = make_kstream(fp, gzread, mode::in);
     auto ks = make_ikstream(fp, gzread);
-
+    int n_q_chunk_size = 500000;
 
 //    std::string line, seq, prev_acc;
     std::string seq_rc;
@@ -692,10 +692,11 @@ int main (int argc, char *argv[])
         }
 
         while (ks ) {
-            auto records = ks.read(500000);  // read a chunk of 500000 records
-            std::cout << "Mapping chunk of " << records.size() << " query sequences... " << std::endl;
+            auto records = ks.read(n_q_chunk_size);  // read a chunk of 500000 records
+            int n_it =  records.size();
+            std::cout << "Mapping chunk of " << n_it << " query sequences... " << std::endl;
             #pragma omp parallel for num_threads(n_threads) shared(output_files, read_cnt, q_id) private(acc,seq_rc, query_mers, query_mers_rc)
-            for(unsigned int i = 0; i != records.size(); ++i){
+            for(int i = 0; i < n_it; ++i){
                 auto record =records[i];
 //            for (auto & record : records){
                 read_cnt ++;
@@ -772,11 +773,11 @@ int main (int argc, char *argv[])
         output_file.open(output_file_name);
         while (ks ) {
     //        ks >> record;
-             auto records = ks.read(500000);  // read a chunk of 500000 records
-             std::cout << "Mapping chunk of " << records.size() << " query sequences... " << std::endl;
-
+             auto records = ks.read(n_q_chunk_size);  // read a chunk of 500000 records
+            int n_it =  records.size();
+             std::cout << "Mapping chunk of " << n_it << " query sequences... " << std::endl;
             #pragma omp parallel for num_threads(n_threads) shared(read_cnt, output_file, q_id) private(acc,seq_rc, query_mers,query_mers_rc)
-            for(unsigned int i = 0; i != records.size(); ++i){
+            for(int i = 0; i < n_it; ++i){
                 auto record =records[i];
 //            for (auto & record : records){
                 read_cnt ++;
