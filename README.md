@@ -92,7 +92,7 @@ Functions `minstrobes_iter` and `hybridstrobes_iter` have the same interface.
 
 ## Installation
 
-You can acquire precompiled binaries for Linux and Mac OSx from [here](https://github.com/ksahlin/strobemers/tree/main/binaries).
+You can acquire precompiled binaries for Linux and Mac OSx from [here](https://github.com/ksahlin/strobemers/tree/main/strobemers_cpp/binaries).
 
 If you want to compile from the source, you need to have a never `g++` and `zlib` installed. Then do the following:
 
