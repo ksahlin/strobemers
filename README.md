@@ -92,17 +92,26 @@ Functions `minstrobes_iter` and `hybridstrobes_iter` have the same interface.
 
 ## Installation
 
+You can acquire precompiled binaries for Linux and Mac OSx from [here](https://github.com/ksahlin/strobemers/tree/main/binaries).
+
+If you want to compile from the source, you need to have a never `g++` and `zlib` installed. Then do the following:
 
 ```
 git clone https://github.com/ksahlin/strobemers
 cd strobemers/strobemers_cpp/
 
-# Newer gcc versions (at least >4.9)
-g++ -std=c++14 main.cpp index.cpp -lz -fopenmp -o StrobeMap -O3 -mavx2
+# Needs a newer g++ version. Tested with version 8 and uppwards.
 
-# Older gcc versions
-g++ -std=c++1y main.cpp index.cpp -lz -fopenmp -o StrobeMap -O3 -mavx2
-``` 
+g++ -std=c++14 main.cpp index.cpp -lz -fopenmp -o StrobeMap -O3 -mavx2
+```  
+
+If zlib is not already installed on your system, it can be installed through, e.g., conda by
+
+```
+conda install -c anaconda zlib
+```
+
+If you dont have conda, download and install [here](https://zlib.net/). 
 
 
 ## Usage
@@ -130,6 +139,23 @@ options:
 # randstrobes (3,30,31,60)
 StrobeMap -k 30 -n 3 -v 31 -w 60 -c randstrobes -o mapped.tsv  ref.fa query.fa
 ```
+
+### Common installation from source errors
+
+If you have `zlib` installed, and the `zlib.h` file is in folder `/path/to/zlib_header` but you get 
+
+```
+main.cpp:12:10: fatal error: zlib.h: No such file or directory
+ #include <zlib.h>
+          ^~~~~~~~
+compilation terminated.
+```
+
+add `-I/path/to/zlib_header` to the compilation, that is
+
+```
+g++ -std=c++14 -I/path/to/zlib_header main.cpp index.cpp -lz -fopenmp -o StrobeMap -O3 -mavx2
+``` 
 
 
 # Using StrobeMap (Python)

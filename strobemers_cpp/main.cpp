@@ -695,7 +695,9 @@ int main (int argc, char *argv[])
             auto records = ks.read(500000);  // read a chunk of 500000 records
             std::cout << "Mapping chunk of " << records.size() << " query sequences... " << std::endl;
             #pragma omp parallel for num_threads(n_threads) shared(output_files, read_cnt, q_id) private(acc,seq_rc, query_mers, query_mers_rc)
-            for (auto & record : records){
+            for(unsigned int i = 0; i != records.size(); ++i){
+                auto record =records[i];
+//            for (auto & record : records){
                 read_cnt ++;
                 acc = split_string(record.name);
                 //        std::cout << acc << std::endl;
@@ -774,7 +776,9 @@ int main (int argc, char *argv[])
              std::cout << "Mapping chunk of " << records.size() << " query sequences... " << std::endl;
 
             #pragma omp parallel for num_threads(n_threads) shared(read_cnt, output_file, q_id) private(acc,seq_rc, query_mers,query_mers_rc)
-            for (auto & record : records){
+            for(unsigned int i = 0; i != records.size(); ++i){
+                auto record =records[i];
+//            for (auto & record : records){
                 read_cnt ++;
                 acc = split_string(record.name);
         //        std::cout << acc << std::endl;
