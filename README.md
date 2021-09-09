@@ -92,7 +92,7 @@ Functions `minstrobes_iter` and `hybridstrobes_iter` have the same interface.
 
 ## Installation
 
-You can acquire precompiled binaries for Linux and Mac OSx from [here](https://github.com/ksahlin/strobemers/tree/main/binaries).
+You can acquire precompiled binaries for Linux and Mac OSx from [here](https://github.com/ksahlin/strobemers/tree/main/strobemers_cpp/binaries).
 
 If you want to compile from the source, you need to have a never `g++` and `zlib` installed. Then do the following:
 
@@ -142,7 +142,7 @@ StrobeMap -k 30 -n 3 -v 31 -w 60 -c randstrobes -o mapped.tsv  ref.fa query.fa
 
 ### Common installation from source errors
 
-If you have `zlib` installed, and the `zlib.h` file is in folder `/path/to/zlib_header` but you get 
+If you have `zlib` installed, and the `zlib.h` file is in folder `/path/to/zlib/include` and the `libz.so` file in `/path/to/zlib/lib` but you get 
 
 ```
 main.cpp:12:10: fatal error: zlib.h: No such file or directory
@@ -151,10 +151,10 @@ main.cpp:12:10: fatal error: zlib.h: No such file or directory
 compilation terminated.
 ```
 
-add `-I/path/to/zlib_header` to the compilation, that is
+add `-I/path/to/zlib/include -L/path/to/zlib/lib` to the compilation, that is
 
 ```
-g++ -std=c++14 -I/path/to/zlib_header main.cpp index.cpp -lz -fopenmp -o StrobeMap -O3 -mavx2
+g++ -std=c++14 -I/path/to/zlib/include -L/path/to/zlib/lib main.cpp index.cpp -lz -fopenmp -o StrobeMap -O3 -mavx2
 ``` 
 
 
