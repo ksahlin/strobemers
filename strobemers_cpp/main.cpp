@@ -677,7 +677,7 @@ int main (int argc, char *argv[])
             std::string output_file_name_thread = output_file_name + "/seeds_batch_-1.txt";
             output_files[0].open(output_file_name_thread);
 
-            std::string output_file_name_thread_rc = output_file_name + "seeds_batch_-1_rc.txt";
+            std::string output_file_name_thread_rc = output_file_name + "/seeds_batch_-1_rc.txt";
             output_files[1].open(output_file_name_thread_rc);
         }
         else {
@@ -759,7 +759,7 @@ int main (int argc, char *argv[])
                 {
 //                    std::cout << omp_get_thread_num() << " " << output_files.size() << " " <<  n_threads + omp_get_thread_num() << std::endl;
                     output_nams(nams, output_files[omp_get_thread_num()], acc, acc_map, false);
-                    output_nams(nams_rc, output_files[n_threads + omp_get_thread_num()], acc, acc_map, true);
+                    output_nams(nams_rc, output_files[n_threads + omp_get_thread_num()], acc, acc_map, false); // set false for rev comp here evern though it is rev comp because RC reads are output to separate file without 'Reverse' in header
                 }
                 q_id ++;
             }
