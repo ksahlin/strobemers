@@ -674,19 +674,19 @@ int main (int argc, char *argv[])
         std::vector<std::ofstream> output_files(2*n_threads);
         std::ofstream output_file;
         if (n_threads == 1){
-            std::string output_file_name_thread = output_file_name + "/mummer_mems_batch_-1.txt";
+            std::string output_file_name_thread = output_file_name + "/seeds_batch_-1.txt";
             output_files[0].open(output_file_name_thread);
 
-            std::string output_file_name_thread_rc = output_file_name + "mummer_mems_batch_-1_rc.txt";
+            std::string output_file_name_thread_rc = output_file_name + "seeds_batch_-1_rc.txt";
             output_files[1].open(output_file_name_thread_rc);
         }
         else {
             for (int i = 0; i < n_threads; ++i) {
 
-                std::string output_file_name_thread = output_file_name + "/mummer_mems_batch_" + std::to_string(i) + ".txt";
+                std::string output_file_name_thread = output_file_name + "/seeds_batch_" + std::to_string(i) + ".txt";
                 output_files[i].open(output_file_name_thread);
 
-                std::string output_file_name_thread_rc = output_file_name + "/mummer_mems_batch_" + std::to_string(i) + "_rc.txt";
+                std::string output_file_name_thread_rc = output_file_name + "/seeds_batch_" + std::to_string(i) + "_rc.txt";
                 output_files[n_threads + i].open(output_file_name_thread_rc);
             }
         }
