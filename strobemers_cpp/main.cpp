@@ -427,6 +427,7 @@ int main (int argc, char *argv[])
     bool unique = false;
     bool output_specified = false;
     bool ultra_output = false;
+    bool wmin_set = false;
     int opn = 1;
     while (opn < argc) {
         bool flag = false;
@@ -448,6 +449,7 @@ int main (int argc, char *argv[])
                 w_min = std::stoi(argv[opn + 1]);
                 opn += 2;
                 flag = true;
+                wmin_set = true;
             } else if (argv[opn][1] == 'w') {
                 w_max = std::stoi(argv[opn + 1]);
                 opn += 2;
@@ -477,12 +479,14 @@ int main (int argc, char *argv[])
             break;
     }
 
-    w_min = k+1; // Update if user has specified non-default k
+    if (!wmin_set){
+        w_min = k+1; // Update default w_min to k +1 if user has specified non-default k and not set w_min parameter
+    }
     omp_set_num_threads(n_threads); // set number of threads in "parallel" blocks
     std::cout << "Using" << std::endl;
     std::cout << "n: " << n << std::endl;
     std::cout << "k: " << k << std::endl;
-    std::cout << "s: " << s << std::endl;
+    std::cout << "-s: " << ultra_output << std::endl;
     std::cout << "w_min: " << w_min << std::endl;
     std::cout << "w_max: " << w_max << std::endl;
     std::cout << "t: " << n_threads << std::endl;
