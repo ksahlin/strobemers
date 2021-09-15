@@ -402,7 +402,7 @@ void print_usage() {
     std::cerr << "\t-t INT number of threads [3]\n";
     std::cerr << "\t-o name of output tsv-file [output.tsv]\n";
     std::cerr << "\t-c Choice of protocol to use; kmers, minstrobes, hybridstrobes, randstrobes [randstrobes]. \n";
-    std::cerr << "\t-C UINT Mask (do not process) strobemer hits with count larger than C [10000]\n";
+    std::cerr << "\t-C UINT Mask (do not process) strobemer hits with count larger than C [1000]\n";
     std::cerr << "\t-s Split output into one file per thread and forward/reverse complement mappings. \n\t   This option is used to generate format compatible with uLTRA long-read RNA aligner and requires \n\t   option -o to be specified as a folder path to uLTRA output directory, e.g., -o /my/path/to/uLTRA_output/ \n";
 //    std::cerr << "\t-u Produce NAMs only from unique strobemers (w.r.t. reference sequences). This provides faster mapping.\n";
 }
@@ -434,7 +434,7 @@ int main (int argc, char *argv[])
     bool output_specified = false;
     bool ultra_output = false;
     bool wmin_set = false;
-    unsigned int filter_cutoff = 10000;
+    unsigned int filter_cutoff = 1000;
     int opn = 1;
     while (opn < argc) {
         bool flag = false;
