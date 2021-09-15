@@ -218,7 +218,7 @@ static inline std::vector<nam> find_nams_unique(mers_vector &query_mers, mers_ve
 }
 
 
-static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &mers_vector, vector_index &mers_index, int k, acc_to_idx &acc_map_to_idx,  std::string query_acc){
+static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &mers_vector, vector_index &mers_index, int k, acc_to_idx &acc_map_to_idx,  std::string query_acc, unsigned int filter_cutoff){
 //    std::cout << "ENTER FIND NAMS " <<  std::endl;
     robin_hood::unordered_map< unsigned int, std::vector<hit>> hits_per_ref; // [ref_id] -> vector( struct hit)
     uint64_t hit_count_reduced = 0;
@@ -240,23 +240,28 @@ static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &m
             mer = mers_index[mer_hashv];
             uint64_t offset = std::get<0>(mer);
             unsigned int count = std::get<1>(mer);
-            for(size_t j = offset; j < offset+count; ++j)
-            {
+            if (count <= filter_cutoff){
+                for(size_t j = offset; j < offset+count; ++j)
+                {
 
-                auto r = mers_vector[j];
-                unsigned int ref_s = std::get<2>(r);
-                unsigned int ref_e = std::get<4>(r) + k;
-                unsigned int ref_id = std::get<1>(r);
-                if ( (acc_map_to_idx.find(query_acc) != acc_map_to_idx.end()) && ref_id ==  acc_map_to_idx[query_acc]) { // No self mappings
-                    continue;
+                    auto r = mers_vector[j];
+                    unsigned int ref_s = std::get<2>(r);
+                    unsigned int ref_e = std::get<4>(r) + k;
+                    unsigned int ref_id = std::get<1>(r);
+                    if ( (acc_map_to_idx.find(query_acc) != acc_map_to_idx.end()) && ref_id ==  acc_map_to_idx[query_acc]) { // No self mappings
+                        continue;
+                    }
+                    h.ref_s = ref_s;
+                    h.ref_e = ref_e;
+                    hits_per_ref[ref_id].push_back(h);
+
+                    hit_count_all ++;
+
                 }
-                h.ref_s = ref_s;
-                h.ref_e = ref_e;
-                hits_per_ref[ref_id].push_back(h);
-
-                hit_count_all ++;
-
             }
+//            else {
+//                std::cout << "Strobemer had count: " <<  count << std::endl;
+//            }
 
         }
     }
@@ -397,6 +402,7 @@ void print_usage() {
     std::cerr << "\t-t INT number of threads [3]\n";
     std::cerr << "\t-o name of output tsv-file [output.tsv]\n";
     std::cerr << "\t-c Choice of protocol to use; kmers, minstrobes, hybridstrobes, randstrobes [randstrobes]. \n";
+    std::cerr << "\t-C UINT Mask (do not process) strobemer hits with count larger than C [10000]\n";
     std::cerr << "\t-s Split output into one file per thread and forward/reverse complement mappings. \n\t   This option is used to generate format compatible with uLTRA long-read RNA aligner and requires \n\t   option -o to be specified as a folder path to uLTRA output directory, e.g., -o /my/path/to/uLTRA_output/ \n";
 //    std::cerr << "\t-u Produce NAMs only from unique strobemers (w.r.t. reference sequences). This provides faster mapping.\n";
 }
@@ -428,6 +434,7 @@ int main (int argc, char *argv[])
     bool output_specified = false;
     bool ultra_output = false;
     bool wmin_set = false;
+    unsigned int filter_cutoff = 10000;
     int opn = 1;
     while (opn < argc) {
         bool flag = false;
@@ -470,6 +477,10 @@ int main (int argc, char *argv[])
                 n_threads = std::stoi(argv[opn + 1]);
                 opn += 2;
                 flag = true;
+            } else if (argv[opn][1] == 'C') {
+                filter_cutoff = std::stoi(argv[opn + 1]);
+                opn += 2;
+                flag = true;
             }
             else {
                 print_usage();
@@ -490,6 +501,7 @@ int main (int argc, char *argv[])
     std::cout << "w_min: " << w_min << std::endl;
     std::cout << "w_max: " << w_max << std::endl;
     std::cout << "t: " << n_threads << std::endl;
+    std::cout << "C: " << filter_cutoff << std::endl;
 
 //    assert(k <= (w/2)*w_min && "k should be smaller than (w/2)*w_min to avoid creating short strobemers");
     assert(k > 7 && "You should really not use too small strobe size!");
@@ -752,8 +764,8 @@ int main (int argc, char *argv[])
                     nams_rc = find_nams_unique(query_mers_rc, all_mers_vector, mers_index, k);
                 }
                 else {
-                    nams = find_nams(query_mers, all_mers_vector, mers_index, k, acc_map_to_idx, acc);
-                    nams_rc = find_nams(query_mers_rc, all_mers_vector, mers_index, k, acc_map_to_idx, acc);
+                    nams = find_nams(query_mers, all_mers_vector, mers_index, k, acc_map_to_idx, acc, filter_cutoff);
+                    nams_rc = find_nams(query_mers_rc, all_mers_vector, mers_index, k, acc_map_to_idx, acc, filter_cutoff);
                 }
                 //Sort hits based on start choordinate on query sequence
                 std::sort(nams.begin(), nams.end(), compareByQueryCoord);
@@ -833,8 +845,8 @@ int main (int argc, char *argv[])
                     nams_rc = find_nams_unique(query_mers_rc, all_mers_vector, mers_index, k);
                 }
                 else {
-                    nams = find_nams(query_mers, all_mers_vector, mers_index, k, acc_map_to_idx, acc);
-                    nams_rc = find_nams(query_mers_rc, all_mers_vector, mers_index, k, acc_map_to_idx, acc);
+                    nams = find_nams(query_mers, all_mers_vector, mers_index, k, acc_map_to_idx, acc, filter_cutoff);
+                    nams_rc = find_nams(query_mers_rc, all_mers_vector, mers_index, k, acc_map_to_idx, acc, filter_cutoff);
                 }
                 //Sort hits based on start choordinate on query sequence
                 std::sort(nams.begin(), nams.end(), compareByQueryCoord);
