@@ -294,6 +294,7 @@ static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &m
                         }
                         o.previous_query_start = h.query_s;
                         o.previous_ref_start = h.ref_s; // keeping track so that we don't . Can be caused by interleaved repeats.
+                        o.n_hits ++;
                         is_added = true;
                         break;
                     }
@@ -310,6 +311,7 @@ static inline std::vector<nam> find_nams(mers_vector &query_mers, mers_vector &m
                 n.ref_id = ref_id;
                 n.previous_query_start = h.query_s;
                 n.previous_ref_start = h.ref_s;
+                n.n_hits = 1;
 //                n.copy_id = hit_copy_id;
                 open_nams.push_back(n);
             }
@@ -375,6 +377,11 @@ static inline bool compareByQueryLength(const nam &a, const nam &b)
     return (a.query_e - a.query_s) < ( b.query_e - b.query_s);
 }
 
+static inline bool score(const nam &a, const nam &b)
+{
+    return ( (a.n_hits * (a.query_e - a.query_s)) > (b.n_hits * (b.query_e - b.query_s)) );
+}
+
 static inline void output_nams(std::vector<nam> &nams, std::ofstream &output_file, std::string query_acc, idx_to_acc &acc_map, bool is_rc) {
     // Output results
     if (is_rc) {
@@ -403,6 +410,8 @@ void print_usage() {
     std::cerr << "\t-o name of output tsv-file [output.tsv]\n";
     std::cerr << "\t-c Choice of protocol to use; kmers, minstrobes, hybridstrobes, randstrobes [randstrobes]. \n";
     std::cerr << "\t-C UINT Mask (do not process) strobemer hits with count larger than C [1000]\n";
+    std::cerr << "\t-L UINT Print at most L NAMs per query [1000]. Will print the NAMs with highest score S = n_strobemer_hits * query_span. \n";
+    std::cerr << "\t-S Sort output NAMs for each query based on score. Default is to sort first by ref ID, then by query coordinate, then by reference coordinate. \n";
     std::cerr << "\t-s Split output into one file per thread and forward/reverse complement mappings. \n\t   This option is used to generate format compatible with uLTRA long-read RNA aligner and requires \n\t   option -o to be specified as a folder path to uLTRA output directory, e.g., -o /my/path/to/uLTRA_output/ \n";
 //    std::cerr << "\t-u Produce NAMs only from unique strobemers (w.r.t. reference sequences). This provides faster mapping.\n";
 }
@@ -435,6 +444,8 @@ int main (int argc, char *argv[])
     bool ultra_output = false;
     bool wmin_set = false;
     unsigned int filter_cutoff = 1000;
+    unsigned int max_lines = 1000;
+    bool sort_on_score_set = false;
     int opn = 1;
     while (opn < argc) {
         bool flag = false;
@@ -481,6 +492,14 @@ int main (int argc, char *argv[])
                 filter_cutoff = std::stoi(argv[opn + 1]);
                 opn += 2;
                 flag = true;
+            } else if (argv[opn][1] == 'L') {
+                max_lines = std::stoi(argv[opn + 1]);
+                opn += 2;
+                flag = true;
+            } else if (argv[opn][1] == 'S') {
+                sort_on_score_set = true;
+                opn += 1;
+                flag = true;
             }
             else {
                 print_usage();
@@ -502,6 +521,7 @@ int main (int argc, char *argv[])
     std::cout << "w_max: " << w_max << std::endl;
     std::cout << "t: " << n_threads << std::endl;
     std::cout << "C: " << filter_cutoff << std::endl;
+    std::cout << "L: " << max_lines << std::endl;
 
 //    assert(k <= (w/2)*w_min && "k should be smaller than (w/2)*w_min to avoid creating short strobemers");
     assert(k > 7 && "You should really not use too small strobe size!");
@@ -684,6 +704,8 @@ int main (int argc, char *argv[])
     std::string acc = "";
     unsigned int q_id = 0;
     unsigned int read_cnt = 0;
+    unsigned int cut_nam_vec_at;
+    unsigned int cut_nam_rc_vec_at;
     mers_vector query_mers; // pos, chr_id, kmer hash value
     mers_vector query_mers_rc; // pos, chr_id, kmer hash value
     if (ultra_output){
@@ -767,15 +789,28 @@ int main (int argc, char *argv[])
                     nams = find_nams(query_mers, all_mers_vector, mers_index, k, acc_map_to_idx, acc, filter_cutoff);
                     nams_rc = find_nams(query_mers_rc, all_mers_vector, mers_index, k, acc_map_to_idx, acc, filter_cutoff);
                 }
+
+                // Sort on score
+                std::sort(nams.begin(), nams.end(), score);
+                std::sort(nams_rc.begin(), nams_rc.end(), score);
+
+                // Take first L NAMs for output
+                cut_nam_vec_at = (max_lines < nams.size()) ? max_lines : nams.size();
+                std::vector<nam> nams_cut(nams.begin(), nams.begin() + cut_nam_vec_at);
+                cut_nam_rc_vec_at = (max_lines < nams_rc.size()) ? max_lines : nams_rc.size();
+                std::vector<nam> nams_rc_cut(nams_rc.begin(), nams_rc.begin() + cut_nam_rc_vec_at);
+
                 //Sort hits based on start choordinate on query sequence
-                std::sort(nams.begin(), nams.end(), compareByQueryCoord);
-                std::sort(nams_rc.begin(), nams_rc.end(), compareByQueryCoord);
+                if (!sort_on_score_set) {
+                    std::sort(nams_cut.begin(), nams_cut.end(), compareByQueryCoord);
+                    std::sort(nams_rc_cut.begin(), nams_rc_cut.end(), compareByQueryCoord);
+                }
                 // Output results
                 #pragma omp critical (datawrite)
                 {
 //                    std::cout << omp_get_thread_num() << " " << output_files.size() << " " <<  n_threads + omp_get_thread_num() << std::endl;
-                    output_nams(nams, output_files[omp_get_thread_num()], acc, acc_map, false);
-                    output_nams(nams_rc, output_files[n_threads + omp_get_thread_num()], acc, acc_map, false); // set false for rev comp here evern though it is rev comp because RC reads are output to separate file without 'Reverse' in header
+                    output_nams(nams_cut, output_files[omp_get_thread_num()], acc, acc_map, false);
+                    output_nams(nams_rc_cut, output_files[n_threads + omp_get_thread_num()], acc, acc_map, false); // set false for rev comp here evern though it is rev comp because RC reads are output to separate file without 'Reverse' in header
                 }
                 q_id ++;
             }
@@ -848,9 +883,23 @@ int main (int argc, char *argv[])
                     nams = find_nams(query_mers, all_mers_vector, mers_index, k, acc_map_to_idx, acc, filter_cutoff);
                     nams_rc = find_nams(query_mers_rc, all_mers_vector, mers_index, k, acc_map_to_idx, acc, filter_cutoff);
                 }
+
+                // Sort on score
+                std::sort(nams.begin(), nams.end(), score);
+                std::sort(nams_rc.begin(), nams_rc.end(), score);
+
+                // Take first L NAMs for output
+                cut_nam_vec_at = (max_lines < nams.size()) ? max_lines : nams.size();
+                std::vector<nam> nams_cut(nams.begin(), nams.begin() + cut_nam_vec_at);
+                cut_nam_rc_vec_at = (max_lines < nams_rc.size()) ? max_lines : nams_rc.size();
+                std::vector<nam> nams_rc_cut(nams_rc.begin(), nams_rc.begin() + cut_nam_rc_vec_at);
+
                 //Sort hits based on start choordinate on query sequence
-                std::sort(nams.begin(), nams.end(), compareByQueryCoord);
-                std::sort(nams_rc.begin(), nams_rc.end(), compareByQueryCoord);
+                if (!sort_on_score_set) {
+                    std::sort(nams_cut.begin(), nams_cut.end(), compareByQueryCoord);
+                    std::sort(nams_rc_cut.begin(), nams_rc_cut.end(), compareByQueryCoord);
+                }
+
                 // Output results
                 #pragma omp critical (datawrite)
                 {

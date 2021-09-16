@@ -70,6 +70,7 @@ struct nam {
     unsigned int query_e;
     unsigned int ref_s;
     unsigned int ref_e;
+    unsigned int n_hits = 0;
     unsigned int previous_query_start;
     unsigned int previous_ref_start;
 //    uint64_t copy_id; // If many hits, keep track of which it in order of left to right on the reference
