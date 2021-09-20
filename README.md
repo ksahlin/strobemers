@@ -100,7 +100,7 @@ chmod +x StrobeMap-0.0.2
 ./StrobeMap-0.0.2  # test program
 ```
 
-If you want to compile from the source, you need to have a never `g++` and `zlib` installed. Then do the following:
+If you want to compile from the source, you need to have a newer `g++` and `zlib` installed. Then do the following:
 
 ```
 git clone https://github.com/ksahlin/strobemers
