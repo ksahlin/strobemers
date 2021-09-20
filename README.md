@@ -88,7 +88,7 @@ for (p1,p2), s in indexing.randstrobes_iter(seq, k_size, w_min, w_max, order = 2
 ```
 Functions `minstrobes_iter` and `hybridstrobes_iter` have the same interface.
 
-# Using StrobeMap (C++)
+# StrobeMap (C++)
 
 ## Installation
 
@@ -158,7 +158,7 @@ g++ -std=c++14 -I/path/to/zlib/include -L/path/to/zlib/lib main.cpp index.cpp -l
 ``` 
 
 
-# Using StrobeMap (Python)
+# StrobeMap (Python)
 
 `StrobeMap` implements order 2 and 3 hybridstrobes (default), randstrobes, minstrobes, as well as kmers. The tool produces NAMs (Non-overlapping Approximate Matches; see explanation in preprint) for both strobemers and kmers. Test data is found in the folder `data` in this repository.
 Here are some example uses:
