@@ -25,7 +25,7 @@ Other strobemer implementations are found here
 
 The construction time is dependent on the implementation. The times reported in the preprint are for the C++/Python implementations in this repository.
 
-# C++ implementation in this repository
+# C++ functions
 
 You can copy the `index.cpp` and `index.hpp` files in the `strobemers_cpp` folder in this repository if you want to use either randstrobes (order 2 and 3), hybridstrobes (order 2), or minstrobes (order 2) in your project. The implementation of these functions uses bitpacking and some other clever tricks (inspired by [this repo](https://github.com/lh3/kmer-cnt)) to be fast. Because of bitpacking, the limitation is that any single strobe cannot be lager than 32, which means that the **maximum strobemer length allowed in this implementation** is `3*32 = 96` for strobemers of order 3, and `2*32 = 64` for order 2. This should be large enough for most applications. 
 
@@ -64,7 +64,7 @@ My benchmarking is saying that randstrobes is roughly as fast as hybridstrobes a
 The preprint describes shrinking the windows at ends of sequences to assure similar number of strobemers and k-mers created. For, e.g., read mapping, there is little to no need to shrink windows. This is because if we modify windows at the ends, the windows used to extract the strobemer from the read and the reference will be different. Therefore, the strobemers at the ends are not guaranteed to match the reference, as first described in [this issue](https://github.com/ksahlin/strobemers/issues/2). Therefore, in my implementation, there will be `n - (k + w_min) +1` strobemers of order 2 generated form a sequence of length `n`, and `n - (k + w_max + w_min) +1` strobemers of order 3. In other words, we will only slide last strobe's window outside the sequence. Once it is fully outside the sequence we stop (illistrated in approach B for order 2 in [here](https://github.com/ksahlin/strobemers/issues/2).
 
 
-# Python implementation in this repository
+# Python functions
 
 The `indexing.py` module located in the `modules` folder contains functions for generating k-mers, spaced k-mers, minimizers, and strobemers (minstrobes, hybridstrobes, and randstrobes) of order 2 and 3. For randstrobes, there are two ways to create them. The first way is with the function `randstrobes`, which takes a string, k-mer size, and upper and lower window limits and returns a dictionary with positions of the strobes as keys and the hash value of the randstrobe sequence (strings) as values. For example
 
