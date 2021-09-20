@@ -106,7 +106,7 @@ If you want to compile from the source, you need to have a newer `g++` and `zlib
 git clone https://github.com/ksahlin/strobemers
 cd strobemers/strobemers_cpp/
 
-# Needs a newer g++ version. Tested with version 8 and uppwards.
+# Needs a newer g++ version. Tested with version 8 and upwards.
 
 g++ -std=c++14 main.cpp index.cpp -lz -fopenmp -o StrobeMap -O3 -mavx2
 ```  
