@@ -1,20 +1,14 @@
 Strobemers
 ===========
+[![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](http://bioconda.github.io/recipes/strobemap/README.html)
 
-A repository for generating strobemers and evaluation. A preprint of strobemers is found [here](https://doi.org/10.1101/2021.01.28.428549).
-
-# This repository
 
 The repository consists of 
 
-- a C++ library
-- a python library
-- a tool `StrobeMap` implemented in both C++ and Python. 
-
-The C++ library `strobemers_cpp/index.[cpp/hpp]` contains functions for creating randstobes (order 2 and 3), hybridstrobes (order 2 and 3) and minstrobes (order 2). The python library `indexing.py` contains functions and generators for creating all strobemers of order 2 and 3.
-
-
-The tool `StrobeMap` is a program which roughly has the same interface as `MUMmer`. `StrobeMap` takes a reference and queries file in fasta or fastq format. It produces NAMs (Non-overlapping Approximate Matches) between the queries and references and outputs them in a format simular to nucmer/MUMmer. See [preprint](https://doi.org/10.1101/2021.01.28.428549) for definition of NAMs.
+- functions to generate strobemers in C++
+- functions to generate strobemers in Python
+- a tool `StrobeMap` implemented in both C++ and Python
+- Scripts used for the evaluations in the [preprint](https://doi.org/10.1101/2021.01.28.428549)
 
 
 ### Other implementations of strobemers 
@@ -26,6 +20,8 @@ Other strobemer implementations are found here
 The construction time is dependent on the implementation. The times reported in the preprint are for the C++/Python implementations in this repository.
 
 # C++ functions
+
+The C++ library `strobemers_cpp/index.[cpp/hpp]` contains functions for creating randstobes (order 2 and 3), hybridstrobes (order 2 and 3) and minstrobes (order 2). 
 
 You can copy the `index.cpp` and `index.hpp` files in the `strobemers_cpp` folder in this repository if you want to use either randstrobes (order 2 and 3), hybridstrobes (order 2), or minstrobes (order 2) in your project. The implementation of these functions uses bitpacking and some other clever tricks (inspired by [this repo](https://github.com/lh3/kmer-cnt)) to be fast. Because of bitpacking, the limitation is that any single strobe cannot be lager than 32, which means that the **maximum strobemer length allowed in this implementation** is `3*32 = 96` for strobemers of order 3, and `2*32 = 64` for order 2. This should be large enough for most applications. 
 
@@ -66,6 +62,9 @@ The preprint describes shrinking the windows at ends of sequences to assure simi
 
 # Python functions
 
+The python library `indexing.py` contains functions and generators for creating all strobemers of order 2 and 3.
+
+
 The `indexing.py` module located in the `modules` folder contains functions for generating k-mers, spaced k-mers, minimizers, and strobemers (minstrobes, hybridstrobes, and randstrobes) of order 2 and 3. For randstrobes, there are two ways to create them. The first way is with the function `randstrobes`, which takes a string, k-mer size, and upper and lower window limits and returns a dictionary with positions of the strobes as keys and the hash value of the randstrobe sequence (strings) as values. For example
 
 ```
@@ -90,9 +89,12 @@ Functions `minstrobes_iter` and `hybridstrobes_iter` have the same interface.
 
 # StrobeMap (C++)
 
+
+The tool `StrobeMap` is a program which roughly has the same interface as `MUMmer`. `StrobeMap` takes a reference and query file in multi-fasta or fastq format. It produces NAMs (Non-overlapping Approximate Matches) between the queries and references and outputs them in a format simular to nucmer/MUMmer. See [preprint](https://doi.org/10.1101/2021.01.28.428549) for definition of NAMs.
+
 ## Installation
 
-You can acquire precompiled binaries for Linux and Mac OSx from [here](https://github.com/ksahlin/strobemers/tree/main/strobemers_cpp/binaries). For example, for linux, simply do
+`StrobeMap` is available through [bioconda](https://bioconda.github.io/recipes/strobemap/README.html#package-strobemap). You can also acquire precompiled binaries for Linux and Mac OSx from [here](https://github.com/ksahlin/strobemers/tree/main/strobemers_cpp/binaries). For example, for linux, simply do
 
 ```
 wget https://github.com/ksahlin/strobemers/raw/main/strobemers_cpp/binaries/Linux/StrobeMap-0.0.2
@@ -100,7 +102,7 @@ chmod +x StrobeMap-0.0.2
 ./StrobeMap-0.0.2  # test program
 ```
 
-If you want to compile from the source, you need to have a newer `g++` and `zlib` installed. Then do the following:
+If you want to compile from source, you need to have a newer `g++` and `zlib` installed. Then do the following:
 
 ```
 git clone https://github.com/ksahlin/strobemers
