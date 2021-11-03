@@ -300,4 +300,4 @@ Above plots were produced with a second strobe produced from a window adjacent t
 CREDITS
 ----------------
 
-Kristoffer Sahlin, Effective sequence similarity detection with strobemers, Genome Res. November 2021 31: 2080-2094; doi: https://doi.org/10.1101/gr.275648.121 [Paper link](https://doi.org/10.1101/gr.275648.121)
+Kristoffer Sahlin, Effective sequence similarity detection with strobemers, Genome Res. November 2021 31: 2080-2094; doi: https://doi.org/10.1101/gr.275648.121
