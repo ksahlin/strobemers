@@ -8,7 +8,7 @@ The repository consists of
 - functions to generate strobemers in C++
 - functions to generate strobemers in Python
 - a tool `StrobeMap` implemented in both C++ and Python
-- Scripts used for the evaluations in the [preprint](https://doi.org/10.1101/2021.01.28.428549)
+- scripts used for the evaluations in the [paper](https://genome.cshlp.org/content/31/11/2080)
 
 
 ### Other implementations of strobemers 
@@ -51,13 +51,13 @@ randstrobe = seq.substr(strobe1_pos, k) + seq.substr(strobe2_pos, k)+ seq.substr
 }
 ```
 
-If you are using some of `seq_to_randstrobes2`, `seq_to_hybridstrobes2`, or `seq_to_minstrobes3` they return the same vector tuples but position of strobe 2 copied twice, i.e., `(kmer hash value, seq_id, strobe1_pos, strobe2_pos, strobe2_pos)`. There is no reason for this besides it helped me call the functions in the same way.
+If you are using some of `seq_to_randstrobes2`, `seq_to_hybridstrobes2`, or `seq_to_minstrobes3` they return the same vector tuples but position of strobe 2 copied twice, i.e., `(kmer hash value, seq_id, strobe1_pos, strobe2_pos, strobe2_pos)`. There is no reason for this and for any high performance application the function could be modified to return the minimal needed information.
 
-My benchmarking is saying that randstrobes is roughly as fast as hybridstrobes and minstrobes, and that randstrobes is unexpectedly fast in this implementation in general, about 1.5-3 times slower than generating k-mers for randstrobes of (n=2, s=15, w_min=16,w_max=70). What takes time is pushing the tuples to vector and not computing the strobemers. But more detailed investigation will follow.
+My benchmarking in Table S3 in the [supplemental methods](https://genome.cshlp.org/content/suppl/2021/10/19/gr.275648.121.DC1/Supplemental_Methods.pdf) found that randstrobes is roughly as fast as hybridstrobes and minstrobes. Furthermore, randstrobes is unexpectedly fast in this implementation in general, about 1.5-3 times slower than generating k-mers for randstrobes of (n=2, s=15, w_min=16,w_max=70). What takes time is pushing the tuples to a vector, not computing the strobemers. Bare construction time could be further compared if preallocating an array of fixed size to remove the resizing when pushing to vectors. Nevertheless, the takehome message is that the generation of strobemers could be implemented so that it is fast, and will likely not be a bottleneck in most algorithms using them.
 
 #### Notes for sequence mapping
 
-The preprint describes shrinking the windows at ends of sequences to assure similar number of strobemers and k-mers created. For, e.g., read mapping, there is little to no need to shrink windows. This is because if we modify windows at the ends, the windows used to extract the strobemer from the read and the reference will be different. Therefore, the strobemers at the ends are not guaranteed to match the reference, as first described in [this issue](https://github.com/ksahlin/strobemers/issues/2). Therefore, in my implementation, there will be `n - (k + w_min) +1` strobemers of order 2 generated form a sequence of length `n`, and `n - (k + w_max + w_min) +1` strobemers of order 3. In other words, we will only slide last strobe's window outside the sequence. Once it is fully outside the sequence we stop (illistrated in approach B for order 2 in [here](https://github.com/ksahlin/strobemers/issues/2).
+The preprint describes shrinking the sampling windows `[w_min, w_max]` at ends of sequences to assure that a similar number of strobemers and k-mers created. However, in, e.g., read mapping, there is little to no gain in shrinking windows. This is because if we shrink windows at the ends of reads, the strobemer extracted from the read in those windows cannot be guaranteed to (but may) be the same as in the reference, as first described in [this issue](https://github.com/ksahlin/strobemers/issues/2). The more the window(s) are shrunk, the less likely the strobers are to match between the sequences, and the probability of matching a strobemer after the last window (original size) is completely outside the read is 0 (if disregarding false matches). After noting this, my implementation only shrink the last strobemer window regardless of the number of strobes (i.e., there is a positive probablility of a match even if window is shrunk). This means that there will be `n - (k + w_min) +1` strobemers of order 2 generated form a sequence of length `n`, and `n - (k + w_max + w_min) +1` strobemers of order 3. In other words, we will only slide last strobe's window outside the sequence. Once it is fully outside the sequence we stop (illustrated in approach B for order 2 in [here](https://github.com/ksahlin/strobemers/issues/2).
 
 
 # Python functions
@@ -90,7 +90,7 @@ Functions `minstrobes_iter` and `hybridstrobes_iter` have the same interface.
 # StrobeMap (C++)
 
 
-The tool `StrobeMap` is a program which roughly has the same interface as `MUMmer`. `StrobeMap` takes a reference and query file in multi-fasta or fastq format. It produces NAMs (Non-overlapping Approximate Matches) between the queries and references and outputs them in a format simular to nucmer/MUMmer. See [preprint](https://doi.org/10.1101/2021.01.28.428549) for definition of NAMs.
+The tool `StrobeMap` is a program which roughly has the same interface as `MUMmer`. `StrobeMap` takes a reference and query file in multi-fasta or fastq format. It produces NAMs (Non-overlapping Approximate Matches) between the queries and references and outputs them in a format simular to nucmer/MUMmer. See [supplementary material](https://genome.cshlp.org/content/suppl/2021/10/19/gr.275648.121.DC1/Supplemental_Methods.pdf) Section A in the paper for definition of NAMs.
 
 ## Installation
 
@@ -300,6 +300,4 @@ Above plots were produced with a second strobe produced from a window adjacent t
 CREDITS
 ----------------
 
-Kristoffer Sahlin, Strobemers: an alternative to k-mers for sequence comparison, bioRxiv 2021.01.28.428549; doi: https://doi.org/10.1101/2021.01.28.428549
-
-Preprint found [here](https://doi.org/10.1101/2021.01.28.428549)
+Kristoffer Sahlin, Effective sequence similarity detection with strobemers, Genome Res. November 2021 31: 2080-2094; doi: https://doi.org/10.1101/gr.275648.121 [Paper link](https://doi.org/10.1101/gr.275648.121)
