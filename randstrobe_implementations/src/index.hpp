@@ -21,17 +21,18 @@ static inline uint64_t hash64(uint64_t key, uint64_t mask);
 
 typedef std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int>> mers_vector;
 
-static inline void get_next_strobe(std::vector<uint64_t> &string_hashes, uint64_t strobe_hashval, unsigned int &strobe_pos_next, uint64_t &strobe_hashval_next,  unsigned int w_start, unsigned int w_end, uint64_t q);
+void make_string_to_hashvalues(std::string &seq, std::vector<uint64_t> &string_hashes, std::vector<unsigned int> &pos_to_seq_choord, int k);
 
-mers_vector seq_to_randstrobes2(int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index);
-mers_vector seq_to_randstrobes3(int n, int k, int w_min, int w_max, std::string &seq, unsigned int ref_index);
+static inline void get_next_strobe(std::vector<uint64_t> &string_hashes, uint64_t strobe_hashval, unsigned int &strobe_pos_next, uint64_t &strobe_hashval_next,  unsigned int w_start, unsigned int w_end, uint64_t q);
+mers_vector link_2_strobes_method2(int w_min, int w_max, std::vector<uint64_t> &string_hashes, std::vector<unsigned int> &pos_to_seq_choord, unsigned int ref_index);
+mers_vector link_3_strobes_method2(int w_min, int w_max, std::vector<uint64_t> &string_hashes, std::vector<unsigned int> &pos_to_seq_choord, unsigned int ref_index);
 
 typedef robin_hood::unordered_map< unsigned int, std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int>>> three_pos_index;
 //mers_vector construct_flat_vector_three_pos(three_pos_index &tmp_index, uint64_t &unique_elements);
 typedef robin_hood::unordered_map< uint64_t, std::tuple<uint64_t, unsigned int >> kmer_lookup;
-void index_vector_three_pos(mers_vector  &mers_vector, kmer_lookup &mers_index);
 void process_flat_vector(mers_vector &flat_vector, uint64_t &unique_elements);
 unsigned int index_vector(mers_vector  &mers_vector, kmer_lookup &mers_index, float f);
+
 
 struct hit {
     unsigned int query_s;

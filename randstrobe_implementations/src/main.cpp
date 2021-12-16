@@ -559,18 +559,36 @@ int main (int argc, char *argv[])
     flat_vector.reserve(total_ref_seq_size);
     auto start_generating_randstrobes = std::chrono::high_resolution_clock::now();
     unsigned int mer_cnt = 0;
+
+
+    std::vector<uint64_t> string_hashes;
+    std::vector<unsigned int> pos_to_seq_choord;
+
     if (n == 2 ) {
         for (size_t i = 0; i < ref_seqs.size(); ++i) {
+            // first hash
+            string_hashes.reserve(ref_lengths[i]);
+            pos_to_seq_choord.reserve(ref_lengths[i]);
+
+            make_string_to_hashvalues(ref_seqs[i], string_hashes, pos_to_seq_choord, k);
+
+            // then link
             mers_vector randstrobes2; // pos, chr_id, kmer hash value
-            randstrobes2 = seq_to_randstrobes2(n, k, w_min, w_max, ref_seqs[i], i);
+            randstrobes2 = link_2_strobes_method2(w_min, w_max, string_hashes, pos_to_seq_choord, i);
             for (auto &t : randstrobes2) {
                 flat_vector.push_back(t);
             }
         }
     }  else if (n == 3){
         for (size_t i = 0; i < ref_seqs.size(); ++i) {
+            // first hash
+            string_hashes.reserve(ref_lengths[i]);
+            pos_to_seq_choord.reserve(ref_lengths[i]);
+            make_string_to_hashvalues(ref_seqs[i], string_hashes, pos_to_seq_choord, k);
+
+            // then link
             mers_vector randstrobes3; // pos, chr_id, kmer hash value
-            randstrobes3 = seq_to_randstrobes3(n, k, w_min, w_max, ref_seqs[i], i);
+            randstrobes3 = link_3_strobes_method2(w_min, w_max, string_hashes, pos_to_seq_choord, i);
             for (auto &t : randstrobes3) {
                 flat_vector.push_back(t);
             }
