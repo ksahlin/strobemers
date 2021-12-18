@@ -27,16 +27,20 @@ Viable combinations of (hashing, linking) seem to be (1,1)-(1,4), (2,1)-(2,4), (
 ### Metrics
 
 1. Construction time
-2. Dispersity of second strobe:
-    - Distribution of the number of times the position p2 is selected for k_2 (repetition distribution)
-    - Fraction of unique positions p2. 
-    - Distance distribution between the strobes
+2. "Randomness" selecting strobes:
+    - Distribution over positions sampled for the second strobe k_2 (/Number of uniquely sampled positions)
+    - Distance distribution between the `k_1` and `k_2` (goes between `w_min` to `w_max`)
     - W-spread of coordinates of p2, the difference in position of p2 compared to the p2's of previousluy W sampled strobes. Calculated as abs( min_{j-W < i < j}(p2(j) - p2(i))).
-3. Final strobemer hash value and matching:
+3. Uniqueness of final hash value:
     - How many unique matches between two sequences
 4. Downstream metric
     - How it affects strobealign (accuracy, final runtime, mapping sites tried, calls to ksw2)
 
+For randomness, neither of the first two measures suffices. Imagine having a an approach that resulted in a fixed sampling distance `d` between `k_1` and `k_2` (i.e., a spaced k-mer). This will give an optimal result on the first measures. 
+
+Instead, imagine having a an approach that resulted in an approach where position `p+w_max` was sampled for `k_2` for all `w_max-w_min` consecutive `k_1`'s in `[p, p+w_max-w_min]`, then the approach would "jump" forward and sample `k_2` at position `p+2w_max-w_min` for the next `w_max-w_min` consecutive positions of `k_1` in `[p+w_max-w_min, q+2w_max-w_min]`. This would give an optimal uniform distribution over the second measure, but the positional correlation between consecutive strobes is extremely high.
+
+The third measure is designed to measure local dispersity and would give a low score to both the scenarious above.
 
 ## Run benchmark
 

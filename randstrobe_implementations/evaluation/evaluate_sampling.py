@@ -23,18 +23,37 @@ def mkdir_p(path):
             raise
 
 
-def plot_histogram(x, outfolder):
+def plot_histogram(x, outfolder, h, l, name, bins=50):
     # plt.bar(x.keys(), x.values())
     # plt.hist(x, density=True, bins=30)  # density=False would make counts
-    plt.hist(x, density=False, bins=50) 
+    plt.hist(x, density=False, bins=bins) 
     # plt.ylabel('Probability')
     plt.ylabel('Count')
     plt.xlabel('Data')
+    plt.title('HASH: {0}, LINK: {1}'.format(h,l))
     plt.xlim(0, 50)
     plt.yscale('log')
-    outfile = os.path.join(outfolder, "sampled_position_distribution.pdf")
+    outfile = os.path.join(outfolder, "{0}_{1}_{2}.pdf".format(h,l, name))
     plt.savefig(outfile)
+    plt.close()
+    plt.cla()
+    plt.clf()
 
+
+def plot_histogram_distance(x, outfolder, h, l, name, bins=50):
+    # plt.bar(x.keys(), x.values())
+    plt.hist(x, density=False) 
+    # plt.ylabel('Probability')
+    plt.ylabel('Count')
+    plt.xlabel('Data')
+    plt.title('HASH: {0}, LINK: {1}'.format(h,l))
+    # plt.xlim(0, 50)
+    # plt.yscale('log')
+    outfile = os.path.join(outfolder, "{0}_{1}_{2}.pdf".format(h,l, name))
+    plt.savefig(outfile)
+    plt.close()
+    plt.cla()
+    plt.clf()
 
 # def plot_histogram(input_csv, outfolder):
 #     pd.set_option("display.precision", 8)
@@ -58,19 +77,27 @@ def plot_histogram(x, outfolder):
 #     plt.close()
 
 def main(args):
-
     sampling_distribution = {}
     p2_sampled = []
+    distances_sampled = []
     for line in open(args.positions, "r"):
         # nohash,Sahlin1,contig-120_0,75,152
         h, l, ref, p1, p2 = line.strip().split(",")
-        p2_sampled.append(p2)
+        d = int(p2) - int(p1)
+        p2_sampled.append(int(p2))
+        distances_sampled.append(d)
 
-    C = Counter(p2_sampled)
-    unique_p2_sampled = len(C)
-    most_repetitive = C.most_common(1)
-    print(h, l, unique_p2_sampled, most_repetitive)
-    plot_histogram(C.values(), args.outfolder)
+    C1 = Counter(p2_sampled)
+    unique_p2_sampled = len(C1)
+    most_repetitive = C1.most_common(1)
+    print(h, l, unique_p2_sampled, "most_repetitive position:", most_repetitive)
+    plot_histogram(C1.values(), args.outfolder, "strobe_2_distribution", h, l, bins=50)
+
+    C2 = Counter(distances_sampled)
+    most_repetitive = C2.most_common(1)
+    print(h, l, "most_repetitive distance:", most_repetitive)
+    plot_histogram_distance(C2.values(), args.outfolder, "distance_distribution", h, l, bins=len(C2))
+
     # plot_histogram(args.positions, args.outfolder)
 
 

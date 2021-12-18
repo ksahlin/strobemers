@@ -85,10 +85,7 @@ static inline void print_positions(mers_vector &flat_vector, idx_to_acc &acc_map
     std::string h_method;
     std::string l_method;
 
-    if (hash_func == 4)
-    {
-        h_method = "xxh128";
-    } else if (hash_func == 3){
+    if (hash_func == 3){
         h_method = "xxh64";
     } else if (hash_func == 2){
         h_method = "TW";
@@ -588,7 +585,7 @@ int main (int argc, char *argv[])
     std::vector<unsigned int> pos_to_seq_choord;
 
     if (link_func == 5) { // method 5 recuires combined link and hash
-        hash_func = 4;
+        hash_func = 3;
     }
 
     if (n == 2 ) {
