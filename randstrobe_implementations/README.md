@@ -9,7 +9,7 @@ For documentation, I will implement a small bake-off as soon as I have time, whi
 
 1. No hash - simple 2bit encoding of nucleotides
 2. Thomas Wang hash
-3. xxhash3 (64bit/128bit)
+3. xxhash3 (64bit)
 
 Let the hash function be denoted by h.
 
@@ -19,7 +19,7 @@ Let the hash function be denoted by h.
 2. Shen ( (h(k_1) + h(k') ) & p (method2 above)
 3. Sahlin bitcount( h(k_1) ^ h(k') ) (method3 above)
 4. Guo-Pibri h(k_1) ^ h(k') (global XOR), (also a variant: h(k_1 ^ k'))
-5. Liu-Patro-Li h( k_1 || k' ) (concatenation, h is set to xxhash 128bit)
+5. Liu-Patro-Li h( k_1 || k' ) (concatenation)
 
 Viable combinations of (hashing, linking) seem to be (1,1)-(1,4), (2,1)-(2,4), (3,1)-(3,5) as the total length can be larger than 32.
 
