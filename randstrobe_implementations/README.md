@@ -27,12 +27,15 @@ Viable combinations of (hashing, linking) seem to be (1,1)-(1,4), (2,1)-(2,4), (
 ### Metrics
 
 1. Construction time
-2. Uniqueness:
+2. Dispersity of second strobe:
     - Distribution of the number of times the position p2 is selected for k_2 (repetition distribution)
     - Fraction of unique positions p2. 
     - Distance distribution between the strobes
     - W-spread of coordinates of p2, the difference in position of p2 compared to the p2's of previousluy W sampled strobes. Calculated as abs( min_{j-W < i < j}(p2(j) - p2(i))).
-    - Downstream metrics such as how it affects strobealign (accuracy, final runtime, mapping sites tried, calls to ksw2)
+3. Final strobemer hash value and matching:
+    - How many unique matches between two sequences
+4. Downstream metric
+    - How it affects strobealign (accuracy, final runtime, mapping sites tried, calls to ksw2)
 
 
 ## Run benchmark

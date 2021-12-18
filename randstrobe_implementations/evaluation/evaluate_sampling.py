@@ -26,10 +26,11 @@ def mkdir_p(path):
 def plot_histogram(x, outfolder):
     # plt.bar(x.keys(), x.values())
     # plt.hist(x, density=True, bins=30)  # density=False would make counts
-    plt.hist(x, density=False, bins=30) 
+    plt.hist(x, density=False, bins=50) 
     # plt.ylabel('Probability')
     plt.ylabel('Count')
-    plt.xlabel('Data');
+    plt.xlabel('Data')
+    plt.xlim(0, 50)
     plt.yscale('log')
     outfile = os.path.join(outfolder, "sampled_position_distribution.pdf")
     plt.savefig(outfile)

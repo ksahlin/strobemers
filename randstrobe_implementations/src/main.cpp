@@ -592,20 +592,31 @@ int main (int argc, char *argv[])
     }
 
     if (n == 2 ) {
+        mers_vector randstrobes2; // pos, chr_id, kmer hash value
         for (size_t i = 0; i < ref_seqs.size(); ++i) {
-
 
             string_hashes.reserve(ref_lengths[i]);
             pos_to_seq_choord.reserve(ref_lengths[i]);
 
-            auto start_hash = std::chrono::high_resolution_clock::now();
-
-
             if (link_func == 5) { // method 5 recuires combined link and hash
-                ;
+                auto start_hash = std::chrono::high_resolution_clock::now();
+                string_to_hash_nohash(ref_seqs[i], string_hashes, pos_to_seq_choord, k);
+                auto end_hash = std::chrono::high_resolution_clock::now();
+                elapsed_hash += end_hash - start_hash;
+
+                auto start_link = std::chrono::high_resolution_clock::now();
+                randstrobes2 = link_2_strobes_liu_patro_li(w_min, w_max, string_hashes, pos_to_seq_choord, i);
+                auto end_link = std::chrono::high_resolution_clock::now();
+                elapsed_link += end_link - start_link;
+                for (auto &t : randstrobes2) {
+                    flat_vector.push_back(t);
+                }
+                string_hashes.clear();
+                randstrobes2.clear();
+                pos_to_seq_choord.clear();
             }
             else { // the other methods can be separated
-
+                auto start_hash = std::chrono::high_resolution_clock::now();
                 // first hash
                 if (hash_func == 1) {
                     string_to_hash_nohash(ref_seqs[i], string_hashes, pos_to_seq_choord, k);
@@ -622,8 +633,15 @@ int main (int argc, char *argv[])
 
                 // then link
                 auto start_link = std::chrono::high_resolution_clock::now();
-                mers_vector randstrobes2; // pos, chr_id, kmer hash value
-                randstrobes2 = link_2_strobes_method2(w_min, w_max, string_hashes, pos_to_seq_choord, i);
+                if (link_func == 1) {
+                    randstrobes2 = link_2_strobes_sahlin1(w_min, w_max, string_hashes, pos_to_seq_choord, i);
+                } else if (link_func == 2) {
+                    randstrobes2 = link_2_strobes_shen(w_min, w_max, string_hashes, pos_to_seq_choord, i);
+                } else if (link_func == 3) {
+                    randstrobes2 = link_2_strobes_sahlin2(w_min, w_max, string_hashes, pos_to_seq_choord, i);
+                } else if (link_func == 4) {
+                    randstrobes2 = link_2_strobes_guo_pibri(w_min, w_max, string_hashes, pos_to_seq_choord, i);
+                }
                 auto end_link = std::chrono::high_resolution_clock::now();
                 elapsed_link += end_link - start_link;
                 for (auto &t : randstrobes2) {
@@ -631,38 +649,41 @@ int main (int argc, char *argv[])
                 }
                 string_hashes.clear();
                 randstrobes2.clear();
+                pos_to_seq_choord.clear();
             }
 
 //            std::cout << "Done with ref: " << i << std::endl;
         }
-    }  else if (n == 3){
-        for (size_t i = 0; i < ref_seqs.size(); ++i) {
-            // first hash
-            string_hashes.reserve(ref_lengths[i]);
-            pos_to_seq_choord.reserve(ref_lengths[i]);
-            string_to_hash_wang(ref_seqs[i], string_hashes, pos_to_seq_choord, k);
-
-            // then link
-            mers_vector randstrobes3; // pos, chr_id, kmer hash value
-            randstrobes3 = link_3_strobes_method2(w_min, w_max, string_hashes, pos_to_seq_choord, i);
-            for (auto &t : randstrobes3) {
-                flat_vector.push_back(t);
-            }
-        }
     }
+//    else if (n == 3){
+//        for (size_t i = 0; i < ref_seqs.size(); ++i) {
+//            // first hash
+//            string_hashes.reserve(ref_lengths[i]);
+//            pos_to_seq_choord.reserve(ref_lengths[i]);
+//            string_to_hash_wang(ref_seqs[i], string_hashes, pos_to_seq_choord, k);
+//
+//            // then link
+//            mers_vector randstrobes3; // pos, chr_id, kmer hash value
+//            randstrobes3 = link_3_strobes_method2(w_min, w_max, string_hashes, pos_to_seq_choord, i);
+//            for (auto &t : randstrobes3) {
+//                flat_vector.push_back(t);
+//            }
+//        }
+//    }
 
 
 //    float elapsed_hash_rounded = truncf(elapsed_hash.count() * 10) / 10;
-    std::cout << "Total time hashing: " << elapsed_hash.count() << " s\n" <<  std::endl;
 
-//    float elapsed_link_rounded = truncf(elapsed_link.count() * 10) / 10;
+
+    std::cout << "Total time hashing: " << elapsed_hash.count() << " s\n" <<  std::endl;
     std::cout << "Total time linking: " << elapsed_link.count() << " s\n" <<  std::endl;
+
 
     auto finish_generating_randstrobes = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed_mers = finish_generating_randstrobes - start_generating_randstrobes;
-    float rounded = truncf(elapsed_mers.count() * 10) / 10;
+//    float rounded = truncf(elapsed_mers.count() * 10) / 10;
 //    std::cout << rounded << "s";
-    std::cout << "Total time generating mers: " << rounded << " s\n" <<  std::endl;
+    std::cout << "Total time generating randstrobes (hashing + linking): " << elapsed_mers.count() << " s\n" <<  std::endl;
 
     std::cout << "Ref vector actual size: " << flat_vector.size() << std::endl;
     flat_vector.shrink_to_fit();
