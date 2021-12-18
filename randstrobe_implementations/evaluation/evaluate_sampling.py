@@ -29,7 +29,7 @@ def plot_histogram(x, outfolder, h, l, name, bins=50):
     plt.hist(x, density=False, bins=bins) 
     # plt.ylabel('Probability')
     plt.ylabel('Count')
-    plt.xlabel('Data')
+    plt.xlabel('Times a genomic coordinate is sampled for strobe 2')
     plt.title('HASH: {0}, LINK: {1}'.format(h,l))
     plt.xlim(0, 50)
     plt.yscale('log')
@@ -41,11 +41,11 @@ def plot_histogram(x, outfolder, h, l, name, bins=50):
 
 
 def plot_histogram_distance(x, outfolder, h, l, name, bins=50):
-    # plt.bar(x.keys(), x.values())
-    plt.hist(x, density=False) 
+    plt.bar(x.keys(), x.values())
+    # plt.hist(x, density=False) 
     # plt.ylabel('Probability')
     plt.ylabel('Count')
-    plt.xlabel('Data')
+    plt.xlabel('Distance between strobesss')
     plt.title('HASH: {0}, LINK: {1}'.format(h,l))
     # plt.xlim(0, 50)
     # plt.yscale('log')
@@ -96,7 +96,7 @@ def main(args):
     C2 = Counter(distances_sampled)
     most_repetitive = C2.most_common(1)
     print(h, l, "most_repetitive distance:", most_repetitive)
-    plot_histogram_distance(C2.values(), args.outfolder, "distance_distribution", h, l, bins=len(C2))
+    plot_histogram_distance(C2, args.outfolder, "distance_distribution", h, l, bins=len(C2))
 
     # plot_histogram(args.positions, args.outfolder)
 
