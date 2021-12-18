@@ -45,7 +45,7 @@ def plot_histogram_distance(x, outfolder, h, l, name, bins=50):
     # plt.hist(x, density=False) 
     # plt.ylabel('Probability')
     plt.ylabel('Count')
-    plt.xlabel('Distance between strobesss')
+    plt.xlabel('Distance between strobes')
     plt.title('HASH: {0}, LINK: {1}'.format(h,l))
     # plt.xlim(0, 50)
     # plt.yscale('log')
