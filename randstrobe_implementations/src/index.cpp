@@ -9,7 +9,7 @@
 #include <iostream>
 #include <math.h>       /* pow */
 #include <bitset>
-
+#include "xxhash.h"
 
 
 /**********************************************************
@@ -81,19 +81,10 @@ static inline uint64_t kmer_to_uint64(std::string &kmer, uint64_t kmask)
 }
 
 
-
-
-void make_string_to_hashvalues(std::string &seq, std::vector<uint64_t> &string_hashes, std::vector<unsigned int> &pos_to_seq_choord, int k) {
+void string_to_hash_nohash(std::string &seq, std::vector<uint64_t> &string_hashes, std::vector<unsigned int> &pos_to_seq_choord, int k) {
     std::transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
     uint64_t kmask=(1ULL<<2*k) - 1;
-//    std::bitset<64> x(q);
-//    std::cout << x << '\n';
-    // make string of strobes into hashvalues all at once to avoid repetitive k-mer to hash value computations
-//    robin_hood::unordered_map< unsigned int, unsigned int>  pos_to_seq_choord;
 
-
-    robin_hood::hash<uint64_t> robin_hash;
-//    std::vector<std::tuple<uint64_t, unsigned int, unsigned int> > kmers;
     unsigned int hash_count = 0;
     int l;
     int i;
@@ -103,10 +94,31 @@ void make_string_to_hashvalues(std::string &seq, std::vector<uint64_t> &string_h
         if (c < 4) { // not an "N" base
             x = (x << 2 | c) & kmask;                  // forward strand
             if (++l >= k) { // we find a k-mer
-                uint64_t hash_k = x; // no hash
-//                uint64_t hash_k = robin_hash(x);
-//                uint64_t hash_k = hash64(x, kmask); // Thomas Wang hash
-//                std::cout << hash_k << " " << x << std::endl;
+                string_hashes.push_back(x); // no hash
+                pos_to_seq_choord.push_back( i - k + 1);
+//                pos_to_seq_choord[hash_count] = i - k + 1;
+                hash_count ++;
+            }
+        } else {
+            l = 0, x = 0; // if there is an "N", restart
+        }
+    }
+}
+
+
+void string_to_hash_wang(std::string &seq, std::vector<uint64_t> &string_hashes, std::vector<unsigned int> &pos_to_seq_choord, int k) {
+    std::transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
+    uint64_t kmask=(1ULL<<2*k) - 1;
+    unsigned int hash_count = 0;
+    int l;
+    int i;
+    uint64_t x = 0;
+    for (int i = l = 0; i < seq.length(); i++) {
+        int c = seq_nt4_table[(uint8_t) seq[i]];
+        if (c < 4) { // not an "N" base
+            x = (x << 2 | c) & kmask;                  // forward strand
+            if (++l >= k) { // we find a k-mer
+                uint64_t hash_k = hash64(x, kmask); // Thomas Wang hash
                 string_hashes.push_back(hash_k);
                 pos_to_seq_choord.push_back( i - k + 1);
 //                pos_to_seq_choord[hash_count] = i - k + 1;
@@ -117,6 +129,32 @@ void make_string_to_hashvalues(std::string &seq, std::vector<uint64_t> &string_h
         }
     }
 }
+
+void string_to_hash_xxhash(std::string &seq, std::vector<uint64_t> &string_hashes, std::vector<unsigned int> &pos_to_seq_choord, int k) {
+    std::transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
+    uint64_t kmask=(1ULL<<2*k) - 1;
+    unsigned int hash_count = 0;
+    int l;
+    int i;
+    uint64_t x = 0;
+    for (int i = l = 0; i < seq.length(); i++) {
+        int c = seq_nt4_table[(uint8_t) seq[i]];
+        if (c < 4) { // not an "N" base
+            x = (x << 2 | c) & kmask;                  // forward strand
+            if (++l >= k) { // we find a k-mer
+                uint64_t hash_k = XXH3_64bits(&x, 64);
+//                (size_t) XXH3_128bits(src, srcSize).low64
+                string_hashes.push_back(hash_k);
+                pos_to_seq_choord.push_back( i - k + 1);
+//                pos_to_seq_choord[hash_count] = i - k + 1;
+                hash_count ++;
+            }
+        } else {
+            l = 0, x = 0; // if there is an "N", restart
+        }
+    }
+}
+
 
 
 

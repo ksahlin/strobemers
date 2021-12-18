@@ -14,14 +14,16 @@
 #include <deque>
 #include <tuple>
 #include "robin_hood.h"
-
+#include "xxhash.h"
 
 uint64_t hash(std::string kmer);
 static inline uint64_t hash64(uint64_t key, uint64_t mask);
 
 typedef std::vector< std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int>> mers_vector;
 
-void make_string_to_hashvalues(std::string &seq, std::vector<uint64_t> &string_hashes, std::vector<unsigned int> &pos_to_seq_choord, int k);
+void string_to_hash_wang(std::string &seq, std::vector<uint64_t> &string_hashes, std::vector<unsigned int> &pos_to_seq_choord, int k);
+void string_to_hash_xxhash(std::string &seq, std::vector<uint64_t> &string_hashes, std::vector<unsigned int> &pos_to_seq_choord, int k);
+void string_to_hash_nohash(std::string &seq, std::vector<uint64_t> &string_hashes, std::vector<unsigned int> &pos_to_seq_choord, int k);
 
 static inline void get_next_strobe(std::vector<uint64_t> &string_hashes, uint64_t strobe_hashval, unsigned int &strobe_pos_next, uint64_t &strobe_hashval_next,  unsigned int w_start, unsigned int w_end, uint64_t q);
 mers_vector link_2_strobes_method2(int w_min, int w_max, std::vector<uint64_t> &string_hashes, std::vector<unsigned int> &pos_to_seq_choord, unsigned int ref_index);

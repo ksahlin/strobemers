@@ -80,19 +80,47 @@ static uint64_t read_references(std::vector<std::string> &seqs, std::vector<unsi
 }
 
 
-static inline void print_positions(mers_vector &flat_vector, idx_to_acc &acc_map, std::ofstream &output_file  ) {
+static inline void print_positions(mers_vector &flat_vector, idx_to_acc &acc_map, std::ofstream &output_file, int hash_func, int link_func ) {
+    std::string h_method;
+    std::string l_method;
+
+    if (hash_func == 4)
+    {
+        h_method = "xxh128";
+    } else if (hash_func == 3){
+        h_method = "xxh64";
+    } else if (hash_func == 2){
+        h_method = "TW";
+    } else if (hash_func == 1){
+        h_method = "nohash";
+    }
+
+    if (link_func == 1)
+    {
+        l_method = "Sahlin1";
+    } else if (link_func == 2){
+        l_method = "Shen";
+    } else if (link_func == 3){
+        l_method = "Sahlin2";
+    } else if (link_func == 4){
+        l_method = "Guo-Pibri";
+    } else if (link_func == 5){
+        l_method = "Liu-Patro-Li";
+    }
+
+
     for (size_t i = 0; i < flat_vector.size(); ++i)
     {
         // access using []
         auto t = flat_vector[i];
 //        < std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int>
 //        (hash_randstrobe3, ref_index, seq_pos_strobe1, seq_pos_strobe2, seq_pos_strobe3)
-        auto hash_v = std::get<0>(t);
+//        auto hash_v = std::get<0>(t);
         auto ref_index = std::get<1>(t);
         auto seq_pos_strobe1 = std::get<2>(t);
         auto seq_pos_strobe2 = std::get<3>(t);
         auto seq_pos_strobe3 = std::get<4>(t);
-        output_file << acc_map[ref_index]  << "," << seq_pos_strobe1 << "," << seq_pos_strobe3 << "\n";
+        output_file << h_method << "," << l_method << "," <<  acc_map[ref_index]  << "," << seq_pos_strobe1 << "," << seq_pos_strobe3 << "\n";
     }
 
 }
@@ -408,8 +436,8 @@ void print_usage() {
     std::cerr << "\t-w INT strobe w_max offset [70]\n";
     std::cerr << "\t-t INT number of threads [3]\n";
     std::cerr << "\t-o name of output tsv-file [output.tsv]\n";
-    std::cerr << "\t-x Choice of hash function to use; xxhash, wanghash, nohash [nohash]. \n";
-    std::cerr << "\t-l Choice of link function to use; method1 (sahlin modulu), method2 (shen bitwise AND), method3 (guo_pibri XOR), method4 (sahlin bitcount XOR), method5 (Liu-Patro-Li, concatenation). \n";
+    std::cerr << "\t-x Choice of hash function to use; 1: nohash, 2: wanghash, 3:xxhash [1]. \n";
+    std::cerr << "\t-l Choice of link function to use; 1: method1 (sahlin modulo), 2: method2 (shen bitwise AND), 3: method3 (guo_pibri XOR), 4: method4 (sahlin bitcount XOR), 5: method5 (Liu-Patro-Li, concatenation). \n";
 //    std::cerr << "\t-C UINT Mask (do not process) strobemer hits with count larger than C [1000]\n";
 //    std::cerr << "\t-L UINT Print at most L NAMs per query [1000]. Will print the NAMs with highest score S = n_strobemer_hits * query_span. \n";
 //    std::cerr << "\t-S Sort output NAMs for each query based on score. Default is to sort first by ref ID, then by query coordinate, then by reference coordinate. \n";
@@ -429,8 +457,8 @@ int main (int argc, char *argv[])
     }
 
     // Default parameters
-    std::string hash_func = "nohash";
-    std::string link_func = "method1";
+    int hash_func = 1;
+    int link_func = 1;
     int n = 2;
     int k = 20;
     int s = k - 4;
@@ -441,7 +469,6 @@ int main (int argc, char *argv[])
     int n_threads = 3;
     bool unique = false;
     bool output_specified = false;
-    bool ultra_output = false;
     bool wmin_set = false;
     unsigned int filter_cutoff = 1000;
     unsigned int max_lines = 1000;
@@ -473,19 +500,15 @@ int main (int argc, char *argv[])
                 opn += 2;
                 flag = true;
             } else if (argv[opn][1] == 'x') {
-                hash_func = argv[opn + 1];
+                hash_func = std::stoi(argv[opn + 1]);
                 opn += 2;
                 flag = true;
             } else if (argv[opn][1] == 'l') {
-                link_func = argv[opn + 1];
+                link_func =std::stoi( argv[opn + 1]);
                 opn += 2;
                 flag = true;
             } else if (argv[opn][1] == 'u') {
                 unique = true;
-                opn += 1;
-                flag = true;
-            } else if (argv[opn][1] == 's') {
-                ultra_output = true;
                 opn += 1;
                 flag = true;
             } else if (argv[opn][1] == 't') {
@@ -520,7 +543,6 @@ int main (int argc, char *argv[])
     std::cout << "Using" << std::endl;
     std::cout << "n: " << n << std::endl;
     std::cout << "k: " << k << std::endl;
-    std::cout << "-s: " << ultra_output << std::endl;
     std::cout << "w_min: " << w_min << std::endl;
     std::cout << "w_max: " << w_max << std::endl;
     std::cout << "t: " << n_threads << std::endl;
@@ -532,9 +554,6 @@ int main (int argc, char *argv[])
     int filter_nams = 0;
 //    assert(k <= w_min && "k have to be smaller than w_min");
     assert(k <= 32 && "k have to be smaller than 32!");
-    if (ultra_output){
-        assert(output_specified && "If -s is specified -o needs to be specified on format: /my/path/to/uLTRA_output/ ");
-    }
     // File name to reference
     std::string filename = argv[opn];
     opn++;
@@ -560,31 +579,68 @@ int main (int argc, char *argv[])
     auto start_generating_randstrobes = std::chrono::high_resolution_clock::now();
     unsigned int mer_cnt = 0;
 
+    std::cout << "total_ref_seq_size " << total_ref_seq_size << std::endl;
+    std::cout << "Number of refs: " << ref_seqs.size() << std::endl;
+    std::chrono::duration<double> elapsed_hash;
+    std::chrono::duration<double> elapsed_link;
 
     std::vector<uint64_t> string_hashes;
     std::vector<unsigned int> pos_to_seq_choord;
 
+    if (link_func == 5) { // method 5 recuires combined link and hash
+        hash_func = 4;
+    }
+
     if (n == 2 ) {
         for (size_t i = 0; i < ref_seqs.size(); ++i) {
-            // first hash
+
+
             string_hashes.reserve(ref_lengths[i]);
             pos_to_seq_choord.reserve(ref_lengths[i]);
 
-            make_string_to_hashvalues(ref_seqs[i], string_hashes, pos_to_seq_choord, k);
+            auto start_hash = std::chrono::high_resolution_clock::now();
 
-            // then link
-            mers_vector randstrobes2; // pos, chr_id, kmer hash value
-            randstrobes2 = link_2_strobes_method2(w_min, w_max, string_hashes, pos_to_seq_choord, i);
-            for (auto &t : randstrobes2) {
-                flat_vector.push_back(t);
+
+            if (link_func == 5) { // method 5 recuires combined link and hash
+                ;
             }
+            else { // the other methods can be separated
+
+                // first hash
+                if (hash_func == 1) {
+                    string_to_hash_nohash(ref_seqs[i], string_hashes, pos_to_seq_choord, k);
+
+                } else if (hash_func == 2) {
+                    string_to_hash_wang(ref_seqs[i], string_hashes, pos_to_seq_choord, k);
+
+                } else if (hash_func == 3) {
+                    string_to_hash_xxhash(ref_seqs[i], string_hashes, pos_to_seq_choord, k);
+                }
+                auto end_hash = std::chrono::high_resolution_clock::now();
+                elapsed_hash += end_hash - start_hash;
+
+
+                // then link
+                auto start_link = std::chrono::high_resolution_clock::now();
+                mers_vector randstrobes2; // pos, chr_id, kmer hash value
+                randstrobes2 = link_2_strobes_method2(w_min, w_max, string_hashes, pos_to_seq_choord, i);
+                auto end_link = std::chrono::high_resolution_clock::now();
+                elapsed_link += end_link - start_link;
+                for (auto &t : randstrobes2) {
+                    flat_vector.push_back(t);
+                }
+                string_hashes.clear();
+                randstrobes2.clear();
+            }
+
+            std::cout << "Done with ref: " << i << std::endl;
         }
     }  else if (n == 3){
         for (size_t i = 0; i < ref_seqs.size(); ++i) {
             // first hash
             string_hashes.reserve(ref_lengths[i]);
             pos_to_seq_choord.reserve(ref_lengths[i]);
-            make_string_to_hashvalues(ref_seqs[i], string_hashes, pos_to_seq_choord, k);
+            string_to_hash_wang(ref_seqs[i], string_hashes, pos_to_seq_choord, k);
 
             // then link
             mers_vector randstrobes3; // pos, chr_id, kmer hash value
@@ -595,6 +651,12 @@ int main (int argc, char *argv[])
         }
     }
 
+
+//    float elapsed_hash_rounded = truncf(elapsed_hash.count() * 10) / 10;
+    std::cout << "Total time hashing: " << elapsed_hash.count() << " s\n" <<  std::endl;
+
+//    float elapsed_link_rounded = truncf(elapsed_link.count() * 10) / 10;
+    std::cout << "Total time linking: " << elapsed_link.count() << " s\n" <<  std::endl;
 
     auto finish_generating_randstrobes = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed_mers = finish_generating_randstrobes - start_generating_randstrobes;
@@ -608,8 +670,11 @@ int main (int argc, char *argv[])
     std::string output_filename_sampled = "positions.tsv"; // q_position_end (last position) if three strobes
     std::ofstream output_file_sampled; // q_position_end (last position) if three strobes;
     output_file_sampled.open(output_filename_sampled);
-    print_positions(flat_vector, acc_map, output_file_sampled); // TODO
+    print_positions(flat_vector, acc_map, output_file_sampled, hash_func, link_func ); // TODO
     return 0;
+
+
+
 
     uint64_t unique_mers = 0;
     process_flat_vector(flat_vector, unique_mers);
