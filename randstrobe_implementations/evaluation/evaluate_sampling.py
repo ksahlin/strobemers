@@ -123,12 +123,12 @@ def main(args):
     unique_p2_sampled = len(C1)
     max_p2_sampled = C1.most_common(1)[0][1]
     # print(h, l, unique_p2_sampled, "most_repetitive position:", most_repetitive[1])
-    plot_histogram(C1.values(), args.outfolder, "strobe_2_distribution", h, l, bins=50)
+    plot_histogram(C1.values(), args.outfolder, h, l, "strobe_2_distribution", bins=50)
 
     C2 = Counter(distances_sampled)
     # most_repetitive = C2.most_common(1)
     # print(h, l, "most_repetitive distance:", most_repetitive[1])
-    plot_histogram_distance(C2, args.outfolder, "distance_distribution", h, l, bins=len(C2))
+    plot_histogram_distance(C2, args.outfolder, h, l, "distance_distribution", bins=len(C2))
 
     du = get_distance_nonuniformity(C2)
     # w_corr = get_window_correlation(p2_sampled)
@@ -137,7 +137,7 @@ def main(args):
     W4 = get_clumping_metric(p2_sampled, 4)
     W5 = get_clumping_metric(p2_sampled, 5)
     W_greater = sum( [get_clumping_metric(p2_sampled, i) for i in range(6,10)])
-    print(h,l,unique_p2_sampled,max_p2_sampled, du, W2,W3,W4,W5,W_greater) #, distance_nonuniformity,W_correlation)
+    print("{},{},{},{},{},{},{},{},{},{}".format(h,l,unique_p2_sampled,max_p2_sampled, du, W2, W3, W4, W5, W_greater)) #, distance_nonuniformity,W_correlation)
 
     # plot_histogram(args.positions, args.outfolder)
 
