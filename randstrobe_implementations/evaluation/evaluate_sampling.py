@@ -128,8 +128,8 @@ def get_clumping_metric(p2_sampled, w = 5, wmax = 100):
             p_max = max(window)
             if p_max - p_min <= w:
                 tot_bad += 1   
-                if w > 5: 
-                    print(w, p2, window)
+                # if w > 5: 
+                #     print(w, p2, window)
     return tot_bad
 
 def main(args):
@@ -142,8 +142,8 @@ def main(args):
         Metrics:
         M1: Distance uniformity distribution
         M2: Strobe 2 position sampling distribution (times a position is sampled)
-        M3: Min dist: Minimum distance between two M consecutive strobes all sampled within M bps.
-        M4: Local clump metric: M consecutive strobes all sampled within M bps.
+        M3: Min dist: Minimum distance between M consecutive strobes.
+        M4: Clump count metric: How many positions do I have where x consecutive strobes are all sampled within a total span of x bps.
     """
     sampling_distribution = {}
     p2_sampled = []
