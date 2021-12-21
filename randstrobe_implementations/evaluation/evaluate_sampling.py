@@ -98,7 +98,7 @@ def get_distance_nonuniformity(C):
 def get_d_min(p2_sampled, n = 5, wmin = 1, wmax = 100):
     L = wmax - wmin
     E_dist = L / (n**2 - 1)
-    tot_larger = 0
+    tot_smaller = 0
     print("E_dist:", E_dist)
     tot_d_min = 0
     for i in range(len((p2_sampled[:-wmax]))): # Do not count the end of sequence where we reduce window size (there will be more degenerate cases here)
@@ -109,28 +109,33 @@ def get_d_min(p2_sampled, n = 5, wmin = 1, wmax = 100):
 
         min_dist = min([p2-p1 for p1,p2 in zip(window[:-1], window[1:]) ])
         # print(min_dist, p2, window )
-        if min_dist > E_dist:
-            tot_larger += 1
+        if min_dist < E_dist:
+            tot_smaller += 1
         # tot_d_min += 1/(max(1, min_dist))
     num_trials = len(p2_sampled[n:-wmax])
-    print(tot_larger, num_trials)
-    return tot_larger / num_trials # tot_d_min / len(p2_sampled[n:-wmax])
+    print(tot_smaller, num_trials)
+    return tot_smaller / num_trials # tot_d_min / len(p2_sampled[n:-wmax])
 
-def get_clumping_metric(p2_sampled, w = 5, wmax = 100):
-    # w consecutive p2 positions are all within w nucleotides of each other
+
+def get_clumping_metric(p2_sampled, wmin, wmax, n = 5):
+    # upper_bound_expected_nr = len((p2_sampled[:-wmax]))*((n)**(n-1)/(wmax-wmin)**(n-1))
+    # n consecutive p2 positions are all within n nucleotides of each other
     tot_bad = 0
     for i, p2 in enumerate(p2_sampled[:-wmax]):  # Do not count the end of sequence where we reduce window size (there will be more degenerate cases here)
-        if i < w: # not defined here
+        if i < n: # not defined here
             continue
-        window = p2_sampled[i - w : i]
-        if len(window) == w:
+        window = p2_sampled[i - n : i]
+        if len(window) == n:
             p_min = min(window)
             p_max = max(window)
-            if p_max - p_min <= w:
+            if p_max - p_min <= n:
                 tot_bad += 1   
-                # if w > 5: 
-                #     print(w, p2, window)
-    return tot_bad
+                # if n > 5: 
+                #     print(n, p2, window)
+    # print("upper_bound_expected_nr", upper_bound_expected_nr, "tot_bad", tot_bad, "ratio:", tot_bad/upper_bound_expected_nr)
+    return tot_bad #round(tot_bad/upper_bound_expected_nr, 4)
+
+import random
 
 def main(args):
     """
@@ -145,6 +150,33 @@ def main(args):
         M3: Min dist: Minimum distance between M consecutive strobes.
         M4: Clump count metric: How many positions do I have where x consecutive strobes are all sampled within a total span of x bps.
     """
+
+
+    # # Get expected number of clumps
+    # E_clump = {2:0, 3:0, 4:0, 5:0, 6:0}
+    # for i in range(10):
+    #     s = [random.randint(i,i+100) for i in range(1000000)]
+    #     E_clump[2] += get_clumping_metric(s, args.wmin, args.wmax, 2)
+    #     E_clump[3] += get_clumping_metric(s, args.wmin, args.wmax, 3)
+    #     E_clump[4] += get_clumping_metric(s, args.wmin, args.wmax, 4)
+    #     E_clump[5] += get_clumping_metric(s, args.wmin, args.wmax, 5)
+    #     E_clump[6] += get_clumping_metric(s, args.wmin, args.wmax, 6)
+    #     E_clump[6] += get_clumping_metric(s, args.wmin, args.wmax, 7)
+    #     E_clump[6] += get_clumping_metric(s, args.wmin, args.wmax, 8)
+    #     E_clump[6] += get_clumping_metric(s, args.wmin, args.wmax, 9)
+    #     E_clump[6] += get_clumping_metric(s, args.wmin, args.wmax, 10)
+
+    # for c in E_clump.keys():
+    #     E_clump[c] = E_clump[c]/10
+    # print(E_clump)
+    # for c in E_clump.keys():
+    #     print(c, E_clump[c])
+    # sys.exit()
+
+    # Empirical estimates based on above commented out experiment
+    # Clumps per million positions
+    E_clump = {2: 48891.5, 3: 3530.0, 4: 359.1, 5: 45.1, 6: 7.7}
+
     sampling_distribution = {}
     p2_sampled = []
     distances_sampled = []
@@ -155,7 +187,6 @@ def main(args):
         p2_sampled.append(int(p2))
         distances_sampled.append(d)
 
-    print("Hash,Link,total_unique,most_repetitive,distance_nonuniformity,d_min_5,d_max2,d_max3,d_max4,d_max5,d_max6-10")
 
     C1 = Counter(p2_sampled)
     unique_p2_sampled = len(C1)
@@ -170,13 +201,28 @@ def main(args):
 
     du = get_distance_nonuniformity(C2)
     # w_corr = get_window_correlation(p2_sampled)
-    d_max2 = get_clumping_metric(p2_sampled, 2)
-    d_max3 = get_clumping_metric(p2_sampled, 3)
-    d_max4 = get_clumping_metric(p2_sampled, 4)
-    d_max5 = get_clumping_metric(p2_sampled, 5)
-    d_max6_and_up = sum( [get_clumping_metric(p2_sampled, i) for i in range(6,10)])
-    d_min_5 = round(get_d_min(p2_sampled, n = 5, wmax = args.wmax), 3)
-    print("{},{},{},{},{},{},{},{},{},{},{}".format(h,l,unique_p2_sampled,max_p2_sampled, du, d_min_5, d_max2, d_max3, d_max4, d_max5, d_max6_and_up)) #, distance_nonuniformity,W_correlation)
+    d_min_2 = round(get_d_min(p2_sampled, n = 5, wmin = args.wmin, wmax = args.wmax), 3)
+    d_min_3 = round(get_d_min(p2_sampled, n = 5, wmin = args.wmin, wmax = args.wmax), 3)
+    d_min_4 = round(get_d_min(p2_sampled, n = 5, wmin = args.wmin, wmax = args.wmax), 3)
+    d_min_5 = round(get_d_min(p2_sampled, n = 5, wmin = args.wmin, wmax = args.wmax), 3)
+
+    clumps2 = get_clumping_metric(p2_sampled, args.wmin, args.wmax, 2)
+    clumps3 = get_clumping_metric(p2_sampled, args.wmin, args.wmax,3)
+    clumps4 = get_clumping_metric(p2_sampled, args.wmin, args.wmax,4)
+    clumps5 = get_clumping_metric(p2_sampled, args.wmin, args.wmax,5)
+    clumps6to10 = sum( [get_clumping_metric(p2_sampled, args.wmin, args.wmax,i) for i in range(6,11)])
+
+    # 
+    m = len(p2_sampled) - args.wmax
+    n = 1000000 
+    d_max2 = clumps2/((m/n)*E_clump[2])
+    d_max3 = clumps3/((m/n)*E_clump[3])
+    d_max4 = clumps4/((m/n)*E_clump[4])
+    d_max5 = clumps5/((m/n)*E_clump[5])
+    d_max6_and_up = clumps6to10/((m/n)*E_clump[6])
+
+    print("Hash,Link,total_unique,most_repetitive,distance_nonuniformity,d_min_2,d_min_3,d_min_4,d_min_5,d_max2,d_max3,d_max4,d_max5,d_max6-10")
+    print("{},{},{},{},{},{},{},{},{},{},{}".format(h,l,unique_p2_sampled,max_p2_sampled, du, d_min_2, d_min_3, d_min_4, d_min_5, round(d_max2,2), round(d_max3,2), round(d_max4,2), round(d_max5,2), round(d_max6_and_up,2))) #, distance_nonuniformity,W_correlation)
 
     # plot_histogram(args.positions, args.outfolder)
 
@@ -186,7 +232,8 @@ if __name__ == '__main__':
     parser.add_argument('positions', type=str,  default=False, help='Input positions file')
     parser.add_argument('outfolder', type=str,  default=False, help='Input positions file')
     parser.add_argument('--k', type=int,  default=20, help='Input positions file')
-    parser.add_argument('--wmax', type=int,  default=100, help='Input positions file')
+    parser.add_argument('--wmin', type=int,  default=21, help='Input positions file')
+    parser.add_argument('--wmax', type=int,  default=120, help='Input positions file')
 
     args = parser.parse_args()
     mkdir_p(args.outfolder)

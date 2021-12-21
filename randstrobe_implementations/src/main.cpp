@@ -430,8 +430,8 @@ void print_usage() {
     std::cerr << "options:\n";
     std::cerr << "\t-n INT number of strobes [2 or 3]\n";
     std::cerr << "\t-k INT strobe length, limited to 32 [20]\n";
-    std::cerr << "\t-v INT strobe w_min offset [1]\n";
-    std::cerr << "\t-w INT strobe w_max offset [100]\n";
+    std::cerr << "\t-v INT strobe w_min offset [21]\n";
+    std::cerr << "\t-w INT strobe w_max offset [120]\n";
     std::cerr << "\t-t INT number of threads [3]\n";
     std::cerr << "\t-o name of output tsv-file [output.tsv]\n";
     std::cerr << "\t-x Choice of hash function to use; 1: nohash, 2: wanghash, 3:xxhash [1]. \n";
@@ -461,7 +461,7 @@ int main (int argc, char *argv[])
     int k = 20;
     float f = 0.0002;
     std::string output_file_hits = "hits.tsv"; // q_position_start, q_position_end, r_position_start, r_position_end
-    int w_min = 1;
+    int w_min = 21;
     int w_max = 100;
     int n_threads = 3;
     bool unique = false;
@@ -533,9 +533,9 @@ int main (int argc, char *argv[])
             break;
     }
 
-//    if (!wmin_set){
-//        w_min = k+1; // Update default w_min to k +1 if user has specified non-default k and not set w_min parameter
-//    }
+    if (!wmin_set){
+        w_min = k+1; // Update default w_min to k + 1 if user has specified non-default k and not set w_min parameter
+    }
     omp_set_num_threads(n_threads); // set number of threads in "parallel" blocks
     std::cout << "Using" << std::endl;
     std::cout << "n: " << n << std::endl;
