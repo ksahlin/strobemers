@@ -208,8 +208,8 @@ static inline void make_string_to_hashvalues2(std::string &seq, std::vector<uint
             x = (x << 2 | c) & kmask;                  // forward strand
             if (++l >= k) { // we find a k-mer
 //                uint64_t hash_k = x;
-                uint64_t hash_k = robin_hash(x);
-//                uint64_t hash_k = hash64(x, kmask);
+//                uint64_t hash_k = robin_hash(x);
+                uint64_t hash_k = hash64(x, kmask);
 //                std::cout << hash_k << " " << x << std::endl;
                 string_hashes.push_back(hash_k);
                 pos_to_seq_choord.push_back( i - k + 1);
@@ -229,7 +229,8 @@ static inline void get_next_strobe(std::vector<uint64_t> &string_hashes, uint64_
 //    unsigned int min_pos;
 //    min_pos = -1;
     for (auto i = w_start; i <= w_end; i++) {
-        uint64_t res = (strobe_hashval + string_hashes[i]) & q ;
+//        uint64_t res = (strobe_hashval + string_hashes[i]) & q ;
+        uint64_t res = (strobe_hashval ^ string_hashes[i]) ;
         if (res < min_val){
             min_val = res;
             strobe_pos_next = i;
@@ -383,8 +384,8 @@ mers_vector seq_to_randstrobes3(int n, int k, int w_min, int w_max, std::string 
 
             unsigned int w2_start = i+w_max + w_min;
             unsigned int w2_end = i+2*w_max;
-//            uint64_t conditional_next = strobe_hash ^ strobe_hashval_next1;
-            get_next_strobe(string_hashes, strobe_hashval_next1, strobe_pos_next2, strobe_hashval_next2, w2_start, w2_end, q);
+            uint64_t conditional_next = (strobe_hash ^ strobe_hashval_next1);
+            get_next_strobe(string_hashes, conditional_next, strobe_pos_next2, strobe_hashval_next2, w2_start, w2_end, q);
         }
         else if ((i + 2*w_min + 1 < seq_length) && (seq_length <= i + 2*w_max) ){
 //            unsigned int w_start = i+w_min;
@@ -401,8 +402,8 @@ mers_vector seq_to_randstrobes3(int n, int k, int w_min, int w_max, std::string 
 
             unsigned int w2_start = i+w_max - overshot/2 + w_min;
             unsigned int w2_end = i+2*w_max - overshot;
-//            uint64_t conditional_next = strobe_hash ^ strobe_hashval_next1;
-            get_next_strobe(string_hashes, strobe_hashval_next1, strobe_pos_next2, strobe_hashval_next2, w2_start, w2_end, q);
+            uint64_t conditional_next = (strobe_hash ^ strobe_hashval_next1);
+            get_next_strobe(string_hashes, conditional_next, strobe_pos_next2, strobe_hashval_next2, w2_start, w2_end, q);
         }
         else{
             return randstrobes3;
