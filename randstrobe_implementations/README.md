@@ -89,19 +89,17 @@ xxhash - Guo-Pibri
 ----------------
 Total time hashing: 0.080595 s
 Total time linking: 0.88589 s
-Total time generating randstrobes (hashing + linking): 1.02974 s
 
 xxhash - Liu-Patro-Li
 ----------------
 
-Total time hashing: 0.047155 s
+Total time hashing: 0.047155 s (hashing = just reading in k-mers, xxhash performed after concatenation)
 Total time linking: 4.07386 s
 
 xxhash - Sahlin2
 ----------------
 Total time hashing: 0.078989 s
 Total time linking: 0.967672 s
-Total time generating randstrobes (hashing + linking): 1.11326 s
 ```
 
 ## Pseudo-randomness metrics (TBD)
