@@ -60,7 +60,7 @@ static uint64_t read_references(std::vector<std::string> &seqs, std::vector<unsi
 //                generate_kmers(h, k, seq, ref_index);
             }
 //            acc_map[ref_index] = line.substr(1, line.length() -1); //line;
-            acc_map[ref_index] = line.substr(1, line.find(' ')); //line;
+            acc_map[ref_index] = line.substr(1, line.find(' ') -1 ); //line;
             ref_index++;
             seq = "";
         }
