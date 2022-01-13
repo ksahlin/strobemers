@@ -142,7 +142,7 @@ void string_to_hash_xxhash(std::string &seq, std::vector<uint64_t> &string_hashe
         if (c < 4) { // not an "N" base
             x = (x << 2 | c) & kmask;                  // forward strand
             if (++l >= k) { // we find a k-mer
-                uint64_t hash_k = XXH64(&x, 8,0);
+                uint64_t hash_k = XXH64(&x, sizeof(uint64_t),0);
 //                (size_t) XXH3_128bits(src, srcSize).low64
                 string_hashes.push_back(hash_k);
                 pos_to_seq_choord.push_back( i - k + 1);
@@ -433,7 +433,7 @@ inline void get_next_strobe_liu_patro_li(std::vector<uint64_t> &string_hashes, u
     strobeconcat.high = strobe_hashval;
     for (auto i = w_start; i <= w_end; i++) {
         strobeconcat.low = string_hashes[i];
-        uint64_t res = XXH3_64bits(&strobeconcat, 16);
+        uint64_t res = XXH64(&strobeconcat, sizeof(int128), 0);
         if (res < min_val){
             min_val = res;
             strobe_pos_next = i;

@@ -57,3 +57,52 @@ Run
 ```
 
 If `-l 5` is specified, `-x` will use xxhash128.
+
+```
+$ ./randstrobe_benchmark
+
+Randstrobe evaluation
+
+StrobeMap [options] <references.fasta> <queries.fast[a/q]>
+options:
+  -k INT strobe length, limited to 32 [20]
+  -v INT strobe w_min offset [21]
+  -w INT strobe w_max offset [120]
+  -t INT number of threads [3]
+  -o name of output tsv-file [output.tsv]
+  -x Choice of hash function to use; 1: nohash, 2: wanghash, 3:xxhash [1]. 
+  -l Choice of link function to use; 1: method1 (sahlin modulo), 2: method2 (shen bitwise AND), 3: method3 (guo_pibri XOR), 4: method4 (sahlin bitcount XOR), 5: method5 (Liu-Patro-Li, concatenation)
+```
+
+
+## Current timings on an E coli genome
+
+```
+n: 2
+k: 20
+w_min: 21
+w_max: 120
+total_ref_seq_size 5753218
+Number of refs: 2
+
+xxhash - Guo-Pibri
+----------------
+Total time hashing: 0.080595 s
+Total time linking: 0.88589 s
+Total time generating randstrobes (hashing + linking): 1.02974 s
+
+xxhash - Liu-Patro-Li
+----------------
+
+Total time hashing: 0.047155 s
+Total time linking: 4.07386 s
+
+xxhash - Sahlin2
+----------------
+Total time hashing: 0.078989 s
+Total time linking: 0.967672 s
+Total time generating randstrobes (hashing + linking): 1.11326 s
+```
+
+## Pseudo-randomness metrics (TBD)
+
