@@ -6,7 +6,9 @@ Strobemers
 
 Strobemers are seeds extracted from text and used for text similarity searches described [here](https://genome.cshlp.org/content/31/11/2080). They are fuzzy seeds and can match over mutations in text. Strobemers were initially designed for biological sequence analysis where point mutations and small shifts (insertions/deletions) are common, but they are agnostic to the alphabet of text. 
 
-A small illustration below of two biological sequences `T_1` and `T_2` with substitutions and insertions/deletions between them, and four strobemer seeds (`s_1` to `s_4`) extracted from each sequence. Mutations destroy some seeds (`s_1`/`s'_1`), but some remain intact, allowing retrieval of similar regions. 
+A small illustration below of two biological sequences `T` and `T'` with substitutions and insertions/deletions between them, and four strobemer seeds (`s_1`-`s_4` and `s'_1`-`s'_4`) extracted from each sequence. Mutations destroy some seeds (`s_1`/`s'_1`), but some remain intact, allowing retrieval of similar regions. The seeds have total length of 24 letters (2x12), but no consecutive 24 letter string (k-mer) is found beween the sequences.
+
+![strobe](https://user-images.githubusercontent.com/1714667/149466166-1f558539-730a-4b1b-9876-a28f24bb01a2.png)
 
 
 ### This repository
