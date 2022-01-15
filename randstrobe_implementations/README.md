@@ -107,6 +107,8 @@ Total time linking: 0.798029 s
 
 ## Pseudo-randomness metrics
 
+For intuition about the problems we encounter, see [this figure](https://github.com/ksahlin/strobemers/blob/main/randstrobe_implementations/figures/clumpings_motivation.pdf).
+
 To measure the pseudorandomness, the script [evaluate_sampling.py](https://github.com/ksahlin/strobemers/tree/main/randstrobe_implementations/evaluation) can be run on the `positions.tsv` file. 
 ```
 python evaluate_sampling.py positions.tsv outpath/to/randstrobe_evaluation
@@ -119,7 +121,8 @@ Hash,Link,total_unique,most_repetitive,distance_nonuniformity,d_min2,d_min3,d_mi
 xxh64,Guo-Pibri,2987438,11,198.52100000000007,1.19,1.17,1.16,1.14,1.12,1.5,3.42,16.16,377.76
 ```
 
-About the metrics, see [this figure](https://github.com/ksahlin/strobemers/blob/main/randstrobe_implementations/figures/clumpings_motivation.pdf)
+Below is a brief description ofwhat the metrics mean. See [the figure](https://github.com/ksahlin/strobemers/blob/main/randstrobe_implementations/figures/clumpings_motivation.pdf) to understand why we measure this.
+
 ```
 total_unique: unique positions position of strobe2 (higher is better - as long as not scenario B i fig)
 most_repetitive: position that was most sampled (may indicate a degenerate region, see scenario C in fig) 
