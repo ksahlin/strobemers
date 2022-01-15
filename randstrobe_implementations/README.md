@@ -77,7 +77,8 @@ options:
 ## Current timings on an E coli genome
 
 Below the `ecoli.fasta` is [this](https://www.ncbi.nlm.nih.gov/nuccore/NC_000913.3?report=fasta) E. coli genome.
-The second argument is any file as it is no currently used. This file will be used when implementing matching statistics under the methods. Currently, only the positions genereated on the genome are logged and output in a file `positions.tsv` the run directory. Therefore I do not recomment running this analysis on large genomes yet.
+
+The second argument can be any file, as it is no currently used. This file will be used when implementing matching statistics under the methods. Currently, only the positions genereated on the genome are logged and output in a file `positions.tsv` the run directory. `positions.tsv` contains a row for each genomic position. Therefore I do not recomment running this analysis on large genomes yet.
 
 ```
 xxhash - Guo-Pibri
@@ -90,7 +91,7 @@ Total time linking: 0.766273 s
 
 xxhash - Liu-Patro-Li
 ---------------
-./randstrobe_benchmark -l 5 -v 21 -w 120  ~/Downloads/sequence.fasta  lol.txt
+./randstrobe_benchmark -l 5 -v 21 -w 120  ~/Downloads/sequence.fasta  dummy.fa
   
 Total time hashing: 0.039633 s (hashing is just reading in k-mers, xxhash performed after concatenation)
 Total time linking: 3.50736 s
@@ -98,13 +99,13 @@ Total time linking: 3.50736 s
 
 xxhash - Sahlin2
 ----------------
- ./randstrobe_benchmark -x 3 -l 4 -v 21 -w 120  ~/Downloads/sequence.fasta  lol.txt
+ ./randstrobe_benchmark -x 3 -l 4 -v 21 -w 120  ~/Downloads/sequence.fasta  dummy.fa
 
 Total time hashing: 0.065009 s
 Total time linking: 0.798029 s
 ```
 
-## Pseudo-randomness metrics (TBD)
+## Pseudo-randomness metrics
 
 To measure the pseudorandomness, the script [evaluate_sampling.py](https://github.com/ksahlin/strobemers/tree/main/randstrobe_implementations/evaluation) can be run on the `positions.tsv` file. 
 ```
