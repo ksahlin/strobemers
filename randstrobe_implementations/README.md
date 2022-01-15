@@ -124,10 +124,10 @@ xxh64,Guo-Pibri,2987438,11,198.52100000000007,1.19,1.17,1.16,1.14,1.12,1.5,3.42,
 Below is a brief description ofwhat the metrics mean. See [the figure](https://github.com/ksahlin/strobemers/blob/main/randstrobe_implementations/figures/clumpings_motivation.pdf) to understand why we measure this.
 
 
-1. total_unique: unique positions position of strobe2 (higher is better - as long as not scenario B i fig)
-2. most_repetitive: position that was most sampled (may indicate a degenerate region, see scenario C in fig) 
-3. distance_nonuniformity: Should be close to 1 for perfect uniform (if we want strobes sampled uniform from downstream window)
-4. d_minN : Observed number of collisions (position sampled twice) divided by expected number of collisions in a group of N consecutive strobes. A value close to 1 is good. >1 indicates bias. Expected collisions derived experimentally using pythons random number generator. 
-5. d_maxN: Tight groupings. A tight grouping is when the maximum distance between any two strobes within a gropup of N consecutive strobes is N (see scenario E in fig). d_maxN measure observed groupings divided by expected groupings. A value close to 1 is good. >1 indicates bias. 
+1. **total_unique**: unique positions position of strobe2 (higher is better - as long as not scenario B i fig)
+2. **most_repetitive**: position that was most sampled (may indicate a degenerate region, see scenario C in fig) 
+3. **distance_nonuniformity**: Should be close to 1 for perfect uniform (if we want strobes sampled uniform from downstream window)
+4. **d_minN**: Observed number of collisions (position sampled twice) divided by expected number of collisions in a group of N consecutive strobes. A value close to 1 is good. >1 indicates bias. Expected collisions derived experimentally using pythons random number generator. 
+5. **d_maxN**: Tight groupings. A tight grouping is when the maximum distance between any two strobes within a gropup of N consecutive strobes is N (see scenario E in fig). d_maxN measure observed groupings divided by expected groupings. A value close to 1 is good. >1 indicates bias. 
 ```
 
