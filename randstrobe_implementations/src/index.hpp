@@ -31,6 +31,8 @@ mers_vector link_2_strobes_shen(int w_min, int w_max, std::vector<uint64_t> &str
 mers_vector link_2_strobes_sahlin2(int w_min, int w_max, std::vector<uint64_t> &string_hashes, std::vector<unsigned int> &pos_to_seq_choord, unsigned int ref_index);
 mers_vector link_2_strobes_guo_pibri(int w_min, int w_max, std::vector<uint64_t> &string_hashes, std::vector<unsigned int> &pos_to_seq_choord, unsigned int ref_index);
 mers_vector link_2_strobes_liu_patro_li(int w_min, int w_max, std::vector<uint64_t> &string_hashes, std::vector<unsigned int> &pos_to_seq_choord, unsigned int ref_index);
+mers_vector link_2_strobes_liu_patro_li_wyhash(int w_min, int w_max, std::vector<uint64_t> &string_hashes, std::vector<unsigned int> &pos_to_seq_choord, unsigned int ref_index);
+
 
 
 mers_vector link_3_strobes_method2(int w_min, int w_max, std::vector<uint64_t> &string_hashes, std::vector<unsigned int> &pos_to_seq_choord, unsigned int ref_index);

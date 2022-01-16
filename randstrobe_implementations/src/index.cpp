@@ -10,7 +10,7 @@
 #include <math.h>       /* pow */
 #include <bitset>
 #include "xxhash.h"
-
+#include "wyhash.h"
 
 /**********************************************************
  *
@@ -35,6 +35,13 @@ uint64_t hash(std::string kmer)
  * hash kmer into uint64
  *
  * *******************************************************/
+//
+//
+//
+//
+//
+//
+//
 // copy from minimap2:sketch.c : Thomas Wang Hash
 static inline uint64_t hash64(uint64_t key, uint64_t mask)
 {
@@ -74,6 +81,7 @@ static inline uint64_t kmer_to_uint64(std::string &kmer, uint64_t kmask)
 
     for (char i : kmer) {
         int c = seq_nt4_table[(uint8_t)i];
+
         bkmer = (bkmer << 2 | c) & kmask;
 
     }
@@ -114,6 +122,7 @@ void string_to_hash_wang(std::string &seq, std::vector<uint64_t> &string_hashes,
     int i;
     uint64_t x = 0;
     for (int i = l = 0; i < seq.length(); i++) {
+
         int c = seq_nt4_table[(uint8_t) seq[i]];
         if (c < 4) { // not an "N" base
             x = (x << 2 | c) & kmask;                  // forward strand
@@ -142,7 +151,7 @@ void string_to_hash_xxhash(std::string &seq, std::vector<uint64_t> &string_hashe
         if (c < 4) { // not an "N" base
             x = (x << 2 | c) & kmask;                  // forward strand
             if (++l >= k) { // we find a k-mer
-                uint64_t hash_k = XXH64(&x, sizeof(uint64_t),0);
+                uint64_t hash_k = XXH3_64bits_withSeed(&x, sizeof(x), 0);
 //                (size_t) XXH3_128bits(src, srcSize).low64
                 string_hashes.push_back(hash_k);
                 pos_to_seq_choord.push_back( i - k + 1);
@@ -154,6 +163,7 @@ void string_to_hash_xxhash(std::string &seq, std::vector<uint64_t> &string_hashe
         }
     }
 }
+
 
 
 
@@ -194,6 +204,7 @@ mers_vector link_2_strobes_shen(int w_min, int w_max, std::vector<uint64_t> &str
         if (i + w_max <= seq_length - 1){
             unsigned int w_start = i+w_min;
             unsigned int w_end = i+w_max;
+
             uint64_t strobe_hash;
             strobe_hash = string_hashes[i];
             get_next_strobe_shen(string_hashes, strobe_hash, strobe_pos_next, strobe_hashval_next, w_start, w_end, q);
@@ -234,6 +245,7 @@ inline void get_next_strobe_sahlin1(std::vector<uint64_t> &string_hashes, uint64
         if (res < min_val){
             min_val = res;
             strobe_pos_next = i;
+
             strobe_hashval_next = string_hashes[i];
         }
     }
@@ -274,6 +286,7 @@ mers_vector link_2_strobes_sahlin1(int w_min, int w_max, std::vector<uint64_t> &
         }
         else{
             return randstrobes2;
+
         }
 
 //        uint64_t hash_randstrobe2 = (string_hashes[i] << k) ^ strobe_hashval_next;
@@ -314,6 +327,7 @@ mers_vector link_2_strobes_sahlin2(int w_min, int w_max, std::vector<uint64_t> &
     if (string_hashes.size() == 0) {
         return randstrobes2;
     }
+    //
 //    std::cout << seq << std::endl;
     int seq_length = string_hashes.size();
     // create the randstrobes
@@ -354,6 +368,7 @@ mers_vector link_2_strobes_sahlin2(int w_min, int w_max, std::vector<uint64_t> &
 
 //        auto strobe1 = seq.substr(i, k);
 //        std::cout << std::string(i, ' ') << strobe1 << std::string(strobe_pos_next - (i+k), ' ') << std::string(k, 'X') << std::endl;
+
 
     }
     return randstrobes2;
@@ -394,6 +409,7 @@ mers_vector link_2_strobes_guo_pibri(int w_min, int w_max, std::vector<uint64_t>
         if (i + w_max <= seq_length - 1){
             unsigned int w_start = i+w_min;
             unsigned int w_end = i+w_max;
+
             uint64_t strobe_hash;
             strobe_hash = string_hashes[i];
             get_next_strobe_guo_pibri(string_hashes, strobe_hash, strobe_pos_next, strobe_hashval_next, w_start, w_end);
@@ -429,11 +445,14 @@ mers_vector link_2_strobes_guo_pibri(int w_min, int w_max, std::vector<uint64_t>
 typedef struct { uint64_t high; uint64_t low; } int128;
 inline void get_next_strobe_liu_patro_li(std::vector<uint64_t> &string_hashes, uint64_t strobe_hashval, unsigned int &strobe_pos_next, uint64_t &strobe_hashval_next,  unsigned int w_start, unsigned int w_end){
     uint64_t min_val = UINT64_MAX;
+    uint64_t _wyp[4];
     int128 strobeconcat;
     strobeconcat.high = strobe_hashval;
     for (auto i = w_start; i <= w_end; i++) {
         strobeconcat.low = string_hashes[i];
-        uint64_t res = XXH64(&strobeconcat, sizeof(int128), 0);
+        uint64_t res = XXH3_64bits_withSeed(&strobeconcat, sizeof(strobeconcat), 0);
+
+
         if (res < min_val){
             min_val = res;
             strobe_pos_next = i;
@@ -441,6 +460,26 @@ inline void get_next_strobe_liu_patro_li(std::vector<uint64_t> &string_hashes, u
         }
     }
 }
+
+
+inline void get_next_strobe_liu_patro_li_wyhash(std::vector<uint64_t> &string_hashes, uint64_t strobe_hashval, unsigned int &strobe_pos_next, uint64_t &strobe_hashval_next,  unsigned int w_start, unsigned int w_end){
+    uint64_t min_val = UINT64_MAX;
+    uint64_t _wyp[4];
+    int128 strobeconcat;
+    strobeconcat.high = strobe_hashval;
+    for (auto i = w_start; i <= w_end; i++) {
+        strobeconcat.low = string_hashes[i];
+        uint64_t res = wyhash(&strobeconcat, sizeof(int128), 0, _wyp);
+
+
+        if (res < min_val){
+            min_val = res;
+            strobe_pos_next = i;
+            strobe_hashval_next = string_hashes[i];
+        }
+    }
+}
+
 
 mers_vector link_2_strobes_liu_patro_li(int w_min, int w_max, std::vector<uint64_t> &string_hashes, std::vector<unsigned int> &pos_to_seq_choord, unsigned int ref_index)
 {
@@ -455,6 +494,7 @@ mers_vector link_2_strobes_liu_patro_li(int w_min, int w_max, std::vector<uint64
     for (unsigned int i = 0; i <= seq_length; i++) {
 
 //        if ((i % 1000000) == 0 ){
+//
 //            std::cout << i << " strobemers created." << std::endl;
 //        }
         unsigned int strobe_pos_next;
@@ -473,6 +513,61 @@ mers_vector link_2_strobes_liu_patro_li(int w_min, int w_max, std::vector<uint64
             uint64_t strobe_hash;
             strobe_hash = string_hashes[i];
             get_next_strobe_liu_patro_li(string_hashes, strobe_hash, strobe_pos_next, strobe_hashval_next, w_start, w_end);
+        }
+        else{
+            return randstrobes2;
+        }
+
+//        uint64_t hash_randstrobe2 = (string_hashes[i] << k) ^ strobe_hashval_next;
+        uint64_t hash_randstrobe2 = (string_hashes[i]/2) + (strobe_hashval_next/3);
+
+        unsigned int seq_pos_strobe1 = pos_to_seq_choord[i];
+        unsigned int seq_pos_strobe2 = pos_to_seq_choord[strobe_pos_next];
+        std::tuple<uint64_t, unsigned int, unsigned int, unsigned int, unsigned int> s (hash_randstrobe2, ref_index, seq_pos_strobe1, seq_pos_strobe2, seq_pos_strobe2);
+        randstrobes2.push_back(s);
+
+
+//        auto strobe1 = seq.substr(i, k);
+//        std::cout << std::string(i, ' ') << strobe1 << std::string(strobe_pos_next - (i+k), ' ') << std::string(k, 'X') << std::endl;
+
+    }
+    return randstrobes2;
+}
+
+
+
+mers_vector link_2_strobes_liu_patro_li_wyhash(int w_min, int w_max, std::vector<uint64_t> &string_hashes, std::vector<unsigned int> &pos_to_seq_choord, unsigned int ref_index)
+{
+    mers_vector randstrobes2;
+
+    if (string_hashes.size() == 0) {
+        return randstrobes2;
+    }
+//    std::cout << seq << std::endl;
+    int seq_length = string_hashes.size();
+    // create the randstrobes
+    for (unsigned int i = 0; i <= seq_length; i++) {
+
+//        if ((i % 1000000) == 0 ){
+//
+//            std::cout << i << " strobemers created." << std::endl;
+//        }
+        unsigned int strobe_pos_next;
+        uint64_t strobe_hashval_next;
+
+        if (i + w_max <= seq_length - 1){
+            unsigned int w_start = i+w_min;
+            unsigned int w_end = i+w_max;
+            uint64_t strobe_hash;
+            strobe_hash = string_hashes[i];
+            get_next_strobe_liu_patro_li_wyhash(string_hashes, strobe_hash, strobe_pos_next, strobe_hashval_next, w_start, w_end);
+        }
+        else if ((i + w_min + 1 < seq_length) && (seq_length <= i + w_max) ){
+            unsigned int w_start = i+w_min;
+            unsigned int w_end = seq_length -1;
+            uint64_t strobe_hash;
+            strobe_hash = string_hashes[i];
+            get_next_strobe_liu_patro_li_wyhash(string_hashes, strobe_hash, strobe_pos_next, strobe_hashval_next, w_start, w_end);
         }
         else{
             return randstrobes2;

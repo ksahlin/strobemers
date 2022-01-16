@@ -104,6 +104,8 @@ static inline void print_positions(mers_vector &flat_vector, idx_to_acc &acc_map
         l_method = "Guo-Pibri";
     } else if (link_func == 5){
         l_method = "Liu-Patro-Li";
+    } else if (link_func == 6){
+        l_method = "Liu-Patro-Li_wyhash";
     }
 
 
@@ -611,8 +613,23 @@ int main (int argc, char *argv[])
                 string_hashes.clear();
                 randstrobes2.clear();
                 pos_to_seq_choord.clear();
-            }
-            else { // the other methods can be separated
+            } else if (link_func == 6) { // method 6 recuires combined link and hash
+                auto start_hash = std::chrono::high_resolution_clock::now();
+                string_to_hash_nohash(ref_seqs[i], string_hashes, pos_to_seq_choord, k);
+                auto end_hash = std::chrono::high_resolution_clock::now();
+                elapsed_hash += end_hash - start_hash;
+
+                auto start_link = std::chrono::high_resolution_clock::now();
+                randstrobes2 = link_2_strobes_liu_patro_li_wyhash(w_min, w_max, string_hashes, pos_to_seq_choord, i);
+                auto end_link = std::chrono::high_resolution_clock::now();
+                elapsed_link += end_link - start_link;
+                for (auto &t : randstrobes2) {
+                    flat_vector.push_back(t);
+                }
+                string_hashes.clear();
+                randstrobes2.clear();
+                pos_to_seq_choord.clear();
+            } else { // the other methods can be separated
                 auto start_hash = std::chrono::high_resolution_clock::now();
                 // first hash
                 if (hash_func == 1) {
