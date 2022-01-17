@@ -2,9 +2,9 @@ Strobemers
 ===========
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](http://bioconda.github.io/recipes/strobemap/README.html)
 
-### What are strobemers? 
+### What is a strobemer? 
 
-Strobemers are seeds extracted from text and used for text similarity searches described [here](https://genome.cshlp.org/content/31/11/2080). They are fuzzy seeds and can match over mutations in text. Strobemers were initially designed for biological sequence analysis where point mutations and small shifts (insertions/deletions) are common, but they are agnostic to the alphabet of text. 
+A strobemer is a seed extracted from text and used for text similarity searches described [here](https://genome.cshlp.org/content/31/11/2080). Strobemers are _fuzzy_ seeds and can match over mutations in text. They were initially designed for biological sequence analysis where point mutations and small shifts (insertions/deletions) are common, but they are agnostic to the alphabet of text. 
 
 A small illustration below of two biological sequences `T` and `T'` with substitutions and insertions/deletions between them, and four strobemer seeds (`s_1`-`s_4` and `s'_1`-`s'_4`) extracted from each sequence. Mutations destroy some seeds (`s_1`/`s'_1`), but some remain intact, allowing retrieval of similar regions. The seeds have total length of 24 letters (two 12-letter strings separated by a pseudorandom spacing), but no consecutive 24 letter string (k-mer) is found beween `T` and `T'`.
 
