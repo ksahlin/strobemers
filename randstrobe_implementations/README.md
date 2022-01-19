@@ -19,6 +19,7 @@ Let the hash function be denoted by h.
 3. Sahlin bitcount( h(k_1) ^ h(k') ) 
 4. Guo-Pibri h(k_1) ^ h(k') (global XOR), (also a variant: h(k_1 ^ k'))
 5. Liu-Patro-Li h( k_1 || k' ) 
+6. Liu-Patro-Li h( k_1 || k' ) (using wyhash for linking)
 
 Viable combinations of (hashing, linking) seem to be (1,1)-(1,4), (2,1)-(2,4), (3,1)-(3,5) as the total length can be larger than 32.
 
@@ -52,7 +53,7 @@ g++-11 -std=c++14 main.cpp index.cpp xxhash.c -lz -fopenmp -o randstrobe_benchma
 Run
 
 ```
-./randstrobe_benchmark -x [1,2,3] -l [link method 1-5] refs.fasta queries.fasta
+./randstrobe_benchmark -x [1,2,3] -l [link method 1-6] refs.fasta queries.fasta
 ```
 
 If `-l 5` is specified, `-x` will use xxhash128.
@@ -70,7 +71,7 @@ options:
   -t INT number of threads [3]
   -o name of output tsv-file [output.tsv]
   -x Choice of hash function to use; 1: nohash, 2: Thomas Wang hash, 3:xxhash [1]. 
-  -l Choice of link function to use; 1: method1 (sahlin modulo), 2: method2 (shen bitwise AND), 3: method3 (guo_pibri XOR), 4: method4 (sahlin bitcount XOR), 5: method5 (Liu-Patro-Li, concatenation)
+  -l Choice of link function to use; 1: method1 (sahlin modulo), 2: method2 (shen bitwise AND), 3: method3 (guo_pibri XOR), 4: method4 (sahlin bitcount XOR), 5: method5 (Liu-Patro-Li, concatenation), 6: method6 (Liu-Patro-Li, concatenation using wyhash for linking).
 ```
 
 
