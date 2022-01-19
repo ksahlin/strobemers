@@ -437,7 +437,7 @@ void print_usage() {
     std::cerr << "\t-t INT number of threads [3]\n";
     std::cerr << "\t-o name of output tsv-file [output.tsv]\n";
     std::cerr << "\t-x Choice of hash function to use; 1: nohash, 2: wanghash, 3:xxhash [1]. \n";
-    std::cerr << "\t-l Choice of link function to use; 1: method1 (sahlin modulo), 2: method2 (shen bitwise AND), 3: method3 (guo_pibri XOR), 4: method4 (sahlin bitcount XOR), 5: method5 (Liu-Patro-Li, concatenation). \n";
+    std::cerr << "\t-l Choice of link function to use; 1: method1 (sahlin modulo), 2: method2 (shen bitwise AND), 3: method3 (guo_pibri XOR), 4: method4 (sahlin bitcount XOR), 5: method5 (Liu-Patro-Li, concatenation), 6: method6 (Liu-Patro-Li, concatenation using wyhash for linking). \n";
 //    std::cerr << "\t-C UINT Mask (do not process) strobemer hits with count larger than C [1000]\n";
 //    std::cerr << "\t-L UINT Print at most L NAMs per query [1000]. Will print the NAMs with highest score S = n_strobemer_hits * query_span. \n";
 //    std::cerr << "\t-S Sort output NAMs for each query based on score. Default is to sort first by ref ID, then by query coordinate, then by reference coordinate. \n";
