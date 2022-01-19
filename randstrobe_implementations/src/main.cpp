@@ -586,7 +586,7 @@ int main (int argc, char *argv[])
     std::vector<uint64_t> string_hashes;
     std::vector<unsigned int> pos_to_seq_choord;
 
-    if (link_func == 5) { // method 5 recuires combined link and hash
+    if ( (link_func == 5)  || (link_func == 6)) { // method 5 requires combined link and hash
         hash_func = 3;
     }
 
@@ -597,7 +597,7 @@ int main (int argc, char *argv[])
             string_hashes.reserve(ref_lengths[i]);
             pos_to_seq_choord.reserve(ref_lengths[i]);
 
-            if (link_func == 5) { // method 5 recuires combined link and hash
+            if (link_func == 5) { // method 5 requires combined link and hash
                 auto start_hash = std::chrono::high_resolution_clock::now();
                 string_to_hash_nohash(ref_seqs[i], string_hashes, pos_to_seq_choord, k);
                 auto end_hash = std::chrono::high_resolution_clock::now();
@@ -613,7 +613,7 @@ int main (int argc, char *argv[])
                 string_hashes.clear();
                 randstrobes2.clear();
                 pos_to_seq_choord.clear();
-            } else if (link_func == 6) { // method 6 recuires combined link and hash
+            } else if (link_func == 6) { // method 6 requires combined link and hash
                 auto start_hash = std::chrono::high_resolution_clock::now();
                 string_to_hash_nohash(ref_seqs[i], string_hashes, pos_to_seq_choord, k);
                 auto end_hash = std::chrono::high_resolution_clock::now();
