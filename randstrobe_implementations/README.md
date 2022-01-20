@@ -9,7 +9,7 @@ This evaluation will compare combinations of hashing and linking k-mers into ran
 1. No hash - simple 2bit encoding of nucleotides
 2. Thomas Wang hash
 3. [xxhash](https://github.com/Cyan4973/xxHash)
-
+4. [wyhash](https://github.com/wangyi-fudan/wyhash)
 Let the hash function be denoted by h.
 
 ### Linking
@@ -21,7 +21,7 @@ Let the hash function be denoted by h.
 5. Liu-Patro-Li h( k_1 || k' ) 
 6. Liu-Patro-Li h( k_1 || k' ) (using wyhash for linking)
 
-Viable combinations of (hashing, linking) seem to be (1,1)-(1,4), (2,1)-(2,4), (3,1)-(3,5) as the total length can be larger than 32.
+Hashing with method 1 and 2 is not compatible with linking method 5 and 6 as the total strobemers length can be larger than 32.
 
 
 ### Metrics

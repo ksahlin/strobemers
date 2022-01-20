@@ -104,7 +104,6 @@ void string_to_hash_nohash(std::string &seq, std::vector<uint64_t> &string_hashe
             if (++l >= k) { // we find a k-mer
                 string_hashes.push_back(x); // no hash
                 pos_to_seq_choord.push_back( i - k + 1);
-//                pos_to_seq_choord[hash_count] = i - k + 1;
                 hash_count ++;
             }
         } else {
@@ -130,7 +129,6 @@ void string_to_hash_wang(std::string &seq, std::vector<uint64_t> &string_hashes,
                 uint64_t hash_k = hash64(x, kmask); // Thomas Wang hash
                 string_hashes.push_back(hash_k);
                 pos_to_seq_choord.push_back( i - k + 1);
-//                pos_to_seq_choord[hash_count] = i - k + 1;
                 hash_count ++;
             }
         } else {
@@ -152,10 +150,8 @@ void string_to_hash_xxhash(std::string &seq, std::vector<uint64_t> &string_hashe
             x = (x << 2 | c) & kmask;                  // forward strand
             if (++l >= k) { // we find a k-mer
                 uint64_t hash_k = XXH3_64bits_withSeed(&x, sizeof(x), 0);
-//                (size_t) XXH3_128bits(src, srcSize).low64
                 string_hashes.push_back(hash_k);
                 pos_to_seq_choord.push_back( i - k + 1);
-//                pos_to_seq_choord[hash_count] = i - k + 1;
                 hash_count ++;
             }
         } else {
@@ -164,6 +160,31 @@ void string_to_hash_xxhash(std::string &seq, std::vector<uint64_t> &string_hashe
     }
 }
 
+
+void string_to_hash_wyhash(std::string &seq, std::vector<uint64_t> &string_hashes, std::vector<unsigned int> &pos_to_seq_choord, int k) {
+    uint64_t _wyp[4];
+    std::transform(seq.begin(), seq.end(), seq.begin(), ::toupper);
+    uint64_t kmask=(1ULL<<2*k) - 1;
+    unsigned int hash_count = 0;
+    int l;
+    int i;
+    uint64_t x = 0;
+    for (int i = l = 0; i < seq.length(); i++) {
+        int c = seq_nt4_table[(uint8_t) seq[i]];
+        if (c < 4) { // not an "N" base
+            x = (x << 2 | c) & kmask;                  // forward strand
+            if (++l >= k) { // we find a k-mer
+                uint64_t hash_k = wyhash(&x, sizeof(x), 0, _wyp);
+//                uint64_t hash_k = XXH3_64bits_withSeed(&x, sizeof(x), 0);
+                string_hashes.push_back(hash_k);
+                pos_to_seq_choord.push_back( i - k + 1);
+                hash_count ++;
+            }
+        } else {
+            l = 0, x = 0; // if there is an "N", restart
+        }
+    }
+}
 
 
 
