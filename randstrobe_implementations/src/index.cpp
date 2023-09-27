@@ -464,14 +464,16 @@ mers_vector link_2_strobes_guo_pibri(int w_min, int w_max, std::vector<uint64_t>
 
 
 typedef struct { uint64_t high; uint64_t low; } int128;
+
+
 inline void get_next_strobe_liu_patro_li(std::vector<uint64_t> &string_hashes, uint64_t strobe_hashval, unsigned int &strobe_pos_next, uint64_t &strobe_hashval_next,  unsigned int w_start, unsigned int w_end){
     uint64_t min_val = UINT64_MAX;
-    uint64_t _wyp[4];
+    // uint64_t _wyp[4];
     int128 strobeconcat;
     strobeconcat.high = strobe_hashval;
     for (auto i = w_start; i <= w_end; i++) {
         strobeconcat.low = string_hashes[i];
-        uint64_t res = XXH3_64bits_withSeed(&strobeconcat, sizeof(strobeconcat), 0);
+        uint64_t res = XXH3_64bits_withSeed(&strobeconcat, sizeof(int128), 0);
 
 
         if (res < min_val){
@@ -485,13 +487,17 @@ inline void get_next_strobe_liu_patro_li(std::vector<uint64_t> &string_hashes, u
 
 inline void get_next_strobe_liu_patro_li_wyhash(std::vector<uint64_t> &string_hashes, uint64_t strobe_hashval, unsigned int &strobe_pos_next, uint64_t &strobe_hashval_next,  unsigned int w_start, unsigned int w_end){
     uint64_t min_val = UINT64_MAX;
-    uint64_t _wyp[4];
     int128 strobeconcat;
+    uint64_t _wyp[4];
+    srand(strobe_hashval);
+    for (int i = 0; i < 4; i++)
+        _wyp[i] = rand();
+
     strobeconcat.high = strobe_hashval;
     for (auto i = w_start; i <= w_end; i++) {
         strobeconcat.low = string_hashes[i];
         uint64_t res = wyhash(&strobeconcat, sizeof(int128), 0, _wyp);
-
+        // std::cout << res << ' ' << _wyp[3] << ' ' << strobeconcat.high << std::endl;
 
         if (res < min_val){
             min_val = res;

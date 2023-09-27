@@ -7,7 +7,7 @@
 #include <chrono>  // for high_resolution_clock
 #include <cassert>
 #include <math.h>
-#include <omp.h>
+// #include <omp.h>
 
 #include <zlib.h>
 #include "kseq++.hpp"
@@ -467,7 +467,7 @@ int main (int argc, char *argv[])
     std::string output_file_hits = "hits.tsv"; // q_position_start, q_position_end, r_position_start, r_position_end
     int w_min = 21;
     int w_max = 100;
-    int n_threads = 3;
+    // int n_threads = 3;
     bool unique = false;
     bool output_specified = false;
     bool wmin_set = false;
@@ -512,11 +512,13 @@ int main (int argc, char *argv[])
                 unique = true;
                 opn += 1;
                 flag = true;
-            } else if (argv[opn][1] == 't') {
-                n_threads = std::stoi(argv[opn + 1]);
-                opn += 2;
-                flag = true;
-            } else if (argv[opn][1] == 'C') {
+             } 
+             //else if (argv[opn][1] == 't') {
+            //     n_threads = std::stoi(argv[opn + 1]);
+            //     opn += 2;
+            //     flag = true;
+            // } 
+            else if (argv[opn][1] == 'C') {
                 filter_cutoff = std::stoi(argv[opn + 1]);
                 opn += 2;
                 flag = true;
@@ -540,13 +542,13 @@ int main (int argc, char *argv[])
     if (!wmin_set){
         w_min = k+1; // Update default w_min to k + 1 if user has specified non-default k and not set w_min parameter
     }
-    omp_set_num_threads(n_threads); // set number of threads in "parallel" blocks
+
     std::cout << "Using" << std::endl;
     std::cout << "n: " << n << std::endl;
     std::cout << "k: " << k << std::endl;
     std::cout << "w_min: " << w_min << std::endl;
     std::cout << "w_max: " << w_max << std::endl;
-    std::cout << "t: " << n_threads << std::endl;
+    std::cout << "t: " << 1 << std::endl;
     std::cout << "C: " << filter_cutoff << std::endl;
     std::cout << "L: " << max_lines << std::endl;
 
