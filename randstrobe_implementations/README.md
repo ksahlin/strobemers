@@ -47,7 +47,7 @@ The third measure is designed to measure local dispersity and would give a low s
 Compile
 
 ```
-g++-11 -std=c++14 main.cpp index.cpp xxhash.c -lz -fopenmp -o randstrobe_benchmark -O3 -mavx2
+g++ -std=c++14 main.cpp index.cpp xxhash.c -lz -o randstrobe_benchmark -O3 -mavx2
 ```
 
 Run
