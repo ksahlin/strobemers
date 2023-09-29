@@ -489,9 +489,9 @@ inline void get_next_strobe_liu_patro_li_wyhash(std::vector<uint64_t> &string_ha
     uint64_t min_val = UINT64_MAX;
     int128 strobeconcat;
     uint64_t _wyp[4];
-    srand(strobe_hashval);
+    // srand(strobe_hashval);
     for (int i = 0; i < 4; i++)
-        _wyp[i] = rand();
+        _wyp[i] = strobe_hashval; //rand();
 
     strobeconcat.high = strobe_hashval;
     for (auto i = w_start; i <= w_end; i++) {
