@@ -488,15 +488,15 @@ inline void get_next_strobe_liu_patro_li(std::vector<uint64_t> &string_hashes, u
 inline void get_next_strobe_liu_patro_li_wyhash(std::vector<uint64_t> &string_hashes, uint64_t strobe_hashval, unsigned int &strobe_pos_next, uint64_t &strobe_hashval_next,  unsigned int w_start, unsigned int w_end){
     uint64_t min_val = UINT64_MAX;
     int128 strobeconcat;
-    uint64_t _wyp[4];
-    // srand(strobe_hashval);
-    for (int i = 0; i < 4; i++)
-        _wyp[i] = strobe_hashval; //rand();
+    uint64_t _wyp[4] = { 0 };
+
+    // for (int i = 0; i < 4; i++)
+    //     _wyp[i] = strobe_hashval; //rand();
 
     strobeconcat.high = strobe_hashval;
     for (auto i = w_start; i <= w_end; i++) {
         strobeconcat.low = string_hashes[i];
-        uint64_t res = wyhash(&strobeconcat, sizeof(int128), 0, _wyp);
+        uint64_t res = wyhash(&strobeconcat, sizeof(int128), strobe_hashval, _wyp);
         // std::cout << res << ' ' << _wyp[3] << ' ' << strobeconcat.high << std::endl;
 
         if (res < min_val){
