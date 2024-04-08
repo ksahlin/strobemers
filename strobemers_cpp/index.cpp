@@ -475,7 +475,7 @@ mers_vector seq_to_minstrobes2(int n, int k, int w_min, int w_max, std::string &
         minstrobes2.push_back(s);
 
         // update queue and current minimum and position
-        if (i + w_max <= seq_length){
+        if (i + w_max < seq_length){
 //            auto new_strobe = seq.substr(i + w_max, k);
 //            uint64_t new_bstrobe = kmer_to_uint64(new_strobe, kmask);
 //            uint64_t new_strobe_hashval = hash64(new_bstrobe, kmask);
