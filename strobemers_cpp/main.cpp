@@ -748,6 +748,13 @@ int main (int argc, char *argv[])
                     seq_rc = reverse_complement(record.seq);
                     query_mers_rc = seq_to_kmers(k, seq_rc, q_id);
                 }
+                else if (choice == "minstrobes" ) {
+                    if (n == 2) {
+                        query_mers = seq_to_minstrobes2(n, k, w_min, w_max, record.seq, q_id);
+                        seq_rc = reverse_complement(record.seq);
+                        query_mers_rc = seq_to_minstrobes2(n, k, w_min, w_max, seq_rc, q_id);
+                    }
+                }
                 else if (choice == "randstrobes" ){
                     if (n == 2 ){
                         query_mers = seq_to_randstrobes2(n, k, w_min, w_max, record.seq, q_id);
@@ -841,6 +848,13 @@ int main (int argc, char *argv[])
                     query_mers = seq_to_kmers(k, record.seq, q_id);
                     seq_rc = reverse_complement(record.seq);
                     query_mers_rc = seq_to_kmers(k, seq_rc, q_id);
+                }
+                else if (choice == "minstrobes" ){
+                    if (n == 2) {
+                        query_mers = seq_to_minstrobes2(n, k, w_min, w_max, record.seq, q_id);
+                        seq_rc = reverse_complement(record.seq);
+                        query_mers_rc = seq_to_minstrobes2(n, k, w_min, w_max, seq_rc, q_id);
+                    }
                 }
                 else if (choice == "randstrobes" ){
                     if (n == 2 ){
